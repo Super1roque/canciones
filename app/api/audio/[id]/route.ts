@@ -32,7 +32,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     // Delete from Storage after serving — no longer needed
     await bucket.file(storagePath).delete().catch(() => {});
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type':   contentType,
         'Content-Length': buffer.length.toString(),
