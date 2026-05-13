@@ -2,6 +2,7 @@ import { getDb } from '@/lib/firebaseService';
 import AudioPlayer from './AudioPlayer';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function EscucharPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

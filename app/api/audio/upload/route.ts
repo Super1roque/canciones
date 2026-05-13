@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
