@@ -362,6 +362,8 @@ export default function RecortarPage() {
 
   const selDur  = selEnd - selStart;
   const canCut  = loaded && selDur > 0.05;
+  // Estimated MP3 size at 128 kbps
+  const estMB   = (selDur * 16000) / (1024 * 1024);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -459,6 +461,9 @@ export default function RecortarPage() {
               ))}
               <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f97316', marginLeft: 'auto' }}>
                 ✂️ {fmt(selDur)} seleccionado
+                <span style={{ fontSize: '0.78rem', color: 'rgba(249,115,22,0.7)', marginLeft: '0.5rem', fontWeight: 400 }}>
+                  (~{estMB < 0.1 ? '<0.1' : estMB.toFixed(1)} MB)
+                </span>
               </span>
             </div>
 
