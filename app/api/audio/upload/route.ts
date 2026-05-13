@@ -35,6 +35,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     console.error('audio/upload:', msg);
-    return NextResponse.json({ error: 'Error al subir el archivo' }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
