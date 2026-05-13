@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env
+.env.local
+.env*.local
+tsconfig.tsbuildinfo
+memory/
+.wwebjs_auth/
+.wwebjs_cache/
+data/
+.DS_Store
+**/.DS_Store
