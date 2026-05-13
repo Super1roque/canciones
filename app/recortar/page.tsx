@@ -23,7 +23,7 @@ function encodeMp3(buf: AudioBuffer, s: number, e: number): Blob {
   const right = ch > 1 ? toI16(buf.getChannelData(1).subarray(i0, i1)) : null;
   const enc   = new Mp3Encoder(ch, sr, 128);
   const block = 1152;
-  const parts: Int8Array[] = [];
+  const parts: (Int8Array | Uint8Array)[] = [];
   for (let i = 0; i < len; i += block) {
     const l = left.subarray(i, i + block);
     const r = right ? right.subarray(i, i + block) : undefined;
