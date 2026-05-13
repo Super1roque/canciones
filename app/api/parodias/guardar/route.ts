@@ -1,17 +1,5 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const CREACIONES_PATH = path.join(process.cwd(), 'data', 'creaciones.json');
-
-function leerCreaciones() {
-  const data = fs.readFileSync(CREACIONES_PATH, 'utf-8');
-  return JSON.parse(data);
-}
-
-function guardarCreaciones(creaciones: unknown[]) {
-  fs.writeFileSync(CREACIONES_PATH, JSON.stringify(creaciones, null, 2), 'utf-8');
-}
+import { getDb } from '@/lib/firebaseService';
 
 export async function POST(request: Request) {
   try {
@@ -21,24 +9,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Faltan datos para guardar la parodia' }, { status: 400 });
     }
 
-    const creaciones = leerCreaciones();
-
-    const nuevaCreacion = {
-      id: Date.now().toString(),
+    const db = getDb();
+    const nueva = {
       cancion_base,
-      estilo: estilo ?? '',
-      descripcionEstilo: descripcionEstilo ?? '',
-      direccionGenerador: direccionGenerador ?? '',
+      estilo:              estilo              ?? '',
+      descripcionEstilo:   descripcionEstilo   ?? '',
+      direccionGenerador:  direccionGenerador  ?? '',
       historia,
       parodia,
       fecha: new Date().toISOString(),
     };
 
-    creaciones.push(nuevaCreacion);
-    guardarCreaciones(creaciones);
-
-    return NextResponse.json(nuevaCreacion, { status: 201 });
-  } catch {
+    const docRef = await db.collection('parodias').add(nueva);
+    return NextResponse.json({ id: docRef.id, ...nueva }, { status: 201 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Firestore guardarParodia:', msg);
     return NextResponse.json({ error: 'Error al guardar la parodia' }, { status: 500 });
   }
 }

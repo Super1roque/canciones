@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const CREACIONES_PATH = path.join(process.cwd(), 'data', 'creaciones.json');
-
-function leerCreaciones() {
-  const data = fs.readFileSync(CREACIONES_PATH, 'utf-8');
-  return JSON.parse(data);
-}
+import { getDb } from '@/lib/firebaseService';
 
 export async function GET() {
   try {
-    const creaciones = leerCreaciones();
-    return NextResponse.json(creaciones.reverse());
-  } catch {
-    return NextResponse.json({ error: 'Error al leer las creaciones' }, { status: 500 });
+    const db = getDb();
+    const snapshot = await db.collection('parodias').orderBy('fecha', 'desc').get();
+    const parodias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return NextResponse.json(parodias);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Firestore listarParodias:', msg);
+    return NextResponse.json({ error: 'Error al leer las parodias' }, { status: 500 });
   }
 }
