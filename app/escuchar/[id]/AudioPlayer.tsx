@@ -20,6 +20,7 @@ export default function AudioPlayer({ id, fileName }: { id: string; fileName: st
             <audio
               src={`/api/audio/${id}`}
               controls
+              controlsList="nodownload"
               preload="none"
               onEnded={() => setEnded(true)}
               onError={() => setErrored(true)}
