@@ -676,7 +676,9 @@ function TabCreaciones({
     setCargando(true);
     try {
       const res = await fetch('/api/parodias');
-      setCreaciones(await res.json());
+      const data = await res.json();
+      setCreaciones(Array.isArray(data) ? data : []);
+      if (!res.ok) showToast(data.error || 'Error al cargar creaciones', 'error');
     } catch {
       showToast('Error al cargar creaciones', 'error');
     } finally {
