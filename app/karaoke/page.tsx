@@ -323,7 +323,7 @@ export default function KaraokePage() {
 
   // ── Glitch ─────────────────────────────────────────────────────────────
   const analyserRef      = useRef<AnalyserNode | null>(null);
-  const freqDataRef      = useRef<Uint8Array | null>(null);
+  const freqDataRef      = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const glitchRef        = useRef(0);
   const glitchEnabledRef = useRef(true);
   const offCanvasRef     = useRef<HTMLCanvasElement | null>(null);
