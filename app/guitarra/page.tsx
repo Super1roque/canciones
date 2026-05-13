@@ -90,7 +90,7 @@ export default function GuitarraPage() {
   const animRef        = useRef<number>(0);
   const audioCtxRef    = useRef<AudioContext | null>(null);
   const analyserRef    = useRef<AnalyserNode | null>(null);
-  const timeBufRef     = useRef<Float32Array | null>(null);
+  const timeBufRef     = useRef<Float32Array<ArrayBuffer> | null>(null);
   const vibrationsRef  = useRef<number[]>([0, 0, 0, 0, 0, 0]);
   const timeRef        = useRef<number[]>([0, 0, 0, 0, 0, 0]);
   // strumAge[i]: -1 = idle, 0..60 = frames since strum triggered

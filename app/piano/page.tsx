@@ -91,7 +91,7 @@ export default function PianoPage() {
   const animRef      = useRef<number>(0);
   const audioCtxRef  = useRef<AudioContext | null>(null);
   const analyserRef  = useRef<AnalyserNode | null>(null);
-  const timeBufRef   = useRef<Float32Array | null>(null);
+  const timeBufRef   = useRef<Float32Array<ArrayBuffer> | null>(null);
   const sourceRef    = useRef<AudioBufferSourceNode | MediaStreamAudioSourceNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const audioFileRef = useRef<File | null>(null);
