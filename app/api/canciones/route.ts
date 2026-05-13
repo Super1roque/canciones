@@ -12,7 +12,7 @@ export async function GET() {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     console.error('Firestore listarCanciones:', msg);
-    return NextResponse.json({ error: 'Error al leer la colección de canciones' }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
