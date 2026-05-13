@@ -54,12 +54,58 @@ function InvalidLink() {
 }
 
 function AlreadyPlayed({ fileName }: { fileName: string }) {
-  return card(
-    <>
-      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
-      <h1 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>Audio ya escuchado</h1>
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>&quot;{fileName}&quot;</p>
-      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', marginTop: '0.4rem' }}>Este audio solo podía escucharse una vez.</p>
-    </>
+  return (
+    <div style={{ minHeight: '100vh', background: '#0c0c18', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '1.5rem' }}>
+      <div style={{ maxWidth: 420, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+        {/* Estado */}
+        <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 16, padding: '2.5rem', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔒</div>
+          <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>Audio ya escuchado</h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>&quot;{fileName}&quot;</p>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', marginTop: '0.4rem' }}>Este audio solo podía escucharse una vez.</p>
+        </div>
+
+        {/* CTA de pago */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1a1030, #0c0c18)',
+          borderRadius: 16, padding: '2rem 1.5rem',
+          border: '2px solid #f97316',
+          boxShadow: '0 0 24px rgba(249,115,22,0.2)',
+        }}>
+          <p style={{
+            fontSize: '1rem', fontWeight: 800, color: '#f97316',
+            textTransform: 'uppercase', letterSpacing: '0.05em',
+            lineHeight: 1.4, marginBottom: '1.25rem',
+          }}>
+            🎵 Para obtener esta canción en audio y video haga el depósito respectivo de:
+          </p>
+
+          <div style={{
+            background: 'rgba(249,115,22,0.12)', borderRadius: 10,
+            padding: '0.75rem 1rem', marginBottom: '1.25rem',
+            border: '1px solid rgba(249,115,22,0.3)',
+          }}>
+            <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff' }}>500 Lempiras</p>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>ó  20 USD americanos</p>
+          </div>
+
+          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>
+            A la siguiente cuenta:
+          </p>
+
+          <div style={{
+            background: 'rgba(255,255,255,0.06)', borderRadius: 10,
+            padding: '1rem 1.25rem', border: '1px solid rgba(255,255,255,0.12)',
+          }}>
+            <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff', marginBottom: '0.3rem' }}>🏦 Banco Atlántida</p>
+            <p style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f97316', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+              14720926485
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }
