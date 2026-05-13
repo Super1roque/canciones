@@ -1,8 +1,21 @@
+import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
 import AudioPlayer from './AudioPlayer';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: '🎵 Aquí está tu muestra de canción',
+    description: 'Aquí está la prueba o muestra gratis de su canción, solo haga clic para escucharla.',
+    openGraph: {
+      title: '🎵 Aquí está tu muestra de canción',
+      description: 'Aquí está la prueba o muestra gratis de su canción, solo haga clic para escucharla.',
+      type: 'website',
+    },
+  };
+}
 
 export default async function EscucharPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
