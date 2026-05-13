@@ -787,10 +787,10 @@ export default function Home() {
   const [modalCancion, setModalCancion] = useState<{ open: boolean; cancion?: Cancion }>({ open: false });
   const [modalCreacion, setModalCreacion] = useState<Creacion | null>(null);
 
-  function showToast(msg: string, type: 'success' | 'error' | '' = '') {
+  const showToast = useCallback((msg: string, type: 'success' | 'error' | '' = '') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
-  }
+  }, []);
 
   const cargarCanciones = useCallback(async () => {
     try {
