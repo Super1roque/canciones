@@ -23,16 +23,21 @@ function encodeMp3(buf: AudioBuffer, s: number, e: number): Blob {
   const right = ch > 1 ? toI16(buf.getChannelData(1).subarray(i0, i1)) : null;
   const enc   = new Mp3Encoder(ch, sr, 128);
   const block = 1152;
-  const parts: (Int8Array | Uint8Array)[] = [];
+  const raw: (Int8Array | Uint8Array)[] = [];
   for (let i = 0; i < len; i += block) {
     const l = left.subarray(i, i + block);
     const r = right ? right.subarray(i, i + block) : undefined;
     const chunk = r ? enc.encodeBuffer(l, r) : enc.encodeBuffer(l);
-    if (chunk.length) parts.push(chunk);
+    if (chunk.length) raw.push(chunk);
   }
   const tail = enc.flush();
-  if (tail.length) parts.push(tail);
-  return new Blob(parts, { type: 'audio/mpeg' });
+  if (tail.length) raw.push(tail);
+  // Flatten into a single plain Uint8Array<ArrayBuffer> for Blob compatibility
+  const totalLen = raw.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(totalLen);
+  let pos = 0;
+  for (const part of raw) { out.set(part as ArrayLike<number>, pos); pos += part.length; }
+  return new Blob([out], { type: 'audio/mpeg' });
 }
 
 function fmt(sec: number): string {
