@@ -25,7 +25,7 @@ function parseBrowser(ua: string): string {
 async function getLocation(ip: string): Promise<string> {
   try {
     const res  = await fetch(`http://ip-api.com/json/${ip}?fields=country,city,status`, { signal: AbortSignal.timeout(3000) });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({ status: 'fail' }));
     if (data.status === 'success') return `🌍 ${data.city}, ${data.country}`;
   } catch {}
   return '🌍 Ubicación desconocida';

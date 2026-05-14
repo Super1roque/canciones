@@ -26,8 +26,8 @@ export default function CompartirPage() {
       const fd = new FormData();
       fd.append('file', file);
       const res  = await fetch('/api/audio/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Error al subir'); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || `Error al subir (${res.status})`); return; }
       setShareUrl(`${window.location.origin}/escuchar/${data.id}`);
     } catch {
       setError('Error de conexión');
