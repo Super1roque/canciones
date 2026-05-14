@@ -77,6 +77,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const browser = parseBrowser(ua);
     const now     = new Date().toLocaleString('es-HN', { timeZone: 'America/Tegucigalpa', hour12: true });
 
+    // Extract phone number from filename (format: xxxx-xxxx)
+    const phoneMatch = fileName.match(/(\d{4}-\d{4})/);
+    const waLink     = phoneMatch
+      ? `\n📲 <a href="https://wa.me/504${phoneMatch[1].replace('-', '')}">Escribir por WhatsApp</a>`
+      : '';
+
     getLocation(ip).then(location => {
       notifyTelegram(
         `🎵 <b>Audio escuchado</b>\n\n` +
@@ -84,7 +90,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         `${device} / ${browser}\n` +
         `${location}\n` +
         `🌐 IP: ${ip}\n` +
-        `🕐 ${now}`
+        `🕐 ${now}` +
+        waLink
       );
     });
 
