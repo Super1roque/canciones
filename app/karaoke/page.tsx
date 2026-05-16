@@ -986,12 +986,20 @@ export default function KaraokePage() {
     setConvertingMp4(true);
     try {
       const blob    = await fetch(blobUrl).then(r => r.blob());
+      if (blob.size > 80 * 1024 * 1024) {
+        alert('El video pesa más de 80 MB. Descarga el archivo .webm e impórtalo en CapCut para exportar como MP4 para WhatsApp.');
+        return;
+      }
       const form    = new FormData();
       form.append('video', blob, isNativeMp4 ? 'karaoke.mp4' : 'karaoke.webm');
       const res     = await fetch('/api/convert-to-mp4', { method: 'POST', body: form });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert('Error al convertir: ' + (data.error ?? res.statusText));
+        const text = await res.text().catch(() => '');
+        let msg = '';
+        try { msg = JSON.parse(text).error ?? ''; } catch { msg = text.slice(0, 200); }
+        if (!msg) msg = `HTTP ${res.status}`;
+        if (res.status === 413) msg = 'El video es demasiado grande para convertir en el servidor (límite 4.5 MB). Descarga el .webm y convierte con CapCut o Handbrake.';
+        alert('Error al convertir: ' + msg);
         return;
       }
       const mp4Blob = await res.blob();
@@ -1000,7 +1008,7 @@ export default function KaraokePage() {
       a.href = url; a.download = 'karaoke.mp4'; a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Error de conexión al convertir a MP4');
+      alert('Error de conexión al convertir a MP4. Intenta descargar el .webm e importarlo en CapCut.');
       console.error(err);
     } finally {
       setConvertingMp4(false);
