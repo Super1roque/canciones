@@ -51,6 +51,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     let storagePath = '';
     let contentType = 'audio/mpeg';
     let fileName    = '';
+    let playNumber  = 0;
 
     try {
       await db.runTransaction(async (tx) => {
@@ -58,6 +59,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         if (!doc.exists)       throw new Error('NOT_FOUND');
         const data = doc.data()!;
         if (data.playsLeft <= 0) throw new Error('ALREADY_PLAYED');
+        playNumber  = 3 - data.playsLeft; // playsLeft=2 → play#1, playsLeft=1 → play#2
         tx.update(docRef, { playsLeft: data.playsLeft - 1, lastPlayedAt: new Date().toISOString() });
         storagePath = data.storagePath;
         contentType = data.contentType || 'audio/mpeg';
@@ -85,7 +87,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     getLocation(ip).then(location => {
       notifyTelegram(
-        `🎵 <b>Audio escuchado</b>\n\n` +
+        `🎵 <b>Audio escuchado — Play #${playNumber} de 2</b>\n\n` +
         `📁 ${fileName}\n` +
         `${device} / ${browser}\n` +
         `${location}\n` +
