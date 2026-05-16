@@ -27,7 +27,7 @@ export default async function EscucharPage({ params }: { params: Promise<{ id: s
     if (!doc.exists) return <InvalidLink />;
 
     const data = doc.data()!;
-    if (data.played) return <AlreadyPlayed fileName={data.fileName} />;
+    if (data.playsLeft <= 0) return <AlreadyPlayed fileName={data.fileName} />;
 
     return <AudioPlayer id={id} fileName={data.fileName} />;
   } catch {

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       storagePath,
       contentType: file.type || 'audio/mpeg',
       size:        buffer.length,
-      played:      false,
+      playsLeft:   2,
       createdAt:   new Date().toISOString(),
     });
 

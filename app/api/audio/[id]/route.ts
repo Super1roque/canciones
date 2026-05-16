@@ -55,10 +55,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     try {
       await db.runTransaction(async (tx) => {
         const doc = await tx.get(docRef);
-        if (!doc.exists)  throw new Error('NOT_FOUND');
+        if (!doc.exists)       throw new Error('NOT_FOUND');
         const data = doc.data()!;
-        if (data.played)  throw new Error('ALREADY_PLAYED');
-        tx.update(docRef, { played: true, playedAt: new Date().toISOString() });
+        if (data.playsLeft <= 0) throw new Error('ALREADY_PLAYED');
+        tx.update(docRef, { playsLeft: data.playsLeft - 1, lastPlayedAt: new Date().toISOString() });
         storagePath = data.storagePath;
         contentType = data.contentType || 'audio/mpeg';
         fileName    = data.fileName    || 'audio';
@@ -96,8 +96,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     const bucket = getStorageBucket();
-    const [buffer] = await bucket.file(storagePath).download();
-    await bucket.file(storagePath).delete().catch(() => {});
+    const fileRef = bucket.file(storagePath);
+    const [buffer] = await fileRef.download();
+
+    const snap = await docRef.get();
+    if ((snap.data()?.playsLeft ?? 0) <= 0) {
+      await fileRef.delete().catch(() => {});
+    }
 
     return new Response(new Uint8Array(buffer), {
       headers: {
