@@ -48,7 +48,7 @@ export default function AudioPlayer({ id, fileName }: { id: string; fileName: st
         {!ended && !errored && (
           <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '2.5rem 2rem', border: '1px solid rgba(255,255,255,0.08)' }}>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginBottom: '2rem' }}>
-              ⚠️ Solo puede escucharse <strong style={{ color: '#f97316' }}>una vez</strong>
+              Esta es una muestra <strong style={{ color: '#f97316' }}>Gratis</strong>
             </p>
 
             {/* Big play/pause button */}

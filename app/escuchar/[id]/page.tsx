@@ -63,7 +63,7 @@ function AlreadyPlayed({ fileName }: { fileName: string }) {
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔒</div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>Audio ya escuchado</h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>&quot;{fileName}&quot;</p>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', marginTop: '0.4rem' }}>Este audio solo podía escucharse una vez.</p>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', marginTop: '0.4rem' }}>Ya agotó la prueba gratis, ya no podrá escuchar más este audio, contáctenos para enviárselo de nuevo.</p>
         </div>
 
         {/* CTA de pago */}
