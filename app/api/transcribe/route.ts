@@ -86,10 +86,26 @@ export async function POST(request: Request) {
       continue;
     }
 
+    // Palabras a ignorar (créditos automáticos de Amara.org u otros)
+    const IGNORE = new Set([
+      'subtítulos','subtitulos','realizados','por','la','comunidad','de',
+      'amara.org','amara','subtitled','by','community',
+    ]);
+
+    const filtered = words.filter(w => {
+      const clean = w.word.toLowerCase().replace(/[^a-záéíóúüñ]/gi, '');
+      return clean.length > 0 && !IGNORE.has(clean);
+    });
+
+    if (filtered.length === 0) {
+      lastError = `Modelo ${model}: solo se detectaron créditos de subtítulos, no se encontró letra cantada.`;
+      continue;
+    }
+
     // Convertir a cues: end de cada palabra = start de la siguiente (más fluido para karaoke)
-    const cues = words.map((w, i) => ({
+    const cues = filtered.map((w, i) => ({
       start: w.start,
-      end:   words[i + 1]?.start ?? w.end,
+      end:   filtered[i + 1]?.start ?? w.end,
       text:  w.punctuated_word || w.word,
     }));
 
