@@ -835,6 +835,7 @@ export default function Home() {
             <a href="/piano" className="nav-btn">🎹 Piano</a>
             <a href="/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/ajustar" className="nav-btn">🎚️ Ajustar</a>
+            <a href="/acordes" className="nav-btn">🎸 Acordes</a>
             <a href="/compartir" className="nav-btn">🔗 Compartir</a>
           </nav>
         </div>
