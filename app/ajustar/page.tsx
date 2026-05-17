@@ -11,6 +11,7 @@ export default function AjustarPage() {
   const [tempo,      setTempo]      = useState(100);  // percentage
   const [format,     setFormat]     = useState<'mp3' | 'ogg'>('mp3');
   const [noise,      setNoise]      = useState(0); // 0-10
+  const [reverb,     setReverb]     = useState(0); // 0-10
   const [processing, setProcessing] = useState(false);
   const [error,      setError]      = useState('');
   const [dragging,   setDragging]   = useState(false);
@@ -35,7 +36,8 @@ export default function AjustarPage() {
       fd.append('file', file);
       fd.append('pitch', String(pitch));
       fd.append('tempo', String(tempo / 100));
-      fd.append('noise', String(noise));
+      fd.append('noise',  String(noise));
+      fd.append('reverb', String(reverb));
       fd.append('format', format);
       const res  = await fetch('/api/audio/ajustar', { method: 'POST', body: fd });
       if (!res.ok) {
@@ -59,7 +61,7 @@ export default function AjustarPage() {
 
   const tempoLabel = tempo === 100 ? 'Sin cambio' : tempo > 100 ? `+${tempo - 100}% más rápido` : `-${100 - tempo}% más lento`;
   const pitchLabel = pitch === 0 ? 'Sin cambio' : pitch > 0 ? `+${pitch} semitono${pitch !== 1 ? 's' : ''} más agudo` : `${pitch} semitono${pitch !== -1 ? 's' : ''} más grave`;
-  const hasChanges = pitch !== 0 || tempo !== 100 || noise > 0;
+  const hasChanges = pitch !== 0 || tempo !== 100 || noise > 0 || reverb > 0;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -178,6 +180,22 @@ export default function AjustarPage() {
               style={{ width: '100%', accentColor: '#f97316' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
               <span>Sin ruido</span><span>Sutil</span><span>Fuerte</span>
+            </div>
+          </div>
+
+          {/* Reverb */}
+          <div style={{ background: 'var(--surface)', borderRadius: 12, padding: '1.25rem', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>🏛️ Reverb</span>
+              <span style={{ fontSize: '0.85rem', color: reverb === 0 ? 'var(--text-muted)' : '#f97316', fontWeight: 600 }}>
+                {reverb === 0 ? 'Desactivado' : reverb <= 3 ? `Nivel ${reverb} — Sala pequeña` : reverb <= 6 ? `Nivel ${reverb} — Salón` : `Nivel ${reverb} — Catedral`}
+              </span>
+            </div>
+            <input type="range" min={0} max={10} step={1} value={reverb}
+              onChange={e => setReverb(Number(e.target.value))}
+              style={{ width: '100%', accentColor: '#f97316' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+              <span>Sin reverb</span><span>Sala</span><span>Catedral</span>
             </div>
           </div>
         </div>
