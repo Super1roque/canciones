@@ -21,10 +21,11 @@ function runFfmpeg(args: string[]): Promise<void> {
 export async function POST(request: Request) {
   let tmpDir: string | null = null;
   try {
-    const form  = await request.formData();
-    const file  = form.get('file')  as File | null;
-    const pitch = parseFloat((form.get('pitch')  as string) || '0');   // semitones
-    const tempo = parseFloat((form.get('tempo')  as string) || '1.0'); // ratio ej. 0.85
+    const form   = await request.formData();
+    const file   = form.get('file')   as File | null;
+    const pitch  = parseFloat((form.get('pitch')  as string) || '0');
+    const tempo  = parseFloat((form.get('tempo')  as string) || '1.0');
+    const format = (form.get('format') as string || 'mp3') === 'ogg' ? 'ogg' : 'mp3';
 
     if (!file) return Response.json({ error: 'Falta el archivo' }, { status: 400 });
     if (Math.abs(pitch) > 6)       return Response.json({ error: 'Pitch fuera de rango (±6)' }, { status: 400 });
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
     const ext        = (file.name.split('.').pop() || 'mp3').toLowerCase();
     const inputPath  = path.join(tmpDir, `input.${ext}`);
-    const outputPath = path.join(tmpDir, 'output.mp3');
+    const outputPath = path.join(tmpDir, `output.${format}`);
 
     fs.writeFileSync(inputPath, Buffer.from(await file.arrayBuffer()));
 
@@ -56,16 +57,22 @@ export async function POST(request: Request) {
 
     const args = ['-i', inputPath];
     if (filters.length) args.push('-af', filters.join(','));
-    args.push('-c:a', 'libmp3lame', '-b:a', '192k', '-y', outputPath);
+    if (format === 'ogg') {
+      args.push('-c:a', 'libvorbis', '-q:a', '6');
+    } else {
+      args.push('-c:a', 'libmp3lame', '-b:a', '192k');
+    }
+    args.push('-y', outputPath);
 
     await runFfmpeg(args);
 
-    const buffer = fs.readFileSync(outputPath);
-    const name   = file.name.replace(/\.[^.]+$/, '') + '_ajustado.mp3';
+    const buffer   = fs.readFileSync(outputPath);
+    const mimeType = format === 'ogg' ? 'audio/ogg' : 'audio/mpeg';
+    const name     = file.name.replace(/\.[^.]+$/, '') + `_ajustado.${format}`;
 
     return new Response(buffer, {
       headers: {
-        'Content-Type':        'audio/mpeg',
+        'Content-Type':        mimeType,
         'Content-Disposition': `attachment; filename="${name}"`,
         'Content-Length':      String(buffer.length),
       },

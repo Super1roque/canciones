@@ -9,6 +9,7 @@ export default function AjustarPage() {
   const [file,       setFile]       = useState<File | null>(null);
   const [pitch,      setPitch]      = useState(0);    // semitones
   const [tempo,      setTempo]      = useState(100);  // percentage
+  const [format,     setFormat]     = useState<'mp3' | 'ogg'>('mp3');
   const [processing, setProcessing] = useState(false);
   const [error,      setError]      = useState('');
   const [dragging,   setDragging]   = useState(false);
@@ -33,6 +34,7 @@ export default function AjustarPage() {
       fd.append('file', file);
       fd.append('pitch', String(pitch));
       fd.append('tempo', String(tempo / 100));
+      fd.append('format', format);
       const res  = await fetch('/api/audio/ajustar', { method: 'POST', body: fd });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
@@ -43,7 +45,7 @@ export default function AjustarPage() {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = file.name.replace(/\.[^.]+$/, '') + '_ajustado.mp3';
+      a.download = file.name.replace(/\.[^.]+$/, '') + `_ajustado.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -162,6 +164,20 @@ export default function AjustarPage() {
           </div>
         </div>
 
+        {/* Formato */}
+        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem' }}>
+          {(['mp3', 'ogg'] as const).map(f => (
+            <button key={f} onClick={() => setFormat(f)}
+              style={{ flex: 1, padding: '0.55rem', borderRadius: 8, fontSize: '0.88rem', cursor: 'pointer', fontWeight: 600,
+                border: format === f ? '1px solid #f97316' : '1px solid var(--border)',
+                background: format === f ? 'rgba(249,115,22,0.15)' : 'var(--surface)',
+                color: format === f ? '#f97316' : 'var(--text-muted)',
+              }}>
+              .{f.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         {error && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>⚠️ {error}</p>}
 
         <button
@@ -170,7 +186,7 @@ export default function AjustarPage() {
           disabled={!file || !hasChanges || processing}
           style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', opacity: (!file || !hasChanges || processing) ? 0.5 : 1 }}
         >
-          {processing ? '⏳ Procesando...' : '⬇ Procesar y descargar'}
+          {processing ? '⏳ Procesando...' : `⬇ Procesar y descargar .${format.toUpperCase()}`}
         </button>
 
         {!hasChanges && file && (
