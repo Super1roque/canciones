@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const file   = form.get('file')   as File | null;
     const pitch  = parseFloat((form.get('pitch')  as string) || '0');
     const tempo  = parseFloat((form.get('tempo')  as string) || '1.0');
+    const noise  = Math.min(10, Math.max(0, parseFloat((form.get('noise') as string) || '0')));
     const format = (form.get('format') as string || 'mp3') === 'ogg' ? 'ogg' : 'mp3';
 
     if (!file) return Response.json({ error: 'Falta el archivo' }, { status: 400 });
@@ -55,14 +56,27 @@ export async function POST(request: Request) {
       filters.push(`atempo=${atempoFinal.toFixed(8)}`);
     }
 
+    const codec = format === 'ogg'
+      ? ['-c:a', 'libvorbis', '-q:a', '6']
+      : ['-c:a', 'libmp3lame', '-b:a', '192k'];
+
     const args = ['-i', inputPath];
-    if (filters.length) args.push('-af', filters.join(','));
-    if (format === 'ogg') {
-      args.push('-c:a', 'libvorbis', '-q:a', '6');
-    } else {
-      args.push('-c:a', 'libmp3lame', '-b:a', '192k');
+
+    if (noise > 0) {
+      // amplitude: nivel 1→0.005, nivel 10→0.05
+      const amplitude = (noise * 0.005).toFixed(4);
+      const audioChain = filters.length ? filters.join(',') : 'acopy';
+      args.push('-filter_complex',
+        `[0:a]${audioChain}[main];` +
+        `anoisesrc=color=white:amplitude=${amplitude}[wn];` +
+        `[main][wn]amix=inputs=2:duration=first:dropout_transition=0[out]`,
+        '-map', '[out]'
+      );
+    } else if (filters.length) {
+      args.push('-af', filters.join(','));
     }
-    args.push('-y', outputPath);
+
+    args.push(...codec, '-y', outputPath);
 
     await runFfmpeg(args);
 
