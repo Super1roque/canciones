@@ -1,6 +1,59 @@
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { execFile } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 export const runtime = 'nodejs';
+
+const FFMPEG = ffmpegInstaller.path;
+
+function runFfmpeg(args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    execFile(FFMPEG, args, { maxBuffer: 200 * 1024 * 1024 }, (err, _out, stderr) => {
+      if (err) reject(new Error(stderr?.slice(-400) || err.message));
+      else resolve();
+    });
+  });
+}
+
+function runFfprobe(args: string[]): Promise<string> {
+  const ffprobePath = FFMPEG.replace(/ffmpeg$/, 'ffprobe');
+  return new Promise((resolve, reject) => {
+    execFile(ffprobePath, args, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) reject(new Error(stderr?.slice(-400) || err.message));
+      else resolve(stdout);
+    });
+  });
+}
+
+async function truncateToHalf(buffer: Buffer, contentType: string, ext: string): Promise<Buffer> {
+  const tmpDir = path.join(os.tmpdir(), `trunc_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  fs.mkdirSync(tmpDir);
+  try {
+    const inputPath  = path.join(tmpDir, `input.${ext}`);
+    const outputPath = path.join(tmpDir, `output.${ext}`);
+    fs.writeFileSync(inputPath, buffer);
+
+    // Get duration via ffprobe
+    const out = await runFfprobe([
+      '-v', 'quiet', '-print_format', 'json', '-show_format', inputPath,
+    ]);
+    const info     = JSON.parse(out);
+    const duration = parseFloat(info?.format?.duration || '0');
+    const half     = (duration / 2).toFixed(3);
+
+    const codec = contentType.includes('ogg')
+      ? ['-c:a', 'libvorbis', '-q:a', '6']
+      : ['-c:a', 'libmp3lame', '-b:a', '192k'];
+
+    await runFfmpeg(['-i', inputPath, '-t', half, ...codec, '-y', outputPath]);
+    return fs.readFileSync(outputPath);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}
 
 function parseDevice(ua: string): string {
   if (/iPhone/.test(ua))        return '📱 iPhone';
@@ -99,17 +152,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const bucket = getStorageBucket();
     const fileRef = bucket.file(storagePath);
-    const [buffer] = await fileRef.download();
+    const [rawBuffer] = await fileRef.download();
 
     const snap = await docRef.get();
     if ((snap.data()?.playsLeft ?? 0) <= 0) {
       await fileRef.delete().catch(() => {});
     }
 
-    return new Response(new Uint8Array(buffer), {
+    // For the 2nd play, serve only the first 50% of the audio
+    let finalBuffer: Buffer = rawBuffer;
+    if (playNumber === 2) {
+      const ext = contentType.includes('ogg') ? 'ogg' : 'mp3';
+      finalBuffer = await truncateToHalf(rawBuffer, contentType, ext);
+    }
+
+    return new Response(new Uint8Array(finalBuffer), {
       headers: {
         'Content-Type':   contentType,
-        'Content-Length': buffer.length.toString(),
+        'Content-Length': finalBuffer.length.toString(),
         'Cache-Control':  'no-store',
       },
     });
