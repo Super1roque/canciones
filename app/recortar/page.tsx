@@ -6,8 +6,11 @@ import { Mp3Encoder } from '@breezystack/lamejs';
 const CW = 1000;
 const CH = 148;
 
-// ─── MP3 encoder via lamejs ───────────────────────────────────────────────────
-function encodeMp3(buf: AudioBuffer, s: number, e: number): Blob {
+// ─── MP3 encoder via lamejs (async — yields every 50 blocks to keep UI responsive) ──
+async function encodeMp3Async(
+  buf: AudioBuffer, s: number, e: number,
+  onProgress?: (p: number) => void
+): Promise<Blob> {
   const sr   = buf.sampleRate;
   const i0   = Math.floor(s * sr);
   const i1   = Math.min(Math.floor(e * sr), buf.length);
@@ -24,15 +27,22 @@ function encodeMp3(buf: AudioBuffer, s: number, e: number): Blob {
   const enc   = new Mp3Encoder(ch, sr, 128);
   const block = 1152;
   const raw: (Int8Array | Uint8Array)[] = [];
-  for (let i = 0; i < len; i += block) {
+  const totalBlocks = Math.ceil(len / block);
+
+  for (let idx = 0, i = 0; i < len; i += block, idx++) {
     const l = left.subarray(i, i + block);
     const r = right ? right.subarray(i, i + block) : undefined;
     const chunk = r ? enc.encodeBuffer(l, r) : enc.encodeBuffer(l);
     if (chunk.length) raw.push(chunk);
+    // Yield every 50 blocks so the browser stays responsive
+    if (idx % 50 === 0) {
+      onProgress?.(Math.round((idx / totalBlocks) * 95));
+      await new Promise(r => setTimeout(r, 0));
+    }
   }
   const tail = enc.flush();
   if (tail.length) raw.push(tail);
-  // Flatten into a single plain Uint8Array<ArrayBuffer> for Blob compatibility
+  onProgress?.(100);
   const totalLen = raw.reduce((s, p) => s + p.length, 0);
   const out = new Uint8Array(totalLen);
   let pos = 0;
@@ -88,8 +98,10 @@ export default function RecortarPage() {
   const [selEnd,   setSelEnd]   = useState(0);
   const [duration, setDuration] = useState(0);
   const [fileName, setFileName] = useState('');
-  const [wavUrl,   setWavUrl]   = useState<string | null>(null);
-  const [wavName,  setWavName]  = useState('');
+  const [wavUrl,     setWavUrl]     = useState<string | null>(null);
+  const [wavName,    setWavName]    = useState('');
+  const [encoding,   setEncoding]   = useState(false);
+  const [encProgress, setEncProgress] = useState(0);
   const [canvasCursor, setCanvasCursor] = useState<string>('crosshair');
 
   // ── Draw ───────────────────────────────────────────────────────────────────
@@ -348,14 +360,16 @@ export default function RecortarPage() {
   }
 
   // ── Export ─────────────────────────────────────────────────────────────────
-  function exportMp3() {
+  async function exportMp3() {
     const buf = audioBufferRef.current;
-    if (!buf) return;
+    if (!buf || encoding) return;
     if (wavUrl) URL.revokeObjectURL(wavUrl);
-    const blob = encodeMp3(buf, selStartRef.current, selEndRef.current);
+    setEncoding(true); setEncProgress(0);
+    const blob = await encodeMp3Async(buf, selStartRef.current, selEndRef.current, setEncProgress);
     const url  = URL.createObjectURL(blob);
     const name = `${fileName}_recortado.mp3`;
     setWavUrl(url); setWavName(name);
+    setEncoding(false);
     const a = document.createElement('a');
     a.href = url; a.download = name; a.click();
   }
@@ -483,10 +497,10 @@ export default function RecortarPage() {
               <button
                 className="kk-btn primary"
                 onClick={exportMp3}
-                disabled={!canCut}
-                style={{ marginLeft: 'auto', opacity: canCut ? 1 : 0.4 }}
+                disabled={!canCut || encoding}
+                style={{ marginLeft: 'auto', opacity: (canCut && !encoding) ? 1 : 0.4 }}
               >
-                ✂️ Recortar y descargar .mp3
+                {encoding ? `⏳ Codificando… ${encProgress}%` : '✂️ Recortar y descargar .mp3'}
               </button>
             </div>
 
