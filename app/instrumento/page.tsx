@@ -11,11 +11,11 @@ type NoteEvent = {
 type Phase = 'idle' | 'loading_model' | 'analyzing' | 'ready' | 'playing' | 'rendering' | 'error';
 
 const INSTRUMENTS = [
-  { id: 'acoustic_grand_piano',  label: '🎹 Piano' },
-  { id: 'violin',                label: '🎻 Violín' },
-  { id: 'acoustic_guitar_nylon', label: '🎸 Guitarra' },
-  { id: 'flute',                 label: '🪈 Flauta' },
-  { id: 'trumpet',               label: '🎺 Trompeta' },
+  { id: 'acoustic_grand_piano',  label: '🎹 Piano',    wave: 'triangle' as OscillatorType, attack: 0.005, decay: 0.4,  sustainRatio: 0.35, release: 0.6 },
+  { id: 'violin',                label: '🎻 Violín',   wave: 'sawtooth' as OscillatorType, attack: 0.08,  decay: 0.08, sustainRatio: 0.85, release: 0.3 },
+  { id: 'acoustic_guitar_nylon', label: '🎸 Guitarra', wave: 'triangle' as OscillatorType, attack: 0.005, decay: 0.5,  sustainRatio: 0.25, release: 0.4 },
+  { id: 'flute',                 label: '🪈 Flauta',   wave: 'sine'     as OscillatorType, attack: 0.06,  decay: 0.05, sustainRatio: 0.90, release: 0.2 },
+  { id: 'trumpet',               label: '🎺 Trompeta', wave: 'sawtooth' as OscillatorType, attack: 0.02,  decay: 0.1,  sustainRatio: 0.80, release: 0.1 },
 ] as const;
 
 type InstrumentId = typeof INSTRUMENTS[number]['id'];
@@ -26,29 +26,58 @@ function fmtSize(bytes: number) {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function midiToFreq(midi: number) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function scheduleNotes(
+  ctx: BaseAudioContext,
+  notes: NoteEvent[],
+  inst: typeof INSTRUMENTS[number],
+  startOffset = 0,
+) {
+  notes.forEach(note => {
+    const freq = midiToFreq(note.pitchMidi);
+    const t0   = startOffset + note.startTimeSeconds;
+    const t1   = t0 + Math.max(0.05, note.durationSeconds);
+    const amp  = Math.max(0.4, Math.min(1, note.amplitude * 2));
+
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = inst.wave;
+    osc.frequency.setValueAtTime(freq, t0);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const sus = amp * inst.sustainRatio;
+    const rel = inst.release;
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(amp, t0 + inst.attack);
+    gain.gain.linearRampToValueAtTime(sus, t0 + inst.attack + inst.decay);
+    gain.gain.setValueAtTime(sus, Math.max(t0 + inst.attack + inst.decay, t1 - rel));
+    gain.gain.linearRampToValueAtTime(0, t1 + rel);
+
+    osc.start(t0);
+    osc.stop(t1 + rel + 0.05);
+  });
+}
+
 function writeStr(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
 }
 
 function audioBufferToWav(buf: AudioBuffer): Blob {
-  const ch       = 2;
-  const sr       = buf.sampleRate;
-  const len      = buf.length;
+  const ch = 2, sr = buf.sampleRate, len = buf.length;
   const dataSize = len * ch * 2;
-  const ab       = new ArrayBuffer(44 + dataSize);
-  const v        = new DataView(ab);
-
-  writeStr(v,  0, 'RIFF'); v.setUint32( 4, 36 + dataSize, true);
-  writeStr(v,  8, 'WAVE'); writeStr(v, 12, 'fmt ');
-  v.setUint32(16, 16,         true);  // chunk size
-  v.setUint16(20,  1,         true);  // PCM
-  v.setUint16(22, ch,         true);
-  v.setUint32(24, sr,         true);
-  v.setUint32(28, sr * ch * 2,true);  // byte rate
-  v.setUint16(32, ch * 2,     true);  // block align
-  v.setUint16(34, 16,         true);  // bits per sample
+  const ab = new ArrayBuffer(44 + dataSize);
+  const v  = new DataView(ab);
+  writeStr(v, 0, 'RIFF'); v.setUint32(4,  36 + dataSize, true);
+  writeStr(v, 8, 'WAVE'); writeStr(v, 12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true);
+  v.setUint16(34, 16, true);
   writeStr(v, 36, 'data'); v.setUint32(40, dataSize, true);
-
   const L = buf.getChannelData(0);
   const R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
   let off = 44;
@@ -58,7 +87,6 @@ function audioBufferToWav(buf: AudioBuffer): Blob {
     v.setInt16(off, l < 0 ? l * 0x8000 : l * 0x7FFF, true); off += 2;
     v.setInt16(off, r < 0 ? r * 0x8000 : r * 0x7FFF, true); off += 2;
   }
-
   return new Blob([ab], { type: 'audio/wav' });
 }
 
@@ -71,9 +99,8 @@ export default function InstrumentoPage() {
   const [dragging,   setDragging]   = useState(false);
   const [instrument, setInstrument] = useState<InstrumentId>('acoustic_grand_piano');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const playerRef   = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const stopTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleFile(f: File) {
     if (!f.type.startsWith('audio/')) { setError('Solo archivos de audio'); return; }
@@ -83,44 +110,38 @@ export default function InstrumentoPage() {
 
   async function analyze() {
     if (!file) return;
-    setPhase('loading_model');
-    setProgress(0);
-    setError('');
+    setPhase('loading_model'); setProgress(0); setError('');
 
     try {
-      const {
-        BasicPitch, noteFramesToTime, addPitchBendsToNoteEvents, outputToNotesPoly,
-      } = await import('@spotify/basic-pitch');
+      const { BasicPitch, noteFramesToTime, addPitchBendsToNoteEvents, outputToNotesPoly } =
+        await import('@spotify/basic-pitch');
 
       setPhase('analyzing');
 
       const decodeCtx = new AudioContext({ sampleRate: 22050 });
-      const arrayBuf  = await file.arrayBuffer();
-      const audioBuf  = await decodeCtx.decodeAudioData(arrayBuf);
+      const audioBuf  = await decodeCtx.decodeAudioData(await file.arrayBuffer());
       await decodeCtx.close();
 
       let mono: Float32Array;
       if (audioBuf.numberOfChannels === 1) {
         mono = audioBuf.getChannelData(0);
       } else {
-        const ch0 = audioBuf.getChannelData(0);
-        const ch1 = audioBuf.getChannelData(1);
+        const ch0 = audioBuf.getChannelData(0), ch1 = audioBuf.getChannelData(1);
         mono = new Float32Array(ch0.length);
         for (let i = 0; i < ch0.length; i++) mono[i] = (ch0[i] + ch1[i]) / 2;
       }
 
       const allFrames: number[][] = [], allOnsets: number[][] = [], allContours: number[][] = [];
-
       const bp = new BasicPitch('/basic-pitch-model/model.json');
       await bp.evaluateModel(
         mono,
-        (frames: number[][], onsets: number[][], contours: number[][]) => {
-          allFrames.push(...frames); allOnsets.push(...onsets); allContours.push(...contours);
+        (f: number[][], o: number[][], c: number[][]) => {
+          allFrames.push(...f); allOnsets.push(...o); allContours.push(...c);
         },
         (p: number) => setProgress(Math.round(p * 100)),
       );
 
-      const detected: NoteEvent[] = noteFramesToTime(
+      const detected = noteFramesToTime(
         addPitchBendsToNoteEvents(
           allContours,
           outputToNotesPoly(allFrames, allOnsets, 0.25, 0.25, 5, true, null, null, false, 11),
@@ -130,104 +151,79 @@ export default function InstrumentoPage() {
       setNotes(detected);
       setPhase('ready');
     } catch (e) {
-      console.error(e);
       setError(e instanceof Error ? e.message : 'Error al analizar');
       setPhase('error');
     }
   }
 
-  async function play() {
+  function getInst() {
+    return INSTRUMENTS.find(i => i.id === instrument)!;
+  }
+
+  function play() {
     if (!notes.length) return;
     stopPlayback();
 
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const Soundfont: any = (await import('soundfont-player')).default;
-
-      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-        audioCtxRef.current = new AudioContext();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') await ctx.resume();
-
-      setPhase('playing');
-
-      const sfPlayer = await Soundfont.instrument(ctx, instrument, { soundfont: 'MusyngKite' });
-      playerRef.current = sfPlayer;
-
-      const now = ctx.currentTime + 0.1;
-      notes.forEach(note => {
-        sfPlayer.play(String(note.pitchMidi), now + note.startTimeSeconds, {
-          duration: note.durationSeconds,
-          gain: Math.min(1, note.amplitude * 1.5),
-        });
-      });
-
-      const totalDur = Math.max(...notes.map(n => n.startTimeSeconds + n.durationSeconds));
-      setTimeout(() => setPhase('ready'), (totalDur + 1) * 1000);
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : 'Error al reproducir');
-      setPhase('ready');
+    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+      audioCtxRef.current = new AudioContext();
     }
+    const ctx = audioCtxRef.current;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const inst = getInst();
+    scheduleNotes(ctx, notes, inst, ctx.currentTime + 0.05);
+
+    setPhase('playing');
+    const totalDur = Math.max(...notes.map(n => n.startTimeSeconds + n.durationSeconds));
+    stopTimeRef.current = setTimeout(() => setPhase('ready'), (totalDur + inst.release + 1) * 1000);
+  }
+
+  function stopPlayback() {
+    if (stopTimeRef.current) clearTimeout(stopTimeRef.current);
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+    setPhase('ready');
   }
 
   async function renderAndDownload() {
     if (!notes.length) return;
     stopPlayback();
-    setPhase('rendering');
-    setError('');
+    setPhase('rendering'); setError('');
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const Soundfont: any = (await import('soundfont-player')).default;
+      const inst     = getInst();
+      const totalDur = Math.max(...notes.map(n => n.startTimeSeconds + n.durationSeconds));
+      const SR       = 44100;
+      const offCtx   = new OfflineAudioContext(2, Math.ceil((totalDur + inst.release + 1) * SR), SR);
 
-      const totalDur  = Math.max(...notes.map(n => n.startTimeSeconds + n.durationSeconds));
-      const SR        = 44100;
-      const offlineCtx = new OfflineAudioContext(2, Math.ceil((totalDur + 2) * SR), SR);
+      scheduleNotes(offCtx, notes, inst, 0);
 
-      const sfPlayer = await Soundfont.instrument(offlineCtx, instrument, { soundfont: 'MusyngKite' });
-
-      notes.forEach(note => {
-        sfPlayer.play(String(note.pitchMidi), note.startTimeSeconds, {
-          duration: note.durationSeconds,
-          gain: Math.min(1, note.amplitude * 1.5),
-        });
-      });
-
-      const rendered  = await offlineCtx.startRendering();
-      const wav       = audioBufferToWav(rendered);
-      const url       = URL.createObjectURL(wav);
-      const a         = document.createElement('a');
-      const baseName  = file?.name.replace(/\.[^.]+$/, '') ?? 'melodia';
-      a.href          = url;
-      a.download      = `${baseName}_${instrument}.wav`;
+      const rendered = await offCtx.startRendering();
+      const wav      = audioBufferToWav(rendered);
+      const url      = URL.createObjectURL(wav);
+      const a        = document.createElement('a');
+      a.href         = url;
+      a.download     = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.wav`;
       a.click();
       URL.revokeObjectURL(url);
-
       setPhase('ready');
     } catch (e) {
-      console.error(e);
       setError(e instanceof Error ? e.message : 'Error al renderizar');
       setPhase('ready');
     }
   }
 
-  function stopPlayback() {
-    if (playerRef.current) { playerRef.current.stop(); playerRef.current = null; }
-    if (phase === 'playing') setPhase('ready');
-  }
-
-  const busy = phase === 'loading_model' || phase === 'analyzing' || phase === 'rendering';
+  const busy     = phase === 'loading_model' || phase === 'analyzing' || phase === 'rendering';
+  const instLabel = INSTRUMENTS.find(i => i.id === instrument)?.label.split(' ')[1] ?? '';
 
   const statusMsg =
     phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
-    phase === 'rendering'     ? '⏳ Generando archivo WAV...' :
+    phase === 'rendering'     ? '⏳ Generando WAV...' :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :
     phase === 'playing'       ? '▶ Reproduciendo...' : '';
-
-  const instLabel = INSTRUMENTS.find(i => i.id === instrument)?.label.split(' ')[1] ?? '';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -241,7 +237,7 @@ export default function InstrumentoPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.3rem' }}>🎹 Voz a Instrumento</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.75rem' }}>
-          Detecta la melodía de un audio a capella y la reproduce con un instrumento real
+          Detecta la melodía de un audio a capella y la reproduce con un instrumento
         </p>
 
         {/* Drop zone */}
@@ -305,7 +301,7 @@ export default function InstrumentoPage() {
           </div>
         )}
 
-        {/* Analyze button */}
+        {/* Analyze */}
         {phase !== 'ready' && phase !== 'playing' && (
           <button className="kk-btn primary" onClick={analyze} disabled={!file || busy}
             style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', marginBottom: '0.75rem',
@@ -332,26 +328,25 @@ export default function InstrumentoPage() {
             </div>
 
             {phase === 'ready' && (
-              <button className="kk-btn primary" onClick={renderAndDownload}
-                style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', marginBottom: '0.75rem',
-                  background: 'rgba(249,115,22,0.12)', border: '1px solid #f97316', color: '#f97316' }}>
-                ⬇ Descargar como WAV
-              </button>
-            )}
-
-            {phase === 'ready' && (
-              <button onClick={() => { setPhase('idle'); setNotes([]); setFile(null); }}
-                style={{ width: '100%', padding: '0.5rem', fontSize: '0.82rem', cursor: 'pointer',
-                  border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', borderRadius: 8 }}>
-                Cargar otro archivo
-              </button>
+              <>
+                <button className="kk-btn primary" onClick={renderAndDownload}
+                  style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', marginBottom: '0.75rem',
+                    background: 'rgba(249,115,22,0.12)', border: '1px solid #f97316', color: '#f97316' }}>
+                  ⬇ Descargar como WAV
+                </button>
+                <button onClick={() => { setPhase('idle'); setNotes([]); setFile(null); }}
+                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.82rem', cursor: 'pointer',
+                    border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', borderRadius: 8 }}>
+                  Cargar otro archivo
+                </button>
+              </>
             )}
           </>
         )}
 
         <div style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', padding: '0.65rem 1rem',
           background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)', lineHeight: 1.8 }}>
-          💡 Funciona mejor con <strong>voz sola</strong> sin música de fondo · Todo el análisis ocurre en tu dispositivo · El WAV se genera sin pasar por ningún servidor
+          💡 Funciona mejor con <strong>voz sola</strong> sin música de fondo · Todo ocurre en tu dispositivo, sin subir archivos
         </div>
       </div>
     </div>
