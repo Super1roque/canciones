@@ -1,26 +1,27 @@
 'use client';
 import { useRef, useState } from 'react';
 
-export default function AudioPlayer({ id, fileName }: { id: string; fileName: string }) {
+export default function AudioPlayer({ id, fileName, playsLeft }: { id: string; fileName: string; playsLeft: number }) {
   const audioRef            = useRef<HTMLAudioElement>(null);
   const blobUrlRef          = useRef<string>('');
-  const [playing,  setPlaying]  = useState(false);
-  const [loading,  setLoading]  = useState(false);
-  const [ended,    setEnded]    = useState(false);
-  const [errored,  setErrored]  = useState(false);
+  const [playing,   setPlaying]   = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [playsDone, setPlaysDone] = useState(0);
+  const [ended,     setEnded]     = useState(false);
+  const [errored,   setErrored]   = useState(false);
 
   async function handlePlay() {
     const a = audioRef.current;
     if (!a) return;
 
-    // Already loaded — just toggle
+    // Already loaded — just toggle play/pause
     if (blobUrlRef.current) {
       if (a.paused) { a.play(); setPlaying(true); }
       else          { a.pause(); setPlaying(false); }
       return;
     }
 
-    // First tap: fetch full audio as blob, assign to element
+    // Fetch audio from API (consumes one play on the server)
     setLoading(true);
     try {
       const res = await fetch(`/api/audio/${id}`);
@@ -38,6 +39,27 @@ export default function AudioPlayer({ id, fileName }: { id: string; fileName: st
     }
   }
 
+  function handleEnded() {
+    setPlaying(false);
+    const done = playsDone + 1;
+    setPlaysDone(done);
+
+    if (done >= playsLeft) {
+      // All plays consumed
+      setEnded(true);
+    } else {
+      // More plays remaining — clear blob so next click fetches fresh audio
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = '';
+      }
+      const a = audioRef.current;
+      if (a) { a.src = ''; }
+    }
+  }
+
+  const playsRemaining = playsLeft - playsDone;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0c0c18', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '1.5rem' }}>
       <div style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
@@ -49,9 +71,18 @@ export default function AudioPlayer({ id, fileName }: { id: string; fileName: st
           <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '2.5rem 2rem', border: '1px solid rgba(255,255,255,0.08)' }}>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginBottom: '2rem' }}>
               Esta es una muestra <strong style={{ color: '#f97316' }}>Gratis</strong>
+              {playsRemaining > 1 && (
+                <span style={{ display: 'block', marginTop: '0.4rem', color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                  Puedes escucharla {playsRemaining} veces
+                </span>
+              )}
+              {playsRemaining === 1 && playsDone > 0 && (
+                <span style={{ display: 'block', marginTop: '0.4rem', color: '#f97316', fontSize: '0.75rem' }}>
+                  Última escucha disponible
+                </span>
+              )}
             </p>
 
-            {/* Big play/pause button */}
             <button
               onClick={handlePlay}
               disabled={loading}
@@ -81,7 +112,7 @@ export default function AudioPlayer({ id, fileName }: { id: string; fileName: st
 
             <audio
               ref={audioRef}
-              onEnded={() => { setPlaying(false); setEnded(true); }}
+              onEnded={handleEnded}
               onError={() => { setPlaying(false); setErrored(true); }}
             />
           </div>
