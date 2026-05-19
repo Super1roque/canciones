@@ -242,7 +242,7 @@ export default function InstrumentoPage() {
       setProgress(87);
 
       // Send MP3 to server → FFmpeg converts to OGG
-      const mp3Blob = new Blob(mp3Parts, { type: 'audio/mpeg' });
+      const mp3Blob = new Blob(mp3Parts as BlobPart[], { type: 'audio/mpeg' });
       const fd = new FormData();
       fd.append('file', mp3Blob, 'audio.mp3');
       fd.append('pitch', '0'); fd.append('tempo', '1'); fd.append('format', 'ogg');
