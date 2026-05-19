@@ -212,27 +212,46 @@ export default function InstrumentoPage() {
       }
 
       const rendered = await offCtx.startRendering();
-      setProgress(82);
+      setProgress(78);
 
-      // Encode raw PCM to WAV in memory, then convert to OGG via server FFmpeg
-      const wav  = audioBufferToWav(rendered);
-      setProgress(88);
+      // Encode to OGG/WebM using MediaRecorder (browser-native, no server)
+      const mimeType =
+        MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')  ? 'audio/ogg;codecs=opus'  :
+        MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+        'audio/webm';
+      const ext = mimeType.startsWith('audio/ogg') ? 'ogg' : 'webm';
 
-      const fd = new FormData();
-      fd.append('file', wav, 'audio.wav');
-      fd.append('pitch',  '0');
-      fd.append('tempo',  '1');
-      fd.append('format', 'ogg');
+      const playCtx  = new AudioContext();
+      const destNode = playCtx.createMediaStreamDestination();
+      const source   = playCtx.createBufferSource();
+      source.buffer  = rendered;
+      source.connect(destNode); // record only — no speakers
 
-      const res = await fetch('/api/audio/ajustar', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Error al convertir a OGG');
+      const recorder = new MediaRecorder(destNode.stream, { mimeType });
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+      const duration = rendered.duration;
+      await new Promise<void>((resolve) => {
+        recorder.onstop = () => resolve();
+        recorder.start(100);
+        source.start();
+        const startMs = Date.now();
+        const iv = setInterval(() => {
+          const pct = 78 + Math.round(((Date.now() - startMs) / 1000 / duration) * 21);
+          setProgress(Math.min(99, pct));
+        }, 300);
+        source.onended = () => { clearInterval(iv); setTimeout(() => recorder.stop(), 150); };
+      });
+
+      await playCtx.close();
       setProgress(100);
 
-      const blob = await res.blob();
+      const blob = new Blob(chunks, { type: mimeType });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.ogg`;
+      a.download = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
       setPhase('ready');
@@ -248,7 +267,7 @@ export default function InstrumentoPage() {
   const statusMsg =
     phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
-    phase === 'rendering'     ? `⏳ Generando OGG... ${progress}%` :
+    phase === 'rendering'     ? (progress < 78 ? `⏳ Generando audio... ${progress}%` : `⏳ Codificando OGG... ${progress}%`) :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :
     phase === 'playing'       ? '▶ Reproduciendo...' : '';
 
