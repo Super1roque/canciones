@@ -214,44 +214,48 @@ export default function InstrumentoPage() {
       const rendered = await offCtx.startRendering();
       setProgress(78);
 
-      // Encode to OGG/WebM using MediaRecorder (browser-native, no server)
-      const mimeType =
-        MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')  ? 'audio/ogg;codecs=opus'  :
-        MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
-        'audio/webm';
-      const ext = mimeType.startsWith('audio/ogg') ? 'ogg' : 'webm';
+      // Encode to MP3 in the browser using lamejs (yields to avoid UI freeze)
+      const { Mp3Encoder } = await import('@breezystack/lamejs');
+      const sr      = rendered.sampleRate;
+      const chL     = rendered.getChannelData(0);
+      const chR     = rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : chL;
+      const encoder = new Mp3Encoder(1, sr, 64); // mono 64 kbps — small, good for melody
+      const mono    = new Int16Array(chL.length);
+      for (let i = 0; i < chL.length; i++) {
+        const s = Math.max(-1, Math.min(1, (chL[i] + chR[i]) / 2));
+        mono[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
 
-      const playCtx  = new AudioContext();
-      const destNode = playCtx.createMediaStreamDestination();
-      const source   = playCtx.createBufferSource();
-      source.buffer  = rendered;
-      source.connect(destNode); // record only — no speakers
+      const BLOCK = 1152;
+      const mp3Parts: Int8Array[] = [];
+      for (let i = 0; i < mono.length; i += BLOCK) {
+        const chunk   = mono.subarray(i, i + BLOCK);
+        const encoded = encoder.encodeBuffer(chunk);
+        if (encoded.length > 0) mp3Parts.push(encoded);
+        if (i % (BLOCK * 50) === 0) {
+          setProgress(78 + Math.round((i / mono.length) * 8));
+          await new Promise(r => setTimeout(r, 0));
+        }
+      }
+      const tail = encoder.flush();
+      if (tail.length > 0) mp3Parts.push(tail);
+      setProgress(87);
 
-      const recorder = new MediaRecorder(destNode.stream, { mimeType });
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      // Send MP3 to server → FFmpeg converts to OGG
+      const mp3Blob = new Blob(mp3Parts, { type: 'audio/mpeg' });
+      const fd = new FormData();
+      fd.append('file', mp3Blob, 'audio.mp3');
+      fd.append('pitch', '0'); fd.append('tempo', '1'); fd.append('format', 'ogg');
 
-      const duration = rendered.duration;
-      await new Promise<void>((resolve) => {
-        recorder.onstop = () => resolve();
-        recorder.start(100);
-        source.start();
-        const startMs = Date.now();
-        const iv = setInterval(() => {
-          const pct = 78 + Math.round(((Date.now() - startMs) / 1000 / duration) * 21);
-          setProgress(Math.min(99, pct));
-        }, 300);
-        source.onended = () => { clearInterval(iv); setTimeout(() => recorder.stop(), 150); };
-      });
-
-      await playCtx.close();
+      const res = await fetch('/api/audio/ajustar', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Error al convertir a OGG');
       setProgress(100);
 
-      const blob = new Blob(chunks, { type: mimeType });
+      const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.${ext}`;
+      a.download = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.ogg`;
       a.click();
       URL.revokeObjectURL(url);
       setPhase('ready');
@@ -267,7 +271,7 @@ export default function InstrumentoPage() {
   const statusMsg =
     phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
-    phase === 'rendering'     ? (progress < 78 ? `⏳ Generando audio... ${progress}%` : `⏳ Codificando OGG... ${progress}%`) :
+    phase === 'rendering'     ? (progress < 78 ? `⏳ Generando audio... ${progress}%` : progress < 87 ? `⏳ Comprimiendo... ${progress}%` : `⏳ Convirtiendo a OGG... ${progress}%`) :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :
     phase === 'playing'       ? '▶ Reproduciendo...' : '';
 
