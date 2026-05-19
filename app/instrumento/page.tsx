@@ -227,7 +227,7 @@ export default function InstrumentoPage() {
       }
 
       const BLOCK = 1152;
-      const mp3Parts: Int8Array[] = [];
+      const mp3Parts: Uint8Array[] = [];
       for (let i = 0; i < mono.length; i += BLOCK) {
         const chunk   = mono.subarray(i, i + BLOCK);
         const encoded = encoder.encodeBuffer(chunk);
