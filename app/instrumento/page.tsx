@@ -212,12 +212,27 @@ export default function InstrumentoPage() {
       }
 
       const rendered = await offCtx.startRendering();
+      setProgress(82);
+
+      // Encode raw PCM to WAV in memory, then convert to OGG via server FFmpeg
+      const wav  = audioBufferToWav(rendered);
+      setProgress(88);
+
+      const fd = new FormData();
+      fd.append('file', wav, 'audio.wav');
+      fd.append('pitch',  '0');
+      fd.append('tempo',  '1');
+      fd.append('format', 'ogg');
+
+      const res = await fetch('/api/audio/ajustar', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Error al convertir a OGG');
       setProgress(100);
-      const wav      = audioBufferToWav(rendered);
-      const url      = URL.createObjectURL(wav);
-      const a        = document.createElement('a');
-      a.href         = url;
-      a.download     = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.wav`;
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${file?.name.replace(/\.[^.]+$/, '') ?? 'melodia'}_${instrument}.ogg`;
       a.click();
       URL.revokeObjectURL(url);
       setPhase('ready');
@@ -233,7 +248,7 @@ export default function InstrumentoPage() {
   const statusMsg =
     phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
-    phase === 'rendering'     ? `⏳ Generando WAV... ${progress}%` :
+    phase === 'rendering'     ? `⏳ Generando OGG... ${progress}%` :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :
     phase === 'playing'       ? '▶ Reproduciendo...' : '';
 
@@ -344,7 +359,7 @@ export default function InstrumentoPage() {
                 <button className="kk-btn primary" onClick={renderAndDownload}
                   style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', marginBottom: '0.75rem',
                     background: 'rgba(249,115,22,0.12)', border: '1px solid #f97316', color: '#f97316' }}>
-                  ⬇ Descargar como WAV
+                  ⬇ Descargar como OGG
                 </button>
                 <button onClick={() => { setPhase('idle'); setNotes([]); setFile(null); }}
                   style={{ width: '100%', padding: '0.5rem', fontSize: '0.82rem', cursor: 'pointer',
