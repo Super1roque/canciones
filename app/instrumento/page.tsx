@@ -190,17 +190,29 @@ export default function InstrumentoPage() {
   async function renderAndDownload() {
     if (!notes.length) return;
     stopPlayback();
-    setPhase('rendering'); setError('');
+    setPhase('rendering'); setProgress(0); setError('');
 
     try {
       const inst     = getInst();
       const totalDur = Math.max(...notes.map(n => n.startTimeSeconds + n.durationSeconds));
       const SR       = 44100;
-      const offCtx   = new OfflineAudioContext(2, Math.ceil((totalDur + inst.release + 1) * SR), SR);
+      const frames   = Math.ceil((totalDur + inst.release + 1) * SR);
+      const offCtx   = new OfflineAudioContext(2, frames, SR);
 
       scheduleNotes(offCtx, notes, inst, 0);
 
+      // Register checkpoints so we can update the progress bar
+      const STEPS = 20;
+      for (let i = 1; i < STEPS; i++) {
+        const t = (frames * i / STEPS) / SR;
+        offCtx.suspend(t).then(() => {
+          setProgress(Math.round((i / STEPS) * 100));
+          offCtx.resume();
+        });
+      }
+
       const rendered = await offCtx.startRendering();
+      setProgress(100);
       const wav      = audioBufferToWav(rendered);
       const url      = URL.createObjectURL(wav);
       const a        = document.createElement('a');
@@ -221,7 +233,7 @@ export default function InstrumentoPage() {
   const statusMsg =
     phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
-    phase === 'rendering'     ? '⏳ Generando WAV...' :
+    phase === 'rendering'     ? `⏳ Generando WAV... ${progress}%` :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :
     phase === 'playing'       ? '▶ Reproduciendo...' : '';
 
@@ -295,9 +307,9 @@ export default function InstrumentoPage() {
             {statusMsg}
           </p>
         )}
-        {phase === 'analyzing' && (
+        {(phase === 'analyzing' || phase === 'rendering') && (
           <div style={{ background: 'var(--border)', borderRadius: 4, height: 6, marginBottom: '1rem', overflow: 'hidden' }}>
-            <div style={{ background: '#f97316', height: '100%', width: `${progress}%`, transition: 'width 0.3s', borderRadius: 4 }} />
+            <div style={{ background: '#f97316', height: '100%', width: `${progress}%`, transition: 'width 0.2s', borderRadius: 4 }} />
           </div>
         )}
 
