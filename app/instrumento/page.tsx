@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 type NoteEvent = {
   startTimeSeconds: number;
@@ -101,6 +101,9 @@ export default function InstrumentoPage() {
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const stopTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const workerRef   = useRef<Worker | null>(null);
+
+  useEffect(() => () => { workerRef.current?.terminate(); }, []);
 
   function handleFile(f: File) {
     if (!f.type.startsWith('audio/')) { setError('Solo archivos de audio'); return; }
@@ -113,43 +116,59 @@ export default function InstrumentoPage() {
     setPhase('loading_model'); setProgress(0); setError('');
 
     try {
-      const { BasicPitch, noteFramesToTime, addPitchBendsToNoteEvents, outputToNotesPoly } =
-        await import('@spotify/basic-pitch');
-
-      setPhase('analyzing');
-
+      // Decode audio on main thread (native async — no freeze)
       const decodeCtx = new AudioContext({ sampleRate: 22050 });
       const audioBuf  = await decodeCtx.decodeAudioData(await file.arrayBuffer());
       await decodeCtx.close();
 
+      // Mix to mono yielding every 50k samples so the UI no se congela
       let mono: Float32Array;
       if (audioBuf.numberOfChannels === 1) {
-        mono = audioBuf.getChannelData(0);
+        mono = audioBuf.getChannelData(0).slice();
       } else {
         const ch0 = audioBuf.getChannelData(0), ch1 = audioBuf.getChannelData(1);
         mono = new Float32Array(ch0.length);
-        for (let i = 0; i < ch0.length; i++) mono[i] = (ch0[i] + ch1[i]) / 2;
+        const CHUNK = 50_000;
+        for (let i = 0; i < ch0.length; i += CHUNK) {
+          const end = Math.min(ch0.length, i + CHUNK);
+          for (let j = i; j < end; j++) mono[j] = (ch0[j] + ch1[j]) / 2;
+          await new Promise(r => setTimeout(r, 0));
+        }
       }
 
-      const allFrames: number[][] = [], allOnsets: number[][] = [], allContours: number[][] = [];
-      const bp = new BasicPitch('/basic-pitch-model/model.json');
-      await bp.evaluateModel(
-        mono,
-        (f: number[][], o: number[][], c: number[][]) => {
-          allFrames.push(...f); allOnsets.push(...o); allContours.push(...c);
-        },
-        (p: number) => setProgress(Math.round(p * 100)),
-      );
+      setPhase('analyzing');
 
-      const detected = noteFramesToTime(
-        addPitchBendsToNoteEvents(
-          allContours,
-          outputToNotesPoly(allFrames, allOnsets, 0.25, 0.25, 5, true, null, null, false, 11),
-        ),
-      ) as NoteEvent[];
+      // Terminar worker previo si existe
+      workerRef.current?.terminate();
 
-      setNotes(detected);
-      setPhase('ready');
+      // Todo el trabajo pesado de TF.js ocurre en el worker — hilo principal libre
+      const worker = new Worker(new URL('./worker.ts', import.meta.url));
+      workerRef.current = worker;
+      const modelUrl = `${window.location.origin}/basic-pitch-model/model.json`;
+
+      worker.onmessage = (ev: MessageEvent) => {
+        const msg = ev.data;
+        if (msg.type === 'progress') {
+          setProgress(msg.value);
+        } else if (msg.type === 'done') {
+          setNotes(msg.notes);
+          setPhase('ready');
+          worker.terminate(); workerRef.current = null;
+        } else if (msg.type === 'error') {
+          setError(msg.message);
+          setPhase('error');
+          worker.terminate(); workerRef.current = null;
+        }
+      };
+      worker.onerror = (ev: ErrorEvent) => {
+        setError(ev.message || 'Error en el análisis');
+        setPhase('error');
+        worker.terminate(); workerRef.current = null;
+      };
+
+      // Transferir el buffer al worker (copia cero — sin duplicar memoria)
+      worker.postMessage({ mono, modelUrl }, [mono.buffer]);
+
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al analizar');
       setPhase('error');
@@ -269,7 +288,7 @@ export default function InstrumentoPage() {
   const instLabel = INSTRUMENTS.find(i => i.id === instrument)?.label.split(' ')[1] ?? '';
 
   const statusMsg =
-    phase === 'loading_model' ? 'Cargando modelo IA (primera vez ~20 seg)...' :
+    phase === 'loading_model' ? 'Cargando modelo IA (puede tardar 1-2 min en local)...' :
     phase === 'analyzing'     ? `Analizando melodía... ${progress}%` :
     phase === 'rendering'     ? (progress < 78 ? `⏳ Generando audio... ${progress}%` : progress < 87 ? `⏳ Comprimiendo... ${progress}%` : `⏳ Convirtiendo a OGG... ${progress}%`) :
     phase === 'ready'         ? `✓ ${notes.length} notas detectadas` :

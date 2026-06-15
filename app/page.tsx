@@ -830,12 +830,17 @@ export default function Home() {
               </button>
             ))}
             <a href="/karaoke" className="nav-btn">🎤 Karaoke</a>
+            <a href="/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
             <a href="/video" className="nav-btn">🎬 Video</a>
             <a href="/guitarra" className="nav-btn">🎸 Guitarra</a>
             <a href="/piano" className="nav-btn">🎹 Piano</a>
             <a href="/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/compartir" className="nav-btn">🔗 Compartir</a>
             <a href="/instrumento" className="nav-btn">🎹 Voz→Inst</a>
+            <a href="/muestra" className="nav-btn">💧 Muestra</a>
+            <a href="/pixel" className="nav-btn">🎨 Pixel Art</a>
+            <a href="/pixel2" className="nav-btn">⬡ Hex Art</a>
+            <a href="/lego-art" className="nav-btn">🟥 Lego Art</a>
           </nav>
         </div>
       </header>

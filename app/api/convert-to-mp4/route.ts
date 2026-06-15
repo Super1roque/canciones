@@ -29,45 +29,46 @@ function runFfmpeg(args: string[]): Promise<void> {
   });
 }
 
-async function convertToMp4(inputPath: string, outputPath: string): Promise<string> {
-  // Intento 1: encoder por hardware (VideoToolbox, macOS) — muy rápido
-  // Nota: VideoToolbox no garantiza Baseline profile; si WhatsApp lo rechaza
-  // el fallback a libx264 siempre produce un MP4 100 % compatible.
-  try {
-    await runFfmpeg([
-      '-i', inputPath,
-      '-c:v', 'h264_videotoolbox',
-      '-b:v', '1500k',           // ~50% más liviano que antes
-      '-profile:v', 'baseline',
-      '-vf', 'scale=-2:720',
-      '-c:a', 'aac',
-      '-b:a', '96k',
-      '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
-      '-y', outputPath,
-    ]);
-    console.log('[convert-to-mp4] ✅ Usando h264_videotoolbox (hardware)');
-    return 'hardware';
-  } catch (hwErr) {
-    console.warn('[convert-to-mp4] VideoToolbox no disponible, usando software:', (hwErr as Error).message.slice(0, 120));
-  }
+// Detecta si el archivo tiene pista de audio usando la salida de stderr de ffmpeg
+function detectAudio(inputPath: string): Promise<boolean> {
+  return new Promise(resolve => {
+    execFile(FFMPEG_BIN, ['-i', inputPath, '-hide_banner'], {}, (_err, _out, stderr) => {
+      resolve(/Stream.*Audio/i.test(stderr));
+    });
+  });
+}
 
-  // Intento 2: libx264 ultrafast — H.264 Baseline profile, WhatsApp-compatible
+async function convertToMp4(inputPath: string, outputPath: string): Promise<string> {
+  const hasAudio = await detectAudio(inputPath);
+  console.log(`[convert-to-mp4] Audio detectado: ${hasAudio}`);
+
+  // Si no hay audio en el WebM, usamos una fuente silenciosa como fallback
+  // para garantizar que el MP4 siempre tenga pista de audio.
+  const audioInputArgs  = hasAudio ? [] : ['-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo'];
+  const audioMapArgs    = hasAudio ? ['-c:a', 'aac', '-b:a', '128k']
+                                   : ['-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '128k', '-shortest'];
+
+  // Limita a 1920px de altura máx y asegura dimensiones pares
+  const scaleFilter = "scale='trunc(iw/2)*2':'trunc(min(ih,1920)/2)*2'";
+
+  // libx264 — respeta maxrate estrictamente, tamaño controlado
   await runFfmpeg([
     '-i', inputPath,
+    ...audioInputArgs,
     '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-crf', '28',               // más liviano (22 = calidad alta, 28 = tamaño ~50% menor)
-    '-profile:v', 'baseline',   // WhatsApp exige Baseline o Main profile
-    '-level', '3.1',
-    '-vf', 'scale=-2:720',      // máximo 720p, reduce si es mayor
-    '-c:a', 'aac',
-    '-b:a', '96k',              // 96k suficiente para WhatsApp (re-comprime igual)
+    '-preset', 'fast',
+    '-crf', '23',
+    '-maxrate', '3000k',
+    '-bufsize', '6000k',
+    '-profile:v', 'high',
+    '-level', '4.0',
+    '-vf', scaleFilter,
     '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
+    ...audioMapArgs,
     '-y', outputPath,
   ]);
-  console.log('[convert-to-mp4] ✅ Usando libx264 ultrafast baseline (software)');
+  console.log('[convert-to-mp4] ✅ libx264 fast high (software)');
   return 'software';
 }
 

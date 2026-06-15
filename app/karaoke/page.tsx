@@ -22,14 +22,13 @@ function parseSRT(txt: string): Cue[] {
     .map(b => {
       const ls = b.split('\n');
       if (ls.length < 3) return null;
+      if (ls.some(l => /amara/i.test(l))) return null;
       const m = ls[1].match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
       if (!m) return null;
       const ts = (h: string, mi: string, s: string, ms: string) => +h * 3600 + +mi * 60 + +s + +ms / 1000;
-      return {
-        start: ts(m[1], m[2], m[3], m[4]),
-        end: ts(m[5], m[6], m[7], m[8]),
-        text: ls.slice(2).join(' ').replace(/<[^>]+>/g, '').trim(),
-      };
+      const text = ls.slice(2).join(' ').replace(/<[^>]+>/g, '').trim();
+      if (!text || /amara/i.test(text)) return null;
+      return { start: ts(m[1], m[2], m[3], m[4]), end: ts(m[5], m[6], m[7], m[8]), text };
     })
     .filter(Boolean) as Cue[];
 }
@@ -915,19 +914,13 @@ export default function KaraokePage() {
       combined = canvasStream;
     }
 
-    // Modo transparente: forzar VP9 — único codec WebM que soporta canal alfa
-    // Modo normal: preferir MP4 nativo para evitar conversión posterior
-    const mimeType = transparent
-      ? (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm')
-      : MediaRecorder.isTypeSupported('video/mp4;codecs=h264,aac')  ? 'video/mp4;codecs=h264,aac'  :
-        MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a') ? 'video/mp4;codecs=avc1,mp4a' :
-        MediaRecorder.isTypeSupported('video/mp4')                  ? 'video/mp4'                  :
-        MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' :
-        MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' :
-        'video/webm';
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+      ? 'video/webm;codecs=vp9,opus'
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+      ? 'video/webm;codecs=vp8,opus'
+      : 'video/webm';
 
-    const isNativeMp4 = !transparent && mimeType.startsWith('video/mp4');
-    console.log(`[karaoke] Grabando con: ${mimeType} (${isNativeMp4 ? 'MP4 nativo ✅' : 'WebM, necesita conversión'}`);
+    const isNativeMp4 = false;
 
     const rec = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 5_000_000 });
     rec.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
@@ -977,7 +970,7 @@ export default function KaraokePage() {
     if (!blobUrl) return;
     const a = document.createElement('a');
     a.href = blobUrl;
-    a.download = isTransparentRec ? 'karaoke-transparente.webm' : isNativeMp4 ? 'karaoke.mp4' : 'karaoke.webm';
+    a.download = isTransparentRec ? 'karaoke-transparente.webm' : 'karaoke.webm';
     a.click();
   }
 
@@ -986,10 +979,6 @@ export default function KaraokePage() {
     setConvertingMp4(true);
     try {
       const blob    = await fetch(blobUrl).then(r => r.blob());
-      if (blob.size > 80 * 1024 * 1024) {
-        alert('El video pesa más de 80 MB. Descarga el archivo .webm e impórtalo en CapCut para exportar como MP4 para WhatsApp.');
-        return;
-      }
       const form    = new FormData();
       form.append('video', blob, isNativeMp4 ? 'karaoke.mp4' : 'karaoke.webm');
       const res     = await fetch('/api/convert-to-mp4', { method: 'POST', body: form });
@@ -1458,10 +1447,7 @@ export default function KaraokePage() {
           {blobUrl && (
             <>
               <button className="kk-btn primary" onClick={downloadVideo}>
-                ⬇ {isTransparentRec ? 'Descargar transparente .webm' : isNativeMp4 ? 'Descargar .mp4' : 'Descargar .webm'}
-              </button>
-              <button className="kk-btn primary" onClick={downloadMp4} disabled={convertingMp4}>
-                {convertingMp4 ? '⏳ Convirtiendo…' : '📱 Para WhatsApp'}
+                {isTransparentRec ? '⬇ Descargar .webm transparente' : '⬇ Descargar .webm'}
               </button>
             </>
           )}
