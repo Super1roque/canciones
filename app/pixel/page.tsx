@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 const COLS = 64;
 const ROWS = 100;
 const PX_SCREEN = 10;
-const CM_PX = 38;
+const CM_PX = 30;
 
 const FIXED_PALETTE: RGB[] = [
   [0x24, 0x24, 0x24],
@@ -219,6 +219,60 @@ function drawCeramicTile(ctx: CanvasRenderingContext2D, x: number, y: number, si
   gl.addColorStop(1,    'rgba(255,255,255,0)');
   ctx.fillStyle = gl;
   ctx.fillRect(x, y, size, size);
+}
+
+function drawFoamiBrick(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: RGB) {
+  const [r, g, b] = color;
+  const bulge = Math.max(1, Math.round(size * 0.09));
+
+  const path = () => {
+    ctx.beginPath();
+    ctx.moveTo(x, y + bulge);
+    ctx.quadraticCurveTo(x + size / 2, y - bulge, x + size, y + bulge);
+    ctx.lineTo(x + size, y + size - bulge);
+    ctx.quadraticCurveTo(x + size / 2, y + size + bulge, x, y + size - bulge);
+    ctx.closePath();
+  };
+
+  ctx.save();
+  path();
+  ctx.clip();
+
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(x, y - bulge, size, size + bulge * 2);
+
+  // Top highlight from convex surface
+  const tg = ctx.createLinearGradient(x, y - bulge, x, y + size * 0.45);
+  tg.addColorStop(0,   'rgba(255,255,255,0.30)');
+  tg.addColorStop(0.5, 'rgba(255,255,255,0.07)');
+  tg.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = tg;
+  ctx.fillRect(x, y - bulge, size, size + bulge * 2);
+
+  // Bottom shadow from convex surface
+  const bg = ctx.createLinearGradient(x, y + size * 0.55, x, y + size + bulge);
+  bg.addColorStop(0, 'rgba(0,0,0,0)');
+  bg.addColorStop(1, 'rgba(0,0,0,0.24)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y - bulge, size, size + bulge * 2);
+
+  // Soft center glow (foam sponge look)
+  const cg = ctx.createRadialGradient(x + size * 0.5, y + size * 0.36, 0, x + size * 0.5, y + size * 0.5, size * 0.55);
+  cg.addColorStop(0, 'rgba(255,255,255,0.12)');
+  cg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = cg;
+  ctx.fillRect(x, y - bulge, size, size + bulge * 2);
+
+  // Side edge vignette
+  const eg = ctx.createLinearGradient(x, 0, x + size, 0);
+  eg.addColorStop(0,    'rgba(0,0,0,0.14)');
+  eg.addColorStop(0.18, 'rgba(0,0,0,0)');
+  eg.addColorStop(0.82, 'rgba(0,0,0,0)');
+  eg.addColorStop(1,    'rgba(0,0,0,0.14)');
+  ctx.fillStyle = eg;
+  ctx.fillRect(x, y - bulge, size, size + bulge * 2);
+
+  ctx.restore();
 }
 
 function drawLegoBrick(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: RGB) {
@@ -782,6 +836,35 @@ export default function PixelPage() {
     a.click();
   }
 
+  function downloadFoami() {
+    const LIGA  = 2;
+    const FOAMI = 26;
+    const CELL  = FOAMI + LIGA;
+
+    const OW = COLS * CELL + LIGA;
+    const OH = ROWS * CELL + LIGA;
+
+    const cv = document.createElement('canvas');
+    cv.width = OW; cv.height = OH;
+    const ctx = cv.getContext('2d')!;
+
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, OW, OH);
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const idx = pixelGrid[row * COLS + col];
+        if (idx === -1) continue;
+        drawFoamiBrick(ctx, col * CELL + LIGA, row * CELL + LIGA, FOAMI, palette[idx]);
+      }
+    }
+
+    const a = document.createElement('a');
+    a.href = cv.toDataURL('image/png');
+    a.download = 'pixel_art_foami.png';
+    a.click();
+  }
+
   const subjectTotal = counts.reduce((s, c) => s + c, 0);
 
   return (
@@ -792,7 +875,7 @@ export default function PixelPage() {
       <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.3rem' }}>🎨 Convertidor Pixel Art</h1>
       <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '2rem' }}>
         Convierte una foto a {COLS}×{ROWS} píxeles con {NUM_COLORS} colores sólidos, sin fondo.
-        Cada píxel equivale a 1 cm² en la imagen descargada.
+        Cada píxel equivale a 0.8 cm × 0.8 cm en la imagen descargada.
       </p>
 
       {/* Toggle eliminar fondo */}
@@ -908,7 +991,7 @@ export default function PixelPage() {
                 fontSize: '0.95rem', border: 'none', cursor: 'pointer',
               }}
             >
-              ⬇ Descargar PNG ({COLS}cm × {ROWS}cm · fondo blanco)
+              ⬇ Descargar PNG ({COLS * 0.8}cm × {ROWS * 0.8}cm · fondo blanco)
             </button>
             <button
               onClick={downloadGuide}
@@ -968,6 +1051,16 @@ export default function PixelPage() {
               }}
             >
               🧱 Descargar mosaico Lego (.png)
+            </button>
+            <button
+              onClick={downloadFoami}
+              style={{
+                width: '100%', padding: '0.75rem', borderRadius: 10,
+                background: 'transparent', color: '#eee', fontWeight: 700,
+                fontSize: '0.95rem', border: '1px solid #444', cursor: 'pointer',
+              }}
+            >
+              🟥 Descargar mosaico de foami (.png)
             </button>
           </div>
         </>
