@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 const COLS = 64;
 const ROWS = 100;
 const PX_SCREEN = 10;
-const CM_PX = 30;
+const CM_PX = 38;
 
 const FIXED_PALETTE: RGB[] = [
   [0x24, 0x24, 0x24],
@@ -836,6 +836,74 @@ export default function PixelPage() {
     a.click();
   }
 
+  function downloadTemplate() {
+    if (!pixelGrid.length) return;
+
+    const PX_MM = 10;
+    const gridW = COLS * PX_MM;
+    const gridH = ROWS * PX_MM;
+    const MARGIN = 10;
+    const CANVAS_W = gridW + MARGIN * 2;
+    const CANVAS_H = gridH + MARGIN * 2;
+
+    const rects: string[] = [];
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const idx = pixelGrid[row * COLS + col];
+        if (idx === -1) continue;
+        const x = MARGIN + col * PX_MM;
+        const y = MARGIN + row * PX_MM;
+        const fill = toHex(palette[idx]);
+        const textColor = luminance(palette[idx]) < 128 ? '#fff' : '#000';
+        rects.push(
+          `<rect x="${x}" y="${y}" width="${PX_MM}" height="${PX_MM}" fill="${fill}" stroke="#555" stroke-width="0.15"/>` +
+          `<text x="${(x + PX_MM / 2).toFixed(2)}" y="${(y + PX_MM / 2 + 1).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="3.5" font-family="Arial,sans-serif" fill="${textColor}" fill-opacity="0.8">${idx + 1}</text>`
+        );
+      }
+    }
+
+    const legendY = MARGIN + gridH + 4;
+    const swatchSize = 6;
+    const legendItems = palette.map((c, i) => {
+      const lx = MARGIN + i * (swatchSize + 12);
+      return `<rect x="${lx}" y="${legendY}" width="${swatchSize}" height="${swatchSize}" fill="${toHex(c)}" stroke="#333" stroke-width="0.3"/>` +
+             `<text x="${lx + swatchSize + 2}" y="${(legendY + swatchSize / 2 + 1).toFixed(1)}" font-size="4" font-family="Arial,sans-serif" fill="#333">${i + 1}</text>`;
+    }).join('\n');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Pixel Art — Plantilla 1:1 (plóter)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #fff; }
+  @page { size: ${CANVAS_W}mm ${CANVAS_H}mm; margin: 0; }
+  .no-print { position: fixed; top: 10px; left: 10px; z-index: 999; background: #f97316; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; font-family: sans-serif; }
+  @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+<button class="no-print" onclick="window.print()">🖨 Imprimir en plóter</button>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="${CANVAS_W}mm" height="${CANVAS_H}mm"
+     viewBox="0 0 ${CANVAS_W} ${CANVAS_H}">
+  <rect width="${CANVAS_W}" height="${CANVAS_H}" fill="white"/>
+  <rect x="${MARGIN}" y="${MARGIN}" width="${gridW}" height="${gridH}" fill="none" stroke="#aaa" stroke-width="0.5" stroke-dasharray="3,3"/>
+  ${rects.join('\n  ')}
+  ${legendItems}
+  <text x="${MARGIN}" y="${(legendY + swatchSize + 5).toFixed(2)}" font-size="3.5" font-family="Arial,sans-serif" fill="#888">Pixel Art — ${COLS}×${ROWS} px · 10 mm/px · ${gridW / 10}cm × ${gridH / 10}cm · escala 1:1</text>
+</svg>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pixel_art_plantilla_ploter.html';
+    a.click();
+  }
+
   function downloadFoami() {
     const LIGA  = 2;
     const FOAMI = 26;
@@ -875,7 +943,7 @@ export default function PixelPage() {
       <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.3rem' }}>🎨 Convertidor Pixel Art</h1>
       <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '2rem' }}>
         Convierte una foto a {COLS}×{ROWS} píxeles con {NUM_COLORS} colores sólidos, sin fondo.
-        Cada píxel equivale a 0.8 cm × 0.8 cm en la imagen descargada.
+        Cada píxel equivale a 1 cm × 1 cm en la imagen descargada.
       </p>
 
       {/* Toggle eliminar fondo */}
@@ -991,7 +1059,7 @@ export default function PixelPage() {
                 fontSize: '0.95rem', border: 'none', cursor: 'pointer',
               }}
             >
-              ⬇ Descargar PNG ({COLS * 0.8}cm × {ROWS * 0.8}cm · fondo blanco)
+              ⬇ Descargar PNG ({COLS}cm × {ROWS}cm · fondo blanco)
             </button>
             <button
               onClick={downloadGuide}
@@ -1002,6 +1070,16 @@ export default function PixelPage() {
               }}
             >
               📄 Descargar guía línea por línea (.html)
+            </button>
+            <button
+              onClick={downloadTemplate}
+              style={{
+                width: '100%', padding: '0.75rem', borderRadius: 10,
+                background: 'transparent', color: '#eee', fontWeight: 700,
+                fontSize: '0.95rem', border: '1px solid #444', cursor: 'pointer',
+              }}
+            >
+              📐 Descargar plantilla plóter 1:1 (.html)
             </button>
             <button
               onClick={downloadPushPin}
