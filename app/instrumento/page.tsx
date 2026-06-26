@@ -15,7 +15,8 @@ const INSTRUMENTS = [
   { id: 'violin',                label: '🎻 Violín',   wave: 'sawtooth' as OscillatorType, attack: 0.08,  decay: 0.08, sustainRatio: 0.85, release: 0.3 },
   { id: 'acoustic_guitar_nylon', label: '🎸 Guitarra', wave: 'triangle' as OscillatorType, attack: 0.005, decay: 0.5,  sustainRatio: 0.25, release: 0.4 },
   { id: 'flute',                 label: '🪈 Flauta',   wave: 'sine'     as OscillatorType, attack: 0.06,  decay: 0.05, sustainRatio: 0.90, release: 0.2 },
-  { id: 'trumpet',               label: '🎺 Trompeta', wave: 'sawtooth' as OscillatorType, attack: 0.02,  decay: 0.1,  sustainRatio: 0.80, release: 0.1 },
+  { id: 'trumpet',               label: '🎺 Trompeta',    wave: 'sawtooth' as OscillatorType, attack: 0.02,  decay: 0.1,  sustainRatio: 0.80, release: 0.1 },
+  { id: 'cello',                 label: '🎻 Violonchelo', wave: 'sawtooth' as OscillatorType, attack: 0.12,  decay: 0.1,  sustainRatio: 0.88, release: 0.5 },
 ] as const;
 
 type InstrumentId = typeof INSTRUMENTS[number]['id'];
