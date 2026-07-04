@@ -54,6 +54,54 @@ function extraerPalabras(texto: string): string[] {
   return [...new Set(palabras)].sort();
 }
 
+const ESTILOS_CORRIDO: Record<string, string> = {
+  tradicional: 'Corrido Tradicional Norteño: narrativo y respetuoso, con expresiones clásicas como "les voy a contar", "señores", "en el año de...", lenguaje formal y épico.',
+  tumbado:     'Corrido Tumbado: flow relajado y urbano, mezcla slang norteño moderno con referencias a la calle, cadencia suave, frases como "ya saben cómo es", "el señor no falla".',
+  alterado:    'Corrido Alterado: lenguaje crudo y directo, adrenalina, referencias al narco y el poder, frases contundentes, sin rodeos.',
+  sierra:      'Corrido de la Sierra: campestre y humilde, con referencias a la tierra, el rancho, los animales, la familia y el paisaje norteño.',
+}
+
+export async function generarCorrido(params: {
+  nombre: string
+  region: string
+  bebida: string
+  estilo?: string
+}): Promise<string> {
+  const { nombre, region, bebida, estilo } = params
+  const estiloDesc = estilo && ESTILOS_CORRIDO[estilo]
+    ? `\nESTILO: ${ESTILOS_CORRIDO[estilo]}`
+    : '\nESTILO: Elige el estilo que mejor se adapte al personaje y región.'
+
+  const systemPrompt = `Eres un compositor experto en música regional mexicana, especializado en corridos. Generas corridos completos, bien estructurados y auténticos, con vocabulario propio del género norteño.
+
+Un corrido bien hecho tiene:
+- Verso introductorio (presenta al protagonista)
+- Versos narrativos (cuentan su historia)
+- Coro (memorable y repetible)
+- Verso de cierre
+- Rima consistente (preferiblemente ABCB o ABAB)
+- Métrica de 8 sílabas por línea (octosílabo) como base
+
+IMPORTANTE: Responde ÚNICAMENTE con la letra del corrido, usando etiquetas como [VERSO 1], [CORO], [VERSO 2], [CIERRE]. Sin explicaciones ni comentarios adicionales.`
+
+  const userPrompt = `Compón un corrido personalizado con los siguientes datos:
+
+PROTAGONISTA: ${nombre}
+REGIÓN DE ORIGEN: ${region}
+BEBIDA FAVORITA: ${bebida}${estiloDesc}
+
+El corrido debe mencionar naturalmente el nombre, la región y la bebida del protagonista. Hazlo sonar auténtico, como si fuera un corrido real grabado en Norteño.`
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }],
+  })
+
+  return (response.content[0] as { type: 'text'; text: string }).text
+}
+
 export async function generarParodia(cancion: Cancion, historia: string): Promise<string> {
   const modoPrueba = esModoPrueba(historia);
 

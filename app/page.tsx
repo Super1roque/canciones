@@ -837,10 +837,10 @@ export default function Home() {
             <a href="/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/compartir" className="nav-btn">🔗 Compartir</a>
             <a href="/instrumento" className="nav-btn">🎹 Voz→Inst</a>
+            <a href="/corrido" className="nav-btn">🎸 Corridos</a>
             <a href="/muestra" className="nav-btn">💧 Muestra</a>
+            <a href="/muestra-video" className="nav-btn">🎬 Muestra Video</a>
             <a href="/pixel" className="nav-btn">🎨 Pixel Art</a>
-            <a href="/pixel2" className="nav-btn">⬡ Hex Art</a>
-            <a href="/lego-art" className="nav-btn">🟥 Lego Art</a>
           </nav>
         </div>
       </header>
