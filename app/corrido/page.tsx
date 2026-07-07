@@ -12,7 +12,6 @@ const ESTILOS = [
 export default function CorridoPage() {
   const [nombre,  setNombre]  = useState('');
   const [region,  setRegion]  = useState('');
-  const [bebida,  setBebida]  = useState('');
   const [estilo,  setEstilo]  = useState('');
   const [corrido, setCorrido] = useState('');
   const [generando, setGenerando] = useState(false);
@@ -27,7 +26,7 @@ export default function CorridoPage() {
       const res  = await fetch('/api/corrido/generar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, region, bebida, estilo }),
+        body: JSON.stringify({ nombre, region, estilo }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Error al generar'); return; }
@@ -89,20 +88,6 @@ export default function CorridoPage() {
             value={region}
             onChange={e => setRegion(e.target.value)}
             placeholder="Ej: Sinaloa, Sonora, Tierra Caliente..."
-            required
-            style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #333', background: '#1a1a1a', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box' }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.9rem' }}>
-            Bebida favorita <span style={{ color: '#e55' }}>*</span>
-          </label>
-          <input
-            type="text"
-            value={bebida}
-            onChange={e => setBebida(e.target.value)}
-            placeholder="Ej: Buchanan's, Caguama, Clamato..."
             required
             style={{ width: '100%', padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #333', background: '#1a1a1a', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box' }}
           />

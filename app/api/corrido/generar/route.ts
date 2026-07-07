@@ -3,10 +3,10 @@ import { generarCorrido } from '@/lib/claudeService';
 
 export async function POST(request: Request) {
   try {
-    const { nombre, region, bebida, estilo } = await request.json();
+    const { nombre, region, estilo } = await request.json();
 
-    if (!nombre?.trim() || !region?.trim() || !bebida?.trim()) {
-      return NextResponse.json({ error: 'Nombre, región y bebida son requeridos' }, { status: 400 });
+    if (!nombre?.trim() || !region?.trim()) {
+      return NextResponse.json({ error: 'Nombre y región son requeridos' }, { status: 400 });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -16,11 +16,10 @@ export async function POST(request: Request) {
     const corrido = await generarCorrido({
       nombre: nombre.trim(),
       region: region.trim(),
-      bebida: bebida.trim(),
       estilo: estilo?.trim() || undefined,
     });
 
-    return NextResponse.json({ corrido, nombre, region, bebida, estilo: estilo || null });
+    return NextResponse.json({ corrido, nombre, region, estilo: estilo || null });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     console.error('Error generando corrido:', msg);

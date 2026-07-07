@@ -64,10 +64,9 @@ const ESTILOS_CORRIDO: Record<string, string> = {
 export async function generarCorrido(params: {
   nombre: string
   region: string
-  bebida: string
   estilo?: string
 }): Promise<string> {
-  const { nombre, region, bebida, estilo } = params
+  const { nombre, region, estilo } = params
   const estiloDesc = estilo && ESTILOS_CORRIDO[estilo]
     ? `\nESTILO: ${ESTILOS_CORRIDO[estilo]}`
     : '\nESTILO: Elige el estilo que mejor se adapte al personaje y región.'
@@ -87,10 +86,9 @@ IMPORTANTE: Responde ÚNICAMENTE con la letra del corrido, usando etiquetas como
   const userPrompt = `Compón un corrido personalizado con los siguientes datos:
 
 PROTAGONISTA: ${nombre}
-REGIÓN DE ORIGEN: ${region}
-BEBIDA FAVORITA: ${bebida}${estiloDesc}
+REGIÓN DE ORIGEN: ${region}${estiloDesc}
 
-El corrido debe mencionar naturalmente el nombre, la región y la bebida del protagonista. Hazlo sonar auténtico, como si fuera un corrido real grabado en Norteño.`
+El corrido debe mencionar naturalmente el nombre y la región del protagonista. Hazlo sonar auténtico, como si fuera un corrido real grabado en Norteño.`
 
   const response = await client.messages.create({
     model: 'claude-opus-4-6',

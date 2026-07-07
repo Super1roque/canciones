@@ -48,6 +48,39 @@ function runFfmpeg(args: string[]): Promise<void> {
   });
 }
 
+type Cue = { start: number; end: number; text: string };
+
+function assTime(sec: number): string {
+  const h  = Math.floor(sec / 3600);
+  const m  = Math.floor((sec % 3600) / 60);
+  const s  = Math.floor(sec % 60);
+  const cs = Math.round((sec % 1) * 100);
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+}
+
+function generateASS(cues: Cue[]): string {
+  // Colores ASS: &HAABBGGRR (00=opaco)
+  // Amarillo: &H0000FFFF  Negro contorno: &H00000000
+  const header = `[Script Info]
+ScriptType: v4.00+
+PlayResX: ${W}
+PlayResY: ${H}
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,75,&H0000FFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,4,2,2,30,30,80,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+
+  // \\an8 = top-center; posicionamos debajo del banner CTA (y≈280px)
+  const events = cues.map(c =>
+    `Dialogue: 0,${assTime(c.start)},${assTime(c.end)},Default,,0,0,0,,{\\an8\\pos(${W / 2},280)}${c.text}`
+  ).join('\n');
+
+  return `${header}\n${events}\n`;
+}
+
 function getWatermarkPcm(): Float32Array {
   if (wmPcmCache) return wmPcmCache;
 
@@ -128,6 +161,16 @@ export async function POST(request: Request) {
     const audioPath = path.join(tmpDir, `audio${path.extname(audio.name).toLowerCase() || '.mp3'}`);
     fs.writeFileSync(audioPath, Buffer.from(await audio.arrayBuffer()));
 
+    // Subtítulos opcionales via Deepgram
+    const cuesRaw = (form.get('cues') as string | null) ?? '';
+    const cues: Cue[] = cuesRaw ? (JSON.parse(cuesRaw) as Cue[]) : [];
+    let assPath: string | null = null;
+    if (cues.length > 0) {
+      assPath = path.join(tmpDir, 'subs.ass');
+      fs.writeFileSync(assPath, generateASS(cues), 'utf8');
+      console.log('[generate-sample-video] subtítulos ASS:', cues.length, 'cues');
+    }
+
     const outputPath  = path.join(tmpDir, 'output.mp4');
     const wmErrRef    = { msg: '' };
     const mixedAudio  = await applyWatermarkAudio(audioPath, tmpDir, wmErrRef);
@@ -196,6 +239,8 @@ export async function POST(request: Request) {
 
     let filterComplex: string;
 
+    const assFilter = assPath ? `,ass='${assPath}'` : '';
+
     if (text) {
       const cleanText = text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
       const textPath  = path.join(tmpDir, 'overlay.txt');
@@ -208,14 +253,14 @@ export async function POST(request: Request) {
         waves,
         `[0:v]${bgFilters}[vbase]`,
         `[vbase][eqv]overlay=x=0:y=${eqY}[with_eq]`,
-        `[with_eq]${drawbox},${drawtext},${ctaCta}[vout]`,
+        `[with_eq]${drawbox},${drawtext},${ctaCta}${assFilter}[vout]`,
       ].join(';');
     } else {
       filterComplex = [
         waves,
         `[0:v]${bgFilters}[vbase]`,
         `[vbase][eqv]overlay=x=0:y=${eqY}[with_eq]`,
-        `[with_eq]${ctaCta}[vout]`,
+        `[with_eq]${ctaCta}${assFilter}[vout]`,
       ].join(';');
     }
 

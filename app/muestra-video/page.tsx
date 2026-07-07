@@ -2,7 +2,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Stage = 'idle' | 'generating' | 'done' | 'error';
+type Stage = 'idle' | 'transcribing' | 'generating' | 'done' | 'error';
+
+type Cue = { start: number; end: number; text: string };
 
 const STEPS = [
   { label: 'Leyendo archivos',   pct: 15 },
@@ -108,11 +110,12 @@ function ProgressGraph({ active }: { active: boolean }) {
 
 export default function MuestraVideoPage() {
   const router = useRouter();
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [text, setText]           = useState('');
-  const [stage, setStage]         = useState<Stage>('idle');
+  const [audioFile, setAudioFile]     = useState<File | null>(null);
+  const [text, setText]               = useState('');
+  const [addSubs, setAddSubs]         = useState(false);
+  const [stage, setStage]             = useState<Stage>('idle');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [error, setError]         = useState<string | null>(null);
+  const [error, setError]             = useState<string | null>(null);
 
   const audioRef = useRef<HTMLInputElement>(null);
 
@@ -126,13 +129,35 @@ export default function MuestraVideoPage() {
 
   async function generate() {
     if (!audioFile) return;
-    setStage('generating');
     setError(null);
     setDownloadUrl(null);
+
+    let cues: Cue[] = [];
+
+    // Paso 1: transcribir con Deepgram si está habilitado
+    if (addSubs) {
+      setStage('transcribing');
+      try {
+        const tForm = new FormData();
+        tForm.append('audio', audioFile);
+        const tRes = await fetch('/api/transcribe', { method: 'POST', body: tForm });
+        const tData = await tRes.json();
+        if (!tRes.ok) throw new Error(tData.error ?? `Error ${tRes.status}`);
+        cues = tData.cues ?? [];
+      } catch (err) {
+        setError('Transcripción falló: ' + (err instanceof Error ? err.message : String(err)));
+        setStage('error');
+        return;
+      }
+    }
+
+    // Paso 2: generar video
+    setStage('generating');
     try {
       const form = new FormData();
       form.append('audio', audioFile);
       form.append('text', text);
+      if (cues.length > 0) form.append('cues', JSON.stringify(cues));
       const res = await fetch('/api/generate-sample-video', { method: 'POST', body: form });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -222,27 +247,47 @@ export default function MuestraVideoPage() {
           />
         </Section>
 
+        {/* Subtítulos */}
+        <Section label="Subtítulos con IA" icon="🎤">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={addSubs}
+              onChange={e => setAddSubs(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: '#f97316', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '0.9rem', color: addSubs ? '#f97316' : 'rgba(255,255,255,0.6)', fontWeight: addSubs ? 600 : 400 }}>
+              Transcribir audio y quemar subtítulos en el video
+            </span>
+          </label>
+          {addSubs && (
+            <p style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.4rem', marginLeft: '1.6rem' }}>
+              Requiere <code style={{ color: 'rgba(255,255,255,0.45)' }}>DEEPGRAM_API_KEY</code> en .env
+            </p>
+          )}
+        </Section>
+
         {/* Botón */}
         <button
           onClick={generate}
-          disabled={!ready || stage === 'generating'}
+          disabled={!ready || stage === 'generating' || stage === 'transcribing'}
           style={{
             width: '100%',
             marginTop: '1.25rem',
             padding: '0.9rem',
             borderRadius: 12,
             border: 'none',
-            background: ready && stage !== 'generating'
+            background: ready && stage !== 'generating' && stage !== 'transcribing'
               ? 'linear-gradient(135deg, #f97316, #ef4444)'
               : 'rgba(255,255,255,0.08)',
-            color: ready && stage !== 'generating' ? '#fff' : 'rgba(255,255,255,0.3)',
+            color: ready && stage !== 'generating' && stage !== 'transcribing' ? '#fff' : 'rgba(255,255,255,0.3)',
             fontWeight: 700,
             fontSize: '1rem',
-            cursor: ready && stage !== 'generating' ? 'pointer' : 'not-allowed',
+            cursor: ready && stage !== 'generating' && stage !== 'transcribing' ? 'pointer' : 'not-allowed',
             transition: 'background 0.2s',
           }}
         >
-          {stage === 'generating' ? '⏳ Generando…' : '🎬 Generar video mariachi'}
+          {stage === 'transcribing' ? '🎤 Transcribiendo con IA…' : stage === 'generating' ? '⏳ Generando…' : '🎬 Generar video mariachi'}
         </button>
 
         {/* Gráfica de progreso */}
