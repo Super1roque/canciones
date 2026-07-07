@@ -68,14 +68,14 @@ PlayResY: ${H}
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,75,&H0000FFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,4,2,2,30,30,80,1
+Style: Default,Arial,130,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,5,2,2,30,30,80,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
 
   // \\an8 = top-center; posicionamos debajo del banner CTA (y≈280px)
   const events = cues.map(c =>
-    `Dialogue: 0,${assTime(c.start)},${assTime(c.end)},Default,,0,0,0,,{\\an8\\pos(${W / 2},280)}${c.text}`
+    `Dialogue: 0,${assTime(c.start)},${assTime(c.end)},Default,,0,0,0,,{\\an5\\pos(${W / 2},700)}${c.text}`
   ).join('\n');
 
   return `${header}\n${events}\n`;
