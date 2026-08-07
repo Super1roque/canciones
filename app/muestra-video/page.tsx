@@ -67,9 +67,8 @@ function ProgressGraph({ active }: { active: boolean }) {
               width: 10,
               borderRadius: 3,
               background: `linear-gradient(to top, #f97316, #ef4444)`,
-              animation: active ? `eq-bar ${0.4 + (i % 5) * 0.15}s ease-in-out infinite alternate` : 'none',
+              animation: active ? `eq-bar ${0.4 + (i % 5) * 0.15}s ease-in-out ${i * 0.05}s infinite alternate` : 'none',
               height: active ? undefined : 4,
-              animationDelay: `${i * 0.05}s`,
               // fallback height when not animating
               minHeight: 4,
             }}
@@ -135,11 +134,25 @@ export default function MuestraVideoPage() {
     let cues: Cue[] = [];
 
     // Paso 1: transcribir con Deepgram si está habilitado
+    // El video solo usa subtítulos del primer minuto, así que recortamos
+    // el audio antes de transcribir — evita mandar la canción completa
+    // a Deepgram y acelera bastante la espera.
     if (addSubs) {
       setStage('transcribing');
       try {
+        let clipToTranscribe: Blob = audioFile;
+        try {
+          const trimForm = new FormData();
+          trimForm.append('audio', audioFile);
+          trimForm.append('seconds', '65');
+          const trimRes = await fetch('/api/trim-audio', { method: 'POST', body: trimForm });
+          if (trimRes.ok) clipToTranscribe = await trimRes.blob();
+        } catch {
+          // Si el recorte falla, seguimos con el audio completo como respaldo
+        }
+
         const tForm = new FormData();
-        tForm.append('audio', audioFile);
+        tForm.append('audio', clipToTranscribe, 'clip.mp3');
         const tRes = await fetch('/api/transcribe', { method: 'POST', body: tForm });
         const tData = await tRes.json();
         if (!tRes.ok) throw new Error(tData.error ?? `Error ${tRes.status}`);
@@ -365,7 +378,7 @@ function UploadButton({
 }) {
   return (
     <>
-      <input type="file" accept={accept} ref={inputRef} onChange={onChange} style={{ display: 'none' }} />
+      <input type="file" accept={accept} ref={inputRef as React.Ref<HTMLInputElement>} onChange={onChange} style={{ display: 'none' }} />
       <button
         onClick={() => inputRef.current?.click()}
         style={{

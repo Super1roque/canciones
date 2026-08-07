@@ -2,8 +2,10 @@
  * POST /api/generate-video
  * Acepta multipart/form-data:
  *   - photos:     uno o más archivos de imagen (en orden deseado)
- *   - duration:   duración total en segundos (3–300)
+ *   - duration:   duración total en segundos (1–600). Opcional si se manda audio.
  *   - transition: tipo de transición (ver TRANSITIONS abajo)
+ *   - audio:      archivo de audio opcional. Si se manda, su duración
+ *                 reemplaza a `duration` y se mezcla como pista de sonido.
  *
  * Genera un video 9:16 (1080×1920) y devuelve el archivo MP4.
  */
@@ -57,6 +59,27 @@ function runFfmpeg(args: string[]): Promise<void> {
       }
     });
   });
+}
+
+function getAudioDuration(filePath: string): Promise<number> {
+  return new Promise(resolve => {
+    execFile(FFMPEG_BIN, ['-i', filePath, '-hide_banner'],
+      { maxBuffer: 512 * 1024 },
+      (_err, _out, stderr) => {
+        const m = stderr.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+        resolve(m ? +m[1] * 3600 + +m[2] * 60 + parseFloat(m[3]) : 0);
+      });
+  });
+}
+
+function muxAudio(videoPath: string, audioPath: string, outputPath: string): Promise<void> {
+  return runFfmpeg([
+    '-i', videoPath, '-i', audioPath,
+    '-map', '0:v:0', '-map', '1:a:0',
+    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+    '-shortest', '-movflags', '+faststart',
+    '-y', outputPath,
+  ]);
 }
 
 // ── Escala y crop común ───────────────────────────────────────────────────────
@@ -394,24 +417,35 @@ export async function POST(request: Request) {
     const photos      = form.getAll('photos') as File[];
     const durationStr = form.get('duration') as string | null;
     const transition  = (form.get('transition') as TransitionType | null) ?? 'fade_black';
+    const audioFile   = form.get('audio') as File | null;
 
     if (!photos.length) {
       return NextResponse.json({ error: 'Se requiere al menos una foto.' }, { status: 400 });
     }
-    if (!durationStr) {
-      return NextResponse.json({ error: 'Se requiere la duración.' }, { status: 400 });
-    }
-
-    const duration = parseFloat(durationStr);
-    if (isNaN(duration) || duration < 3 || duration > 300) {
-      return NextResponse.json(
-        { error: 'Duración inválida. Debe estar entre 3 y 300 segundos.' },
-        { status: 400 }
-      );
+    if (!durationStr && !audioFile) {
+      return NextResponse.json({ error: 'Se requiere la duración o un audio.' }, { status: 400 });
     }
 
     tmpDir = path.join(os.tmpdir(), `vid_${Date.now()}_${Math.random().toString(36).slice(2)}`);
     fs.mkdirSync(tmpDir);
+
+    let audioPath: string | null = null;
+    if (audioFile) {
+      const ext = path.extname(audioFile.name).toLowerCase() || '.mp3';
+      audioPath = path.join(tmpDir, `audio${ext}`);
+      fs.writeFileSync(audioPath, Buffer.from(await audioFile.arrayBuffer()));
+    }
+
+    const duration = audioFile
+      ? await getAudioDuration(audioPath!)
+      : parseFloat(durationStr!);
+
+    if (isNaN(duration) || duration < 1 || duration > 600) {
+      return NextResponse.json(
+        { error: 'Duración inválida. Debe estar entre 1 y 600 segundos.' },
+        { status: 400 }
+      );
+    }
 
     const photoPaths: string[] = [];
     for (let i = 0; i < photos.length; i++) {
@@ -422,15 +456,21 @@ export async function POST(request: Request) {
       photoPaths.push(tmp);
     }
 
-    const outputPath = path.join(tmpDir, 'output.mp4');
+    const videoOnlyPath = path.join(tmpDir, 'video_only.mp4');
 
     if (transition === 'random') {
-      await buildRandomSlideshow(photoPaths, outputPath, duration, tmpDir);
+      await buildRandomSlideshow(photoPaths, videoOnlyPath, duration, tmpDir);
     } else if (isSlide(transition)) {
-      await buildSlideSlideshow(photoPaths, outputPath, duration, transition);
+      await buildSlideSlideshow(photoPaths, videoOnlyPath, duration, transition);
     } else {
-      await buildFadeSlideshow(photoPaths, outputPath, duration,
+      await buildFadeSlideshow(photoPaths, videoOnlyPath, duration,
         transition as 'fade_black' | 'fade_white' | 'hard_cut');
+    }
+
+    let outputPath = videoOnlyPath;
+    if (audioPath) {
+      outputPath = path.join(tmpDir, 'output.mp4');
+      await muxAudio(videoOnlyPath, audioPath, outputPath);
     }
 
     const videoBuffer = fs.readFileSync(outputPath);

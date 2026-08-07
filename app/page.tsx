@@ -206,6 +206,7 @@ function TabCrear({
 }) {
   const [seleccionada, setSeleccionada] = useState<Cancion | null>(null);
   const [historia, setHistoria] = useState('');
+  const [alcance, setAlcance] = useState<'completa' | 'coro'>('completa');
   const [generando, setGenerando] = useState(false);
   const [parodiaActual, setParodiaActual] = useState<ParodiaResult | null>(null);
   const [guardada, setGuardada] = useState(false);
@@ -246,7 +247,7 @@ function TabCrear({
       const res = await fetch('/api/parodias/generar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancionId: seleccionada.id, historia }),
+        body: JSON.stringify({ cancionId: seleccionada.id, historia, alcance }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Error al generar la parodia', 'error'); return; }
@@ -369,6 +370,30 @@ function TabCrear({
                 onChange={e => setHistoria(e.target.value)}
               />
               <span className="char-count">{historia.length} caracteres</span>
+            </div>
+
+            <div className="form-group">
+              <label>¿Qué quieres generar?</label>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.3rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 400, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="alcance"
+                    checked={alcance === 'completa'}
+                    onChange={() => setAlcance('completa')}
+                  />
+                  Letra completa
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 400, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="alcance"
+                    checked={alcance === 'coro'}
+                    onChange={() => setAlcance('coro')}
+                  />
+                  Solo el coro
+                </label>
+              </div>
             </div>
 
             <button className="btn-primary" onClick={handleGenerar} disabled={generando}>
@@ -832,11 +857,12 @@ export default function Home() {
             <a href="/karaoke" className="nav-btn">🎤 Karaoke</a>
             <a href="/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
             <a href="/video" className="nav-btn">🎬 Video</a>
-            <a href="/guitarra" className="nav-btn">🎸 Guitarra</a>
-            <a href="/piano" className="nav-btn">🎹 Piano</a>
             <a href="/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/compartir" className="nav-btn">🔗 Compartir</a>
             <a href="/instrumento" className="nav-btn">🎹 Voz→Inst</a>
+            <a href="/galimatias" className="nav-btn">🗣️ Galimatías</a>
+            <a href="/cambialetra" className="nav-btn">📝 Cambia Letra</a>
+            <a href="/intervalos" className="nav-btn">⏸️ Intervalos</a>
             <a href="/corrido" className="nav-btn">🎸 Corridos</a>
             <a href="/muestra" className="nav-btn">💧 Muestra</a>
             <a href="/muestra-video" className="nav-btn">🎬 Muestra Video</a>

@@ -4,11 +4,13 @@ import { generarParodia } from '@/lib/claudeService';
 
 export async function POST(request: Request) {
   try {
-    const { cancionId, historia } = await request.json();
+    const { cancionId, historia, alcance } = await request.json();
 
     if (!cancionId || !historia) {
       return NextResponse.json({ error: 'Se requieren cancionId e historia' }, { status: 400 });
     }
+
+    const alcanceValido: 'completa' | 'coro' = alcance === 'coro' ? 'coro' : 'completa';
 
     if (historia.trim().length < 10) {
       return NextResponse.json(
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
 
     const cancion = { id: doc.id, ...doc.data() } as { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
     const trimmed  = historia.trim();
-    const parodia  = await generarParodia(cancion, trimmed);
+    const parodia  = await generarParodia(cancion, trimmed, alcanceValido);
     const modoPrueba = trimmed.toLowerCase().startsWith('esta es una prueba');
 
     return NextResponse.json({

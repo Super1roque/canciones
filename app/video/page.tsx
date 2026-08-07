@@ -42,6 +42,29 @@ export default function VideoPage() {
   // ── Transición ───────────────────────────────────────────────────────
   const [transition, setTransition]   = useState<string>('fade_black');
 
+  // ── Audio opcional ───────────────────────────────────────────────────
+  const [audioFile, setAudioFile]         = useState<File | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number | null>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+
+  const onAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const audioEl = document.createElement('audio');
+    audioEl.preload = 'metadata';
+    audioEl.onloadedmetadata = () => setAudioDuration(audioEl.duration);
+    audioEl.src = URL.createObjectURL(file);
+    setAudioFile(file);
+    setDownloadUrl(null);
+    setError(null);
+  };
+
+  const removeAudio = () => {
+    setAudioFile(null);
+    setAudioDuration(null);
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Duración total calculada según el modo activo
@@ -121,6 +144,8 @@ export default function VideoPage() {
         form.append('duration', String(duration));
       }
 
+      if (audioFile) form.append('audio', audioFile);
+
       setProgress('Generando video con FFmpeg… (puede tardar unos segundos)');
       const res  = await fetch('/api/generate-video', { method: 'POST', body: form });
 
@@ -162,7 +187,7 @@ export default function VideoPage() {
       <div className="karaoke-body" style={{ maxWidth: 640 }}>
         <h1 className="karaoke-title">Carrusel<span>de fotos</span></h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-          Sube tus fotos, elige la duración y genera un video vertical 9:16.
+          Sube tus fotos (o solo una), agrégale audio si quieres, y genera un video vertical 9:16 listo para redes sociales.
         </p>
 
         {/* ── Zona de carga ── */}
@@ -224,12 +249,61 @@ export default function VideoPage() {
           </div>
         )}
 
+        {/* ── Audio opcional ── */}
+        <div style={{
+          width: '100%', background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '1.25rem', marginBottom: '1.5rem',
+        }}>
+          <p style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase',
+            letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+            Audio (opcional)
+          </p>
+          {audioFile ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+            }}>
+              <span style={{ fontSize: '1.3rem' }}>🎵</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {audioFile.name}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {audioDuration != null ? secToLabel(audioDuration) : 'Calculando duración…'}
+                </div>
+              </div>
+              <button onClick={removeAudio} className="kk-btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
+                ✕ Quitar
+              </button>
+            </div>
+          ) : (
+            <button
+              className="kk-btn"
+              style={{ width: '100%', fontSize: '0.85rem' }}
+              onClick={() => audioInputRef.current?.click()}
+            >
+              🎵 Elegir archivo de audio
+            </button>
+          )}
+          <input ref={audioInputRef} type="file" accept="audio/*"
+            style={{ display: 'none' }} onChange={onAudioChange} />
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.6rem' }}>
+            Si subes un audio, el video dura lo mismo que el audio y se usa como pista de sonido — ideal para subir a redes sociales.
+          </p>
+        </div>
+
         {/* ── Modo: duración total vs repetición ── */}
         <div style={{
           width: '100%', background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', padding: '1.25rem', marginBottom: '1.5rem',
           display: 'flex', flexDirection: 'column', gap: '1.25rem',
+          opacity: audioFile ? 0.45 : 1, pointerEvents: audioFile ? 'none' : 'auto',
         }}>
+          {audioFile && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+              🔒 Duración controlada por el audio subido ({audioDuration != null ? secToLabel(audioDuration) : '…'})
+            </p>
+          )}
           {/* Toggle */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button

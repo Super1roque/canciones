@@ -6,15 +6,28 @@ import { Mp3Encoder } from '@breezystack/lamejs';
 const CW = 1000;
 const CH = 148;
 
+type Zone = { start: number; end: number };
+
+const GAP_SEC = 1; // silence inserted between fragments in the exported mp3
+
+// ─── Merge overlapping/adjacent zones, sorted by start time ──────────────────
+function mergeZones(zones: Zone[]): Zone[] {
+  const sorted = [...zones].sort((a, b) => a.start - b.start);
+  const out: Zone[] = [];
+  for (const z of sorted) {
+    const last = out[out.length - 1];
+    if (last && z.start <= last.end + 0.001) last.end = Math.max(last.end, z.end);
+    else out.push({ ...z });
+  }
+  return out;
+}
+
 // ─── MP3 encoder via lamejs (async — yields every 50 blocks to keep UI responsive) ──
 async function encodeMp3Async(
-  buf: AudioBuffer, s: number, e: number,
+  buf: AudioBuffer, ranges: Zone[],
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const sr   = buf.sampleRate;
-  const i0   = Math.floor(s * sr);
-  const i1   = Math.min(Math.floor(e * sr), buf.length);
-  const len  = i1 - i0;
   const ch   = Math.min(buf.numberOfChannels, 2);
   const toI16 = (f: Float32Array) => {
     const out = new Int16Array(f.length);
@@ -22,14 +35,37 @@ async function encodeMp3Async(
       out[i] = Math.round(Math.max(-1, Math.min(1, f[i])) * 32767);
     return out;
   };
-  const left  = toI16(buf.getChannelData(0).subarray(i0, i1));
-  const right = ch > 1 ? toI16(buf.getChannelData(1).subarray(i0, i1)) : null;
+
+  const chData0 = buf.getChannelData(0);
+  const chData1 = ch > 1 ? buf.getChannelData(1) : null;
+  const segs = ranges.map(r => {
+    const i0 = Math.floor(r.start * sr);
+    const i1 = Math.min(Math.floor(r.end * sr), buf.length);
+    return { i0, len: Math.max(0, i1 - i0) };
+  });
+  const gapLen  = Math.round(GAP_SEC * sr);
+  const gapsLen = gapLen * Math.max(0, segs.length - 1);
+  const totalLen = segs.reduce((s, seg) => s + seg.len, 0) + gapsLen;
+
+  // Float32Array is zero-initialized, so the gaps are silence by default
+  const leftAll  = new Float32Array(totalLen);
+  const rightAll = chData1 ? new Float32Array(totalLen) : null;
+  let pos = 0;
+  segs.forEach(({ i0, len }, idx) => {
+    leftAll.set(chData0.subarray(i0, i0 + len), pos);
+    if (rightAll && chData1) rightAll.set(chData1.subarray(i0, i0 + len), pos);
+    pos += len;
+    if (idx < segs.length - 1) pos += gapLen;
+  });
+
+  const left  = toI16(leftAll);
+  const right = rightAll ? toI16(rightAll) : null;
   const enc   = new Mp3Encoder(ch, sr, 128);
   const block = 1152;
   const raw: (Int8Array | Uint8Array)[] = [];
-  const totalBlocks = Math.ceil(len / block);
+  const totalBlocks = Math.ceil(totalLen / block);
 
-  for (let idx = 0, i = 0; i < len; i += block, idx++) {
+  for (let idx = 0, i = 0; i < totalLen; i += block, idx++) {
     const l = left.subarray(i, i + block);
     const r = right ? right.subarray(i, i + block) : undefined;
     const chunk = r ? enc.encodeBuffer(l, r) : enc.encodeBuffer(l);
@@ -43,10 +79,10 @@ async function encodeMp3Async(
   const tail = enc.flush();
   if (tail.length) raw.push(tail);
   onProgress?.(100);
-  const totalLen = raw.reduce((s, p) => s + p.length, 0);
-  const out = new Uint8Array(totalLen);
-  let pos = 0;
-  for (const part of raw) { out.set(part as ArrayLike<number>, pos); pos += part.length; }
+  const totalOutLen = raw.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(totalOutLen);
+  let opos = 0;
+  for (const part of raw) { out.set(part as ArrayLike<number>, opos); opos += part.length; }
   return new Blob([out], { type: 'audio/mpeg' });
 }
 
@@ -81,21 +117,25 @@ export default function RecortarPage() {
   const animRef         = useRef<number>(0);
   const startAcTimeRef  = useRef(0);
   const startOffsetRef  = useRef(0);
+  const playEndRef      = useRef(0);
   const playPosRef      = useRef(0);
   const isPlayingRef    = useRef(false);
   const peaksRef        = useRef<Float32Array>(new Float32Array(0));
   const durationRef     = useRef(0);
   const audioBufferRef  = useRef<AudioBuffer | null>(null);
-  const selStartRef     = useRef(0);
-  const selEndRef       = useRef(0);
+
+  const zonesRef        = useRef<Zone[]>([]);
+  const activeIdxRef    = useRef<number | null>(null);
+  const draftRef        = useRef<Zone | null>(null);
   const dragAnchorRef   = useRef<number | null>(null);
+  const dragIdxRef      = useRef<number | null>(null);
   const dragModeRef     = useRef<'start' | 'end' | 'new' | null>(null);
 
   const [loaded,   setLoaded]   = useState(false);
   const [dragging, setDragging] = useState(false);
   const [playing,  setPlaying]  = useState(false);
-  const [selStart, setSelStart] = useState(0);
-  const [selEnd,   setSelEnd]   = useState(0);
+  const [zones,     setZones]     = useState<Zone[]>([]);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [duration, setDuration] = useState(0);
   const [fileName, setFileName] = useState('');
   const [wavUrl,     setWavUrl]     = useState<string | null>(null);
@@ -103,6 +143,11 @@ export default function RecortarPage() {
   const [encoding,   setEncoding]   = useState(false);
   const [encProgress, setEncProgress] = useState(0);
   const [canvasCursor, setCanvasCursor] = useState<string>('crosshair');
+
+  function selectZone(i: number | null) {
+    activeIdxRef.current = i;
+    setActiveIdx(i);
+  }
 
   // ── Draw ───────────────────────────────────────────────────────────────────
   const drawCanvas = useCallback(() => {
@@ -113,58 +158,67 @@ export default function RecortarPage() {
     const peaks = peaksRef.current;
     if (!dur || !peaks.length) return;
 
-    const ss = selStartRef.current;
-    const se = selEndRef.current;
+    const committed = zonesRef.current;
+    const draft = draftRef.current;
+    const allZones = draft ? [...committed, draft] : committed;
+    const activeDrawIdx = draft ? allZones.length - 1 : activeIdxRef.current;
     const pp = playPosRef.current;
 
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, CW, CH);
 
-    // Waveform bars
+    // Waveform bars — orange where inside any zone
     const barW = 2;
     for (let i = 0; i < CW; i += barW) {
       const peak  = peaks[Math.round(i * peaks.length / CW)] ?? 0;
       const barH  = Math.max(2, peak * (CH - 24));
       const t     = (i / CW) * dur;
-      const inSel = t >= ss && t <= se;
-      ctx.fillStyle = inSel ? '#f97316' : '#252540';
+      const inZone = allZones.some(z => t >= z.start && t <= z.end);
+      ctx.fillStyle = inZone ? '#f97316' : '#252540';
       ctx.fillRect(i, (CH - 8 - barH) / 2 + 4, barW - 1, barH);
     }
 
-    // Selection highlight overlay
-    const sx1 = (ss / dur) * CW;
-    const sx2 = (se / dur) * CW;
-    ctx.fillStyle = 'rgba(249,115,22,0.06)';
-    ctx.fillRect(sx1, 0, sx2 - sx1, CH - 18);
+    // Zone overlays
+    allZones.forEach((z, i) => {
+      const isActive = i === activeDrawIdx;
+      const sx1 = (z.start / dur) * CW;
+      const sx2 = (z.end / dur) * CW;
 
-    // Selection boundary lines (solid)
-    ctx.lineWidth   = 2;
-    ctx.strokeStyle = '#f97316';
-    ctx.setLineDash([]);
-    [sx1, sx2].forEach(x => {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH - 18); ctx.stroke();
-    });
+      ctx.fillStyle = isActive ? 'rgba(249,115,22,0.10)' : 'rgba(249,115,22,0.05)';
+      ctx.fillRect(sx1, 0, sx2 - sx1, CH - 18);
 
-    // Drag handles — pill grip at top
-    [[sx1, 1], [sx2, -1]].forEach(([x, dir]) => {
-      const cx  = x as number;
-      const d   = dir as number;
-      const pw  = 18;
-      const ph  = 22;
-      const rx  = d > 0 ? cx : cx - pw;
-      // pill background
-      ctx.fillStyle = '#f97316';
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(rx, 0, pw, ph, 5);
-      else { ctx.rect(rx, 0, pw, ph); }
-      ctx.fill();
-      // grip lines
-      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-      ctx.lineWidth   = 1.5;
-      for (let g = 0; g < 3; g++) {
-        const lx = cx + d * (4 + g * 4);
-        ctx.beginPath(); ctx.moveTo(lx, 6); ctx.lineTo(lx, ph - 6); ctx.stroke();
-      }
+      ctx.lineWidth   = isActive ? 2 : 1.5;
+      ctx.strokeStyle = isActive ? '#fbbf24' : 'rgba(249,115,22,0.65)';
+      ctx.setLineDash([]);
+      [sx1, sx2].forEach(x => {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH - 18); ctx.stroke();
+      });
+
+      // Drag handles — pill grip at top
+      [[sx1, 1], [sx2, -1]].forEach(([x, dir]) => {
+        const cx  = x as number;
+        const d   = dir as number;
+        const pw  = 16;
+        const ph  = 20;
+        const rx  = d > 0 ? cx : cx - pw;
+        ctx.fillStyle = isActive ? '#fbbf24' : 'rgba(249,115,22,0.75)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, 0, pw, ph, 5);
+        else { ctx.rect(rx, 0, pw, ph); }
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+        ctx.lineWidth   = 1.5;
+        for (let g = 0; g < 3; g++) {
+          const lx = cx + d * (4 + g * 3);
+          ctx.beginPath(); ctx.moveTo(lx, 5); ctx.lineTo(lx, ph - 5); ctx.stroke();
+        }
+      });
+
+      // Zone number label
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.font      = 'bold 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${i + 1}`, sx1 + 3, 12);
     });
 
     // Playhead
@@ -200,10 +254,10 @@ export default function RecortarPage() {
     if (!actx || !isPlayingRef.current) return;
     playPosRef.current = Math.min(
       startOffsetRef.current + (actx.currentTime - startAcTimeRef.current),
-      selEndRef.current
+      playEndRef.current
     );
     drawCanvas();
-    if (playPosRef.current < selEndRef.current) {
+    if (playPosRef.current < playEndRef.current) {
       animRef.current = requestAnimationFrame(animate);
     } else {
       isPlayingRef.current = false;
@@ -219,21 +273,22 @@ export default function RecortarPage() {
     const buf = await actx.decodeAudioData(await file.arrayBuffer());
     audioBufferRef.current = buf;
     durationRef.current    = buf.duration;
-    selStartRef.current    = 0;
-    selEndRef.current      = buf.duration;
+    zonesRef.current        = [];
+    draftRef.current        = null;
     playPosRef.current     = 0;
     peaksRef.current       = computePeaks(buf, CW);
     setDuration(buf.duration);
-    setSelStart(0); setSelEnd(buf.duration);
+    setZones([]);
+    selectZone(null);
     setFileName(file.name.replace(/\.[^.]+$/, ''));
     setWavUrl(null); setLoaded(true);
   }
 
   // ── Play / Stop ────────────────────────────────────────────────────────────
-  async function play(from = selStartRef.current, to = selEndRef.current) {
+  async function play(from: number, to: number) {
     const buf  = audioBufferRef.current;
     const actx = audioCtxRef.current;
-    if (!buf || !actx) return;
+    if (!buf || !actx || to <= from) return;
     stopAudio();
     if (actx.state === 'suspended') await actx.resume();
     const src = actx.createBufferSource();
@@ -244,6 +299,7 @@ export default function RecortarPage() {
     sourceRef.current     = src;
     startAcTimeRef.current = actx.currentTime;
     startOffsetRef.current = from;
+    playEndRef.current     = to;
     playPosRef.current     = from;
     isPlayingRef.current   = true;
     setPlaying(true);
@@ -258,7 +314,7 @@ export default function RecortarPage() {
     setPlaying(false);
   }
 
-  // ── Canvas mouse (drag handles or create selection) ────────────────────────
+  // ── Canvas mouse (drag handles, select zone, or create new zone) ───────────
   const HANDLE_SNAP = 14; // px within which a click grabs a handle
 
   function getCanvasX(e: React.MouseEvent<HTMLCanvasElement>): number {
@@ -271,29 +327,50 @@ export default function RecortarPage() {
     return Math.max(0, Math.min(durationRef.current, (x / CW) * durationRef.current));
   }
 
-  function hitMode(canvasX: number): 'start' | 'end' | 'new' {
+  function hitTest(canvasX: number): { idx: number; mode: 'start' | 'end' | 'body' | 'new' } {
     const dur = durationRef.current;
-    if (!dur) return 'new';
-    const sx1 = (selStartRef.current / dur) * CW;
-    const sx2 = (selEndRef.current   / dur) * CW;
-    if (Math.abs(canvasX - sx1) <= HANDLE_SNAP) return 'start';
-    if (Math.abs(canvasX - sx2) <= HANDLE_SNAP) return 'end';
-    return 'new';
+    if (!dur) return { idx: -1, mode: 'new' };
+    const zs = zonesRef.current;
+    for (let i = 0; i < zs.length; i++) {
+      const sx1 = (zs[i].start / dur) * CW;
+      if (Math.abs(canvasX - sx1) <= HANDLE_SNAP) return { idx: i, mode: 'start' };
+    }
+    for (let i = 0; i < zs.length; i++) {
+      const sx2 = (zs[i].end / dur) * CW;
+      if (Math.abs(canvasX - sx2) <= HANDLE_SNAP) return { idx: i, mode: 'end' };
+    }
+    for (let i = 0; i < zs.length; i++) {
+      const sx1 = (zs[i].start / dur) * CW;
+      const sx2 = (zs[i].end / dur) * CW;
+      if (canvasX >= sx1 && canvasX <= sx2) return { idx: i, mode: 'body' };
+    }
+    return { idx: -1, mode: 'new' };
+  }
+
+  function cursorFor(mode: 'start' | 'end' | 'body' | 'new'): string {
+    return mode === 'start' || mode === 'end' ? 'ew-resize' : mode === 'body' ? 'pointer' : 'crosshair';
   }
 
   function onMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
     if (!loaded) return;
     stopAudio();
-    const cx   = getCanvasX(e);
-    const t    = getTime(e);
-    const mode = hitMode(cx);
-    dragModeRef.current = mode;
-    if (mode === 'new') {
+    const cx  = getCanvasX(e);
+    const t   = getTime(e);
+    const hit = hitTest(cx);
+
+    if (hit.mode === 'start' || hit.mode === 'end') {
+      dragModeRef.current = hit.mode;
+      dragIdxRef.current  = hit.idx;
+      selectZone(hit.idx);
+    } else if (hit.mode === 'body') {
+      dragModeRef.current = null;
+      selectZone(hit.idx);
+    } else {
+      dragModeRef.current   = 'new';
       dragAnchorRef.current = t;
-      selStartRef.current   = t;
-      selEndRef.current     = t;
+      draftRef.current      = { start: t, end: t };
     }
-    setCanvasCursor(mode !== 'new' ? 'ew-resize' : 'crosshair');
+    setCanvasCursor(cursorFor(hit.mode));
     drawCanvas();
   }
 
@@ -302,21 +379,20 @@ export default function RecortarPage() {
     const t  = getTime(e);
 
     if (dragModeRef.current === null) {
-      // Update cursor based on proximity to handles
-      const mode = hitMode(cx);
-      setCanvasCursor(mode !== 'new' ? 'ew-resize' : 'crosshair');
+      setCanvasCursor(cursorFor(hitTest(cx).mode));
       return;
     }
 
     const dur = durationRef.current;
-    if (dragModeRef.current === 'start') {
-      selStartRef.current = Math.max(0, Math.min(t, selEndRef.current - 0.05));
-    } else if (dragModeRef.current === 'end') {
-      selEndRef.current = Math.min(dur, Math.max(t, selStartRef.current + 0.05));
-    } else {
+    if (dragModeRef.current === 'start' && dragIdxRef.current !== null) {
+      const z = zonesRef.current[dragIdxRef.current];
+      z.start = Math.max(0, Math.min(t, z.end - 0.05));
+    } else if (dragModeRef.current === 'end' && dragIdxRef.current !== null) {
+      const z = zonesRef.current[dragIdxRef.current];
+      z.end = Math.min(dur, Math.max(t, z.start + 0.05));
+    } else if (dragModeRef.current === 'new') {
       const a = dragAnchorRef.current!;
-      selStartRef.current = Math.min(a, t);
-      selEndRef.current   = Math.max(a, t);
+      draftRef.current = { start: Math.min(a, t), end: Math.max(a, t) };
     }
     drawCanvas();
   }
@@ -329,43 +405,65 @@ export default function RecortarPage() {
     if (mode === 'new') {
       const a = dragAnchorRef.current!;
       dragAnchorRef.current = null;
-      // Single click (tiny drag) → reset to full selection
-      if (Math.abs(t - a) * CW / (durationRef.current || 1) < 4) {
-        selStartRef.current = 0;
-        selEndRef.current   = durationRef.current;
+      const draft = draftRef.current;
+      draftRef.current = null;
+      // Only keep the zone if the drag was more than a tiny click
+      if (draft && Math.abs(t - a) * CW / (durationRef.current || 1) >= 4) {
+        zonesRef.current = [...zonesRef.current, draft];
+        selectZone(zonesRef.current.length - 1);
       }
     }
 
     dragModeRef.current = null;
-    setCanvasCursor(hitMode(getCanvasX(e)) !== 'new' ? 'ew-resize' : 'crosshair');
-    setSelStart(selStartRef.current);
-    setSelEnd(selEndRef.current);
+    dragIdxRef.current  = null;
+    setCanvasCursor(cursorFor(hitTest(getCanvasX(e)).mode));
+    setZones([...zonesRef.current]);
     setWavUrl(null);
     drawCanvas();
   }
 
-  // ── Precise input fields ────────────────────────────────────────────────────
+  function deleteZone(i: number) {
+    zonesRef.current = zonesRef.current.filter((_, idx) => idx !== i);
+    setZones([...zonesRef.current]);
+    const prev = activeIdxRef.current;
+    if (prev !== null) {
+      if (prev === i) selectZone(null);
+      else if (prev > i) selectZone(prev - 1);
+    }
+    setWavUrl(null);
+    drawCanvas();
+  }
+
+  // ── Precise input fields (edit the active zone) ─────────────────────────────
   function onStartInput(v: string) {
+    const i = activeIdxRef.current;
+    if (i === null) return;
     const n = parseFloat(v);
     if (isNaN(n)) return;
-    const c = Math.max(0, Math.min(selEndRef.current - 0.01, n));
-    selStartRef.current = c; setSelStart(c); setWavUrl(null); drawCanvas();
+    const z = zonesRef.current[i];
+    z.start = Math.max(0, Math.min(z.end - 0.01, n));
+    setZones([...zonesRef.current]); setWavUrl(null); drawCanvas();
   }
 
   function onEndInput(v: string) {
+    const i = activeIdxRef.current;
+    if (i === null) return;
     const n = parseFloat(v);
     if (isNaN(n)) return;
-    const c = Math.min(durationRef.current, Math.max(selStartRef.current + 0.01, n));
-    selEndRef.current = c; setSelEnd(c); setWavUrl(null); drawCanvas();
+    const z = zonesRef.current[i];
+    z.end = Math.min(durationRef.current, Math.max(z.start + 0.01, n));
+    setZones([...zonesRef.current]); setWavUrl(null); drawCanvas();
   }
 
   // ── Export ─────────────────────────────────────────────────────────────────
   async function exportMp3() {
     const buf = audioBufferRef.current;
     if (!buf || encoding) return;
+    const merged = mergeZones(zonesRef.current);
+    if (!merged.length) return;
     if (wavUrl) URL.revokeObjectURL(wavUrl);
     setEncoding(true); setEncProgress(0);
-    const blob = await encodeMp3Async(buf, selStartRef.current, selEndRef.current, setEncProgress);
+    const blob = await encodeMp3Async(buf, merged, setEncProgress);
     const url  = URL.createObjectURL(blob);
     const name = `${fileName}_recortado.mp3`;
     setWavUrl(url); setWavName(name);
@@ -374,10 +472,13 @@ export default function RecortarPage() {
     a.href = url; a.download = name; a.click();
   }
 
-  const selDur  = selEnd - selStart;
-  const canCut  = loaded && selDur > 0.05;
-  // Estimated MP3 size at 128 kbps
-  const estMB   = (selDur * 16000) / (1024 * 1024);
+  const mergedZones = mergeZones(zones);
+  const totalSelDur = mergedZones.reduce((s, z) => s + (z.end - z.start), 0);
+  const outputDur = totalSelDur + GAP_SEC * Math.max(0, mergedZones.length - 1);
+  const canCut  = loaded && totalSelDur > 0.05;
+  const activeZone = activeIdx !== null ? zones[activeIdx] : null;
+  // Estimated MP3 size at 128 kbps, including the silence gaps between fragments
+  const estMB   = (outputDur * 16000) / (1024 * 1024);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -394,7 +495,7 @@ export default function RecortarPage() {
       <div style={{ maxWidth: 1060, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.3rem' }}>✂️ Recortar Audio</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
-          Arrastra sobre la forma de onda para seleccionar el fragmento que quieres conservar
+          Arrastra sobre la forma de onda para marcar una o varias zonas — se exportan unidas en un solo archivo
         </p>
 
         {/* ── Upload zone ── */}
@@ -446,37 +547,75 @@ export default function RecortarPage() {
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
-                onMouseLeave={e => { if (dragAnchorRef.current !== null) onMouseUp(e); }}
+                onMouseLeave={e => { if (dragModeRef.current !== null) onMouseUp(e); }}
               />
+            </div>
+
+            {/* Zone chips */}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              {zones.length === 0 && (
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Sin zonas todavía — arrastra sobre la forma de onda para crear una.
+                </span>
+              )}
+              {zones.map((z, i) => (
+                <div key={i}
+                  onClick={() => selectZone(i)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.3rem 0.6rem', borderRadius: 8, cursor: 'pointer',
+                    background: activeIdx === i ? 'rgba(249,115,22,0.18)' : 'var(--surface)',
+                    border: `1px solid ${activeIdx === i ? '#f97316' : 'var(--border)'}`,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>#{i + 1}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{fmt(z.start)} – {fmt(z.end)}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteZone(i); }}
+                    style={{
+                      background: 'none', border: 'none', color: 'var(--text-muted)',
+                      cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: '0 0.1rem',
+                    }}
+                    title="Eliminar zona"
+                  >×</button>
+                </div>
+              ))}
             </div>
 
             {/* Selection time controls */}
             <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', marginBottom: '1.1rem', flexWrap: 'wrap' }}>
-              {[
-                { label: 'Inicio', val: selStart, ref: 'start' },
-                { label: 'Fin',    val: selEnd,   ref: 'end'   },
-              ].map(({ label, val, ref: r }) => (
-                <div key={r} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', minWidth: 36 }}>{label}:</span>
-                  <input
-                    type="number" min={0} max={duration} step={0.01}
-                    value={val.toFixed(2)}
-                    onChange={e => r === 'start' ? onStartInput(e.target.value) : onEndInput(e.target.value)}
-                    style={{
-                      width: 84, background: 'var(--surface)', border: '1px solid var(--border)',
-                      borderRadius: 8, padding: '0.3rem 0.5rem', color: 'var(--text)',
-                      fontSize: '0.85rem', textAlign: 'center',
-                    }}
-                  />
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                    {fmt(val)}
-                  </span>
-                </div>
-              ))}
+              {activeZone ? (
+                [
+                  { label: 'Inicio', val: activeZone.start, ref: 'start' },
+                  { label: 'Fin',    val: activeZone.end,   ref: 'end'   },
+                ].map(({ label, val, ref: r }) => (
+                  <div key={r} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', minWidth: 36 }}>{label}:</span>
+                    <input
+                      type="number" min={0} max={duration} step={0.01}
+                      value={val.toFixed(2)}
+                      onChange={e => r === 'start' ? onStartInput(e.target.value) : onEndInput(e.target.value)}
+                      style={{
+                        width: 84, background: 'var(--surface)', border: '1px solid var(--border)',
+                        borderRadius: 8, padding: '0.3rem 0.5rem', color: 'var(--text)',
+                        fontSize: '0.85rem', textAlign: 'center',
+                      }}
+                    />
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                      {fmt(val)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Selecciona una zona para editar sus tiempos con precisión.
+                </span>
+              )}
               <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f97316', marginLeft: 'auto' }}>
-                ✂️ {fmt(selDur)} seleccionado
+                ✂️ {fmt(totalSelDur)} en {mergedZones.length} zona{mergedZones.length === 1 ? '' : 's'}
                 <span style={{ fontSize: '0.78rem', color: 'rgba(249,115,22,0.7)', marginLeft: '0.5rem', fontWeight: 400 }}>
-                  (~{estMB < 0.1 ? '<0.1' : estMB.toFixed(1)} MB)
+                  ({fmt(outputDur)} final con gaps · ~{estMB < 0.1 ? '<0.1' : estMB.toFixed(1)} MB)
                 </span>
               </span>
             </div>
@@ -486,9 +625,9 @@ export default function RecortarPage() {
               <button className="kk-mode-btn" onClick={() => play(0, durationRef.current)}>
                 ▶ Escuchar todo
               </button>
-              <button className="kk-mode-btn active" onClick={() => play(selStartRef.current, selEndRef.current)}
-                disabled={!canCut}>
-                ▶ Escuchar selección
+              <button className="kk-mode-btn active" onClick={() => activeZone && play(activeZone.start, activeZone.end)}
+                disabled={!activeZone}>
+                ▶ Escuchar zona
               </button>
               {playing && (
                 <button className="kk-btn" style={{ color: 'var(--error)', borderColor: 'var(--error)' }}
@@ -532,8 +671,9 @@ export default function RecortarPage() {
           padding: '0.65rem 1rem', background: 'var(--surface)',
           borderRadius: 8, border: '1px solid var(--border)', lineHeight: 1.7,
         }}>
-          💡 Arrastra sobre la forma de onda para marcar el fragmento · Clic sin arrastrar = seleccionar todo ·
-          Ajusta los tiempos con precisión en los campos · El archivo se descarga como <strong>.mp3</strong>
+          💡 Arrastra en una zona vacía para crear una nueva marca · Arrastra los extremos de una marca para ajustarla ·
+          Haz clic en una marca (o su chip) para seleccionarla y editar sus tiempos · Usa la × para eliminarla ·
+          Todas las zonas se exportan unidas, en orden cronológico, con {GAP_SEC}s de silencio entre cada una, como un solo <strong>.mp3</strong>
         </div>
       </div>
     </div>

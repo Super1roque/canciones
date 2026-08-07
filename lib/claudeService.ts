@@ -100,8 +100,17 @@ El corrido debe mencionar naturalmente el nombre y la región del protagonista. 
   return (response.content[0] as { type: 'text'; text: string }).text
 }
 
-export async function generarParodia(cancion: Cancion, historia: string): Promise<string> {
+export async function generarParodia(
+  cancion: Cancion,
+  historia: string,
+  alcance: 'completa' | 'coro' = 'completa'
+): Promise<string> {
   const modoPrueba = esModoPrueba(historia);
+  const soloCoro = alcance === 'coro';
+
+  const instruccionAlcance = soloCoro
+    ? `\n\n⚠ ALCANCE SOLICITADO: SOLO EL CORO\nNo generes la canción completa. Genera ÚNICAMENTE la parodia de la sección de coro (etiquetada como [Chorus], [Coro] o variante equivalente) que aparece en la LETRA ORIGINAL de arriba. Ignora el resto de las secciones (versos, intro, puente, outro, etc.). Respeta el número exacto de versos, la métrica y la rima de esa sección.\n\nFORMATO DE SALIDA OBLIGATORIO: Tu respuesta debe comenzar EXACTAMENTE con estas dos líneas (tal cual, sin traducir ni modificar), seguidas de la letra del coro:\n[Chorus]\n[Using uploaded melody]`
+    : '';
 
   let userPrompt: string;
 
@@ -132,7 +141,7 @@ ${listaPalabras}
 REGLA ABSOLUTA E INNEGOCIABLE:
 Cada palabra que escribas en la parodia DEBE aparecer exactamente en la lista de palabras permitidas de arriba. No puedes usar ninguna otra palabra, sin excepción. Ni artículos, ni preposiciones, ni conjunciones que no estén en esa lista. Si necesitas una palabra y no está en la lista, elige otra de las que sí están. Puedes usar la misma palabra varias veces y puedes usar las palabras en cualquier orden. No uses conjugaciones distintas a las que ya aparecen en la lista a menos que las puedas formar con palabras de la lista. Esta restricción tiene PRIORIDAD ABSOLUTA sobre cualquier otra consideración, incluyendo la métrica y la rima — aunque siempre intenta respetarlas en la medida de lo posible dentro de las palabras permitidas.
 
-Genera la parodia completa usando EXCLUSIVAMENTE las palabras de la lista y respetando la estructura de la canción original.`;
+Genera ${soloCoro ? 'solo el coro de la parodia (no la canción completa)' : 'la parodia completa'} usando EXCLUSIVAMENTE las palabras de la lista y respetando la estructura de la canción original.${instruccionAlcance}`;
 
   } else {
     userPrompt = `Genera una parodia de la siguiente canción:
@@ -152,9 +161,9 @@ ${historia}
 
 Antes de generar la parodia, corrige internamente cualquier error gramatical u ortográfico de la historia/temática. Usa la versión corregida como base, pero no menciones ni muestres las correcciones.
 
-Genera la parodia completa respetando ESTRICTAMENTE la métrica, rima, acentos rítmicos y estructura de la canción original.
+Genera ${soloCoro ? 'solo el coro de la parodia (no la canción completa)' : 'la parodia completa'} respetando ESTRICTAMENTE la métrica, rima, acentos rítmicos y estructura de la canción original.
 
-VERIFICACIÓN OBLIGATORIA ANTES DE RESPONDER: Revisa verso por verso que ninguno sea igual ni casi igual al original. Si encuentras alguno, reescríbelo.${cancion.direccionGenerador ? `\n\nDIRECCIÓN ADICIONAL PARA LA GENERACIÓN:\n${cancion.direccionGenerador}` : ''}`;
+VERIFICACIÓN OBLIGATORIA ANTES DE RESPONDER: Revisa verso por verso que ninguno sea igual ni casi igual al original. Si encuentras alguno, reescríbelo.${cancion.direccionGenerador ? `\n\nDIRECCIÓN ADICIONAL PARA LA GENERACIÓN:\n${cancion.direccionGenerador}` : ''}${instruccionAlcance}`;
   }
 
 
@@ -173,4 +182,48 @@ VERIFICACIÓN OBLIGATORIA ANTES DE RESPONDER: Revisa verso por verso que ninguno
   });
 
   return (response.content[0] as { type: 'text'; text: string }).text;
+}
+
+const SYSTEM_PROMPT_GALIMATIAS = `Eres un experto en fonética del español, especializado en inventar palabras sin significado (galimatías) que suenan naturales al cantarse.
+
+Reglas estrictas para cada palabra que inventes:
+1. Debe tener EXACTAMENTE el mismo número de sílabas que la palabra original.
+2. La sílaba tónica debe estar en la misma posición que en la palabra original.
+3. NO debe ser una palabra real del español ni parecerse demasiado a la original.
+4. Usa preferentemente vocales abiertas (a, e, o) y consonantes fáciles de cantar (m, n, l, r, d, b), evitando grupos consonánticos difíciles.
+5. No debe tener ningún significado.
+
+IMPORTANTE: Responde ÚNICAMENTE con un array JSON de strings, en el mismo orden y con la misma cantidad de elementos que la lista de entrada. No pienses en voz alta, no muestres tu razonamiento ni recuentos de sílabas, no incluyas explicaciones, markdown ni ningún texto antes o después del array. Cuenta las sílabas y el acento mentalmente antes de responder, y da directamente el resultado final.`;
+
+/**
+ * Genera, para cada palabra de una letra transcrita, una palabra inventada
+ * sin significado que conserva el número de sílabas y el acento tónico —
+ * pensada para "doblar" una canción a capella con galimatías cantables.
+ */
+export async function generarGalimatias(palabras: string[]): Promise<string[]> {
+  if (palabras.length === 0) return [];
+
+  const listaNumerada = palabras.map((p, i) => `${i + 1}. ${p}`).join('\n');
+  const userPrompt = `Inventa una palabra sin sentido por cada palabra de esta lista, respetando sílabas y acento tónico:\n\n${listaNumerada}`;
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 2048,
+    system: SYSTEM_PROMPT_GALIMATIAS,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  const texto = (response.content[0] as { type: 'text'; text: string }).text;
+
+  // Toma el último array plano de la respuesta: si Claude piensa en voz alta
+  // antes de responder, el resultado final es el último bloque, no el primero.
+  const matches = texto.match(/\[[^[\]]*\]/g);
+  if (!matches || matches.length === 0) throw new Error('Claude no devolvió un array JSON válido');
+
+  const resultado = JSON.parse(matches[matches.length - 1]);
+  if (!Array.isArray(resultado) || resultado.length !== palabras.length) {
+    throw new Error(`Se esperaban ${palabras.length} palabras y se recibieron ${Array.isArray(resultado) ? resultado.length : 0}`);
+  }
+
+  return resultado.map(String);
 }
