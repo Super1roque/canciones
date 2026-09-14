@@ -854,6 +854,7 @@ export default function Home() {
                 {t === 'crear' ? 'Crear Parodia' : t === 'coleccion' ? 'Mi Colección' : 'Mis Creaciones'}
               </button>
             ))}
+            <a href="/admin/pedidos" className="nav-btn">📦 Pedidos</a>
             <a href="/admin/karaoke" className="nav-btn">🎤 Karaoke</a>
             <a href="/admin/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
             <a href="/admin/video" className="nav-btn">🎬 Video</a>

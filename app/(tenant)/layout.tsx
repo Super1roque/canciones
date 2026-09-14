@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { Rye } from 'next/font/google';
 import styles from './tenant.module.css';
 
@@ -7,11 +8,25 @@ import styles from './tenant.module.css';
 // Next.js son globales).
 const rye = Rye({ weight: '400', subsets: ['latin'], variable: '--font-corrido' });
 
-export default function TenantLayout({ children }: { children: React.ReactNode }) {
+export default async function TenantLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const registrado = Boolean(cookieStore.get('tenant_phone')?.value);
+
   return (
     <div className={`${styles.shell} ${rye.variable}`}>
-      <header className={styles.header}>
+      <header className={styles.header} style={{ position: 'relative' }}>
         <span className={styles.logo}>🎸 Canciones</span>
+        {registrado && (
+          <a
+            href="/dashboard"
+            style={{
+              position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)',
+              color: 'var(--cr-gold)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
+            }}
+          >
+            💳 Mi cuenta
+          </a>
+        )}
       </header>
       {children}
     </div>

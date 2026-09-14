@@ -25,4 +25,9 @@ function getStorageBucket() {
   return admin.storage().bucket();
 }
 
-export { getDb, getStorageBucket };
+function getAuth() {
+  initApp();
+  return admin.auth();
+}
+
+export { getDb, getStorageBucket, getAuth };

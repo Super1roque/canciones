@@ -7,8 +7,11 @@ type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?:
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
 type Toast = { msg: string; type: 'success' | 'error' } | null;
 
+const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
+
 export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
-  const cuotaAgotada = tenant.cancionesGratisUsadas >= tenant.cancionesGratisLimite;
+  const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
+  const saldoInsuficiente = !usaGratis && (tenant.saldo ?? 0) < COSTO_CANCION;
 
   const [canciones, setCanciones] = useState<Cancion[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -23,13 +26,13 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
   const [toast, setToast] = useState<Toast>(null);
 
   useEffect(() => {
-    if (cuotaAgotada) { setCargando(false); return; }
+    if (saldoInsuficiente) { setCargando(false); return; }
     fetch('/api/canciones')
       .then(res => res.json())
       .then(data => setCanciones(Array.isArray(data) ? data : []))
       .catch(() => showToast('No se pudo cargar la lista de canciones', 'error'))
       .finally(() => setCargando(false));
-  }, [cuotaAgotada]);
+  }, [saldoInsuficiente]);
 
   useEffect(() => {
     if (!toast) return;
@@ -105,13 +108,14 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
     c.estilo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  if (cuotaAgotada && !enviado) {
+  if (saldoInsuficiente && !enviado) {
     return (
       <main className={styles.main}>
-        <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 420, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 420, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
           <span style={{ fontSize: '2.5rem' }}>🎉</span>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.4rem', margin: 0 }}>Ya usaste tu canción gratis</h2>
-          <p className={styles.textMuted}>Muy pronto vas a poder pedir canciones adicionales. ¡Gracias por probarlo!</p>
+          <p className={styles.textMuted}>Cada canción nueva cuesta L {COSTO_CANCION}. Comprá créditos para seguir pidiendo.</p>
+          <a href="/dashboard" className={styles.btnPrimary}>💳 Comprar créditos</a>
         </div>
       </main>
     );
@@ -204,6 +208,11 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                     style={{ fontFamily: "'Fira Mono', monospace", fontSize: '0.85rem', lineHeight: 1.75 }}
                   />
                   <span className={styles.textMuted} style={{ fontSize: '0.78rem' }}>Podés editar la letra antes de enviarla</span>
+                  {!usaGratis && (
+                    <span className={styles.textMuted} style={{ fontSize: '0.78rem' }}>
+                      Esta canción te va a costar L {COSTO_CANCION} de tu saldo (tenés L {tenant.saldo ?? 0}).
+                    </span>
+                  )}
                   <button className={styles.btnPrimary} onClick={handleEnviar} disabled={enviando}>
                     {enviando ? 'Enviando...' : '📨 Enviar pedido'}
                   </button>
