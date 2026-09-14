@@ -15,8 +15,9 @@ export default function AdminLogin() {
     try {
       await loginConGoogle();
       router.push('/admin');
-    } catch {
-      setError('No se pudo iniciar sesión. Intentá de nuevo.');
+    } catch (e: unknown) {
+      const codigo = e && typeof e === 'object' && 'code' in e ? String((e as { code: unknown }).code) : 'desconocido';
+      setError(`No se pudo iniciar sesión (${codigo}). Intentá de nuevo.`);
     } finally {
       setEntrando(false);
     }

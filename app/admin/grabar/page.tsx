@@ -180,7 +180,7 @@ export default function GrabarPage() {
       <header className="header">
         <div className="header-inner">
           <div className="logo"><span className="logo-icon">🎵</span><span className="logo-text">Canciones</span></div>
-          <a href="/" className="nav-btn">← Volver</a>
+          <a href="/admin" className="nav-btn">← Volver</a>
         </div>
       </header>
 

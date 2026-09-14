@@ -180,7 +180,7 @@ export default function VideoPage() {
             <span className="logo-icon">🎬</span>
             <span className="logo-text">Video Generator</span>
           </div>
-          <a href="/" className="nav-btn">← Volver</a>
+          <a href="/admin" className="nav-btn">← Volver</a>
         </div>
       </header>
 
