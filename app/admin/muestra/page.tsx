@@ -136,7 +136,7 @@ export default function MuestraPage() {
       setProgress(97);
 
       // 5. Crear descarga
-      const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
+      const blob = new Blob(mp3Chunks as BlobPart[], { type: 'audio/mpeg' });
       const url  = URL.createObjectURL(blob);
       const name = file.name.replace(/\.mp3$/i, '') + '_muestra.mp3';
       setOutputUrl(url);
