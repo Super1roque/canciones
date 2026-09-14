@@ -9,16 +9,17 @@ function fmtSize(bytes: number) {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-type Modo = 'voz' | 'tono';
+type Modo = 'voz' | 'tono' | 'tonototal';
 
 export default function CambiaLetraPage() {
-  const [file,      setFile]      = useState<File | null>(null);
-  const [texto,     setTexto]     = useState('');
-  const [modo,      setModo]      = useState<Modo>('voz');
-  const [phase,     setPhase]     = useState<Phase>('idle');
-  const [error,     setError]     = useState('');
-  const [dragging,  setDragging]  = useState(false);
-  const [resultUrl, setResultUrl] = useState('');
+  const [file,           setFile]           = useState<File | null>(null);
+  const [texto,          setTexto]          = useState('');
+  const [modo,           setModo]           = useState<Modo>('voz');
+  const [silencioInicial, setSilencioInicial] = useState('');
+  const [phase,          setPhase]          = useState<Phase>('idle');
+  const [error,          setError]          = useState('');
+  const [dragging,       setDragging]       = useState(false);
+  const [resultUrl,      setResultUrl]      = useState('');
 
   useEffect(() => () => { if (resultUrl) URL.revokeObjectURL(resultUrl); }, [resultUrl]);
 
@@ -37,6 +38,7 @@ export default function CambiaLetraPage() {
       fd.append('file', file);
       fd.append('modo', modo);
       if (modo === 'voz') fd.append('texto', texto);
+      if (silencioInicial.trim()) fd.append('silencioInicial', silencioInicial.trim());
 
       const res = await fetch('/api/cambialetra', { method: 'POST', body: fd });
       if (!res.ok) {
@@ -68,13 +70,14 @@ export default function CambiaLetraPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.3rem' }}>📝 Cambia Letra</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1rem' }}>
-          Sube un audio a capella. Elegí si querés reemplazar la letra por una nueva (voz sintetizada) o tararear el tono original con un sonido puro
+          Subí un audio y elegí qué hacer: reemplazar la letra por una nueva (voz sintetizada), tararear el tono de las palabras reconocidas, o tararear también lo que no se reconoció como palabra (vocalizaciones, coros)
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
           {([
             { id: 'voz' as const, label: '🗣️ Letra nueva' },
-            { id: 'tono' as const, label: '🎵 Tarareo del tono' },
+            { id: 'tono' as const, label: '🎵 Tarareo de voz' },
+            { id: 'tonototal' as const, label: '🎶 Tarareo completo' },
           ]).map(m => (
             <button key={m.id} onClick={() => setModo(m.id)} disabled={busy}
               style={{
@@ -116,6 +119,28 @@ export default function CambiaLetraPage() {
             onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
         </div>
 
+        <div className="form-group" style={{ marginBottom: '1rem' }}>
+          <label htmlFor="silencio-inicial">Segundos de silencio al inicio (opcional)</label>
+          <input
+            id="silencio-inicial"
+            type="number"
+            min="0"
+            step="0.1"
+            value={silencioInicial}
+            onChange={e => setSilencioInicial(e.target.value)}
+            placeholder="Ej: 3"
+            disabled={busy}
+            style={{
+              width: '100%', padding: '0.65rem 0.75rem', borderRadius: 10,
+              border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+              fontFamily: 'inherit', fontSize: '0.9rem',
+            }}
+          />
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+            Si sabés que el audio arranca con silencio, poné cuántos segundos son — se salta esa parte al analizar, así el proceso es más rápido.
+          </p>
+        </div>
+
         {modo === 'voz' && (
           <textarea
             value={texto}
@@ -142,13 +167,15 @@ export default function CambiaLetraPage() {
             opacity: (!file || (modo === 'voz' && !texto.trim()) || busy) ? 0.5 : 1 }}>
           {busy
             ? '⏳ Generando...'
-            : modo === 'voz' ? '📝 Generar con letra nueva' : '🎵 Generar tarareo'}
+            : modo === 'voz' ? '📝 Generar con letra nueva'
+            : modo === 'tono' ? '🎵 Generar tarareo'
+            : '🎶 Generar tarareo completo'}
         </button>
 
         {resultUrl && (
           <div style={{ marginBottom: '0.75rem' }}>
             <audio controls src={resultUrl} style={{ width: '100%', marginBottom: '0.5rem' }} />
-            <a href={resultUrl} download={`${file?.name.replace(/\.[^.]+$/, '') ?? 'audio'}_cambialetra.mp3`}
+            <a href={resultUrl} download={`${file?.name.replace(/\.[^.]+$/, '') ?? 'audio'}_${modo === 'tonototal' ? 'tono_completo' : modo === 'tono' ? 'tono' : 'cambialetra'}.mp3`}
               className="kk-btn primary"
               style={{ display: 'block', textAlign: 'center', width: '100%', padding: '0.7rem', fontSize: '0.9rem',
                 background: 'rgba(249,115,22,0.12)', border: '1px solid #f97316', color: '#f97316', borderRadius: 10,

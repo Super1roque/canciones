@@ -1,0 +1,170 @@
+/* Tema "corridos" — deliberadamente distinto del panel de admin (violeta/
+   oscuro, en app/globals.css). Todo acá vive en CSS Modules (nombres de
+   clase con hash único) para no poder pisar ni ser pisado por esas clases
+   globales, sin importar el orden en que Next.js junte las hojas de
+   estilo. */
+
+.shell {
+  --cr-bg-1: #7a1620;
+  --cr-bg-2: #4a0e14;
+  --cr-surface: #3a1216;
+  --cr-surface-2: #4d1a1f;
+  --cr-border: #7a3038;
+  --cr-gold: #f2b705;
+  --cr-gold-soft: #f9d15c;
+  --cr-green: #1f8a4c;
+  --cr-text: #fdf3e0;
+  --cr-text-muted: #e0b98f;
+  --cr-error: #ff8a7a;
+  --cr-radius: 16px;
+  --cr-radius-sm: 10px;
+
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(242, 183, 5, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(31, 138, 76, 0.15), transparent 45%),
+    linear-gradient(160deg, var(--cr-bg-1) 0%, var(--cr-bg-2) 100%);
+  color: var(--cr-text);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.logo {
+  font-family: var(--font-corrido, inherit);
+  font-size: 1.6rem;
+  letter-spacing: 0.03em;
+  color: var(--cr-gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.panel {
+  background: var(--cr-surface);
+  border: 2px solid var(--cr-border);
+  border-radius: var(--cr-radius);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25), 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.heroTitle {
+  font-family: var(--font-corrido, inherit);
+  color: var(--cr-gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  letter-spacing: 0.01em;
+}
+
+.textMuted {
+  color: var(--cr-text-muted);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.formGroup label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cr-text-muted);
+}
+
+.input,
+.textarea {
+  background: var(--cr-surface-2);
+  border: 2px solid var(--cr-border);
+  border-radius: var(--cr-radius-sm);
+  color: var(--cr-text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.9rem;
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--cr-gold);
+}
+
+.btnPrimary {
+  background: linear-gradient(180deg, var(--cr-gold-soft), var(--cr-gold));
+  color: #3a1216;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.6rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #a87b03;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.05);
+}
+
+.btnPrimary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #a87b03;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: var(--cr-surface-2);
+  color: var(--cr-text);
+  border: 2px solid var(--cr-border);
+  border-radius: 999px;
+  padding: 0.7rem 1.3rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnSecondary:hover {
+  border-color: var(--cr-gold);
+}
+
+.error {
+  color: var(--cr-error);
+  font-size: 0.85rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(242, 183, 5, 0.14);
+  border: 1px solid var(--cr-gold);
+  color: var(--cr-gold);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}

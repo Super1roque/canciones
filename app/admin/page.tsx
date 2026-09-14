@@ -239,7 +239,7 @@ function TabCrear({
 
   async function handleGenerar() {
     if (!seleccionada) { showToast('Primero selecciona una canción', 'error'); return; }
-    if (historia.trim().length < 10) { showToast('Escribe una historia más detallada (mínimo 10 caracteres)', 'error'); return; }
+    if (historia.trim().length < 2) { showToast('Escribe una historia o al menos el nombre de la persona', 'error'); return; }
 
     setGenerando(true);
     setParodiaActual(null);
@@ -365,7 +365,7 @@ function TabCrear({
               <textarea
                 id="historia"
                 rows={5}
-                placeholder="Ej: Un estudiante que odia los lunes, llega tarde a clases, se olvidó la tarea y su maestro es muy estricto...&#10;&#10;💡 Modo prueba: comienza con &quot;esta es una prueba&quot; seguido de las palabras que quieres usar. Ej: &quot;esta es una prueba amor lluvia noche corazón solo&quot;"
+                placeholder="Ej: Un estudiante que odia los lunes, llega tarde a clases, se olvidó la tarea y su maestro es muy estricto...&#10;&#10;💡 También podés escribir solo el nombre de una persona (ej: &quot;Armando Roque&quot;) y la parodia va a girar en torno a ella.&#10;&#10;💡 Modo prueba: comienza con &quot;esta es una prueba&quot; seguido de las palabras que quieres usar. Ej: &quot;esta es una prueba amor lluvia noche corazón solo&quot;"
                 value={historia}
                 onChange={e => setHistoria(e.target.value)}
               />
@@ -854,19 +854,22 @@ export default function Home() {
                 {t === 'crear' ? 'Crear Parodia' : t === 'coleccion' ? 'Mi Colección' : 'Mis Creaciones'}
               </button>
             ))}
-            <a href="/karaoke" className="nav-btn">🎤 Karaoke</a>
-            <a href="/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
-            <a href="/video" className="nav-btn">🎬 Video</a>
-            <a href="/recortar" className="nav-btn">✂️ Recortar</a>
-            <a href="/compartir" className="nav-btn">🔗 Compartir</a>
-            <a href="/instrumento" className="nav-btn">🎹 Voz→Inst</a>
-            <a href="/galimatias" className="nav-btn">🗣️ Galimatías</a>
-            <a href="/cambialetra" className="nav-btn">📝 Cambia Letra</a>
-            <a href="/intervalos" className="nav-btn">⏸️ Intervalos</a>
-            <a href="/corrido" className="nav-btn">🎸 Corridos</a>
-            <a href="/muestra" className="nav-btn">💧 Muestra</a>
-            <a href="/muestra-video" className="nav-btn">🎬 Muestra Video</a>
-            <a href="/pixel" className="nav-btn">🎨 Pixel Art</a>
+            <a href="/admin/karaoke" className="nav-btn">🎤 Karaoke</a>
+            <a href="/admin/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
+            <a href="/admin/video" className="nav-btn">🎬 Video</a>
+            <a href="/admin/video-letra" className="nav-btn">🎞️ Video Letra</a>
+            <a href="/admin/recortar" className="nav-btn">✂️ Recortar</a>
+            <a href="/admin/grabar" className="nav-btn">🎙️ Grabar</a>
+            <a href="/admin/compartir" className="nav-btn">🔗 Compartir</a>
+            <a href="/admin/instrumento" className="nav-btn">🎹 Voz→Inst</a>
+            <a href="/admin/galimatias" className="nav-btn">🗣️ Galimatías</a>
+            <a href="/admin/cambialetra" className="nav-btn">📝 Cambia Letra</a>
+            <a href="/admin/intervalos" className="nav-btn">⏸️ Intervalos</a>
+            <a href="/admin/prompt-suno" className="nav-btn">🎛️ Prompts Suno</a>
+            <a href="/admin/corrido" className="nav-btn">🎸 Corridos</a>
+            <a href="/admin/muestra" className="nav-btn">💧 Muestra</a>
+            <a href="/admin/muestra-video" className="nav-btn">🎬 Muestra Video</a>
+            <a href="/admin/pixel" className="nav-btn">🎨 Pixel Art</a>
           </nav>
         </div>
       </header>
