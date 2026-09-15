@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
@@ -55,17 +55,13 @@ export default function LandingClient() {
     }
   }
 
-  // Acepta un código explícito (para el autocompletado de WebOTP, que
-  // dispara la verificación apenas llega el SMS, antes de que el estado
-  // "codigo" termine de actualizarse) — si no se lo pasan, usa el del input.
-  async function handleVerificarCodigo(e?: React.FormEvent, codigoOverride?: string) {
-    e?.preventDefault();
-    const codigoAVerificar = codigoOverride ?? codigo;
+  async function handleVerificarCodigo(e: React.FormEvent) {
+    e.preventDefault();
     setError('');
     setVerificando(true);
     try {
       if (!confirmacionRef.current) throw new Error('sin confirmación pendiente');
-      const credencial = await confirmacionRef.current.confirm(codigoAVerificar);
+      const credencial = await confirmacionRef.current.confirm(codigo);
       const idToken = await credencial.user.getIdToken();
 
       const res = await fetch('/api/tenants', {
@@ -83,45 +79,6 @@ export default function LandingClient() {
       setVerificando(false);
     }
   }
-
-  // WebOTP: en Android Chrome, si el SMS que manda Firebase trae el
-  // formato que exige el estándar (código al final precedido de "#"), el
-  // navegador se lo pasa a la página sin que el usuario tenga que salir a
-  // leer el mensaje y copiar el código a mano. Si el navegador no lo
-  // soporta o el SMS no matchea ese formato, esto simplemente no hace nada
-  // — no reemplaza el ingreso manual, solo lo evita cuando se puede.
-  useEffect(() => {
-    if (paso !== 'codigo') return;
-    if (!('OTPCredential' in window)) {
-      setError('DEBUG: este navegador no tiene OTPCredential (WebOTP no soportado)');
-      return;
-    }
-    setError('DEBUG: WebOTP soportado, escuchando el SMS...');
-
-    const abortController = new AbortController();
-    navigator.credentials
-      .get({
-        // @ts-expect-error — la Credential Management API todavía no tiene tipos oficiales de "otp" en TS.
-        otp: { transport: ['sms'] },
-        signal: abortController.signal,
-      })
-      .then((cred: unknown) => {
-        const code = (cred as { code?: string } | null)?.code;
-        setError('DEBUG WebOTP resolvió: ' + JSON.stringify(cred));
-        if (code) {
-          setCodigo(code);
-          handleVerificarCodigo(undefined, code);
-        }
-      })
-      .catch((err: unknown) => {
-        const e = err as { name?: string; message?: string } | undefined;
-        setError('DEBUG WebOTP falló: ' + (e?.name ?? '') + ' — ' + (e?.message ?? String(err)));
-        // Cancelado, timeout, o sin soporte — se sigue completando a mano.
-      });
-
-    return () => abortController.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paso]);
 
   function cambiarNumero() {
     setPaso('telefono');
