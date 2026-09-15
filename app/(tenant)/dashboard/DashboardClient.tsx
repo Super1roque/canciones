@@ -51,7 +51,7 @@ function urlWhatsApp(monto: number, telefono: string) {
 // Mismo patrón que RickyMath: Web Share API si el navegador la soporta
 // (la mayoría de móviles), y si no, directo a WhatsApp con la URL pegada
 // al texto — la audiencia de acá comparte por ahí de todas formas.
-const MENSAJE_COMPARTIR = '¡Hola! 👋 Te comparto Canciones — le contás una historia y en minutos tenés tu propia parodia de corrido, bien chistosa. ¡La primera te sale gratis!';
+const MENSAJE_COMPARTIR = '¡Hola! 👋 Te comparto Canciones — le contás una historia y en minutos tenés tu propia parodia de corrido, bien especial para ti. ¡La primera te sale gratis!';
 
 async function compartirApp() {
   const url = window.location.origin;
@@ -71,6 +71,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   const [pedidos, setPedidos] = useState(pedidosIniciales);
   const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
+  const [recargaIdPendiente, setRecargaIdPendiente] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
@@ -119,11 +120,22 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
       setRecargaPendiente(monto);
+      setRecargaIdPendiente(data.id);
     } catch {
       setError('Error de conexión con el servidor');
     } finally {
       setSolicitando(null);
     }
+  }
+
+  // Recién acá se avisa al admin por correo — al crear la solicitud
+  // (pedirRecarga) todavía no hay ninguna intención real de pago.
+  function confirmarAvisoWhatsapp() {
+    if (recargaIdPendiente) {
+      fetch(`/api/recargas/${recargaIdPendiente}/avisar`, { method: 'POST' }).catch(() => {});
+    }
+    setRecargaPendiente(null);
+    setRecargaIdPendiente(null);
   }
 
   return (
@@ -157,7 +169,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                 rel="noopener noreferrer"
                 className={styles.btnPrimary}
                 style={{ textDecoration: 'none' }}
-                onClick={() => setRecargaPendiente(null)}
+                onClick={confirmarAvisoWhatsapp}
               >
                 💬 Avisar por WhatsApp que ya transferí
               </a>

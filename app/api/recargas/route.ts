@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { crearSolicitudRecarga, listarRecargasPorTelefono, MONTOS_VALIDOS } from '@/lib/recargaService';
-import { avisarNuevaRecarga } from '@/lib/emailService';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -30,9 +29,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
     }
 
+    // El aviso por correo se manda recién cuando el tenant confirma por
+    // WhatsApp (ver /api/recargas/[id]/avisar) — no acá, para no generar
+    // avisos falsos de gente que solo toca el monto para ver cómo
+    // funciona sin llegar a pagar ni avisar nada.
     const recarga = await crearSolicitudRecarga(telefono, monto);
-
-    void avisarNuevaRecarga(telefono, monto);
 
     return NextResponse.json(recarga, { status: 201 });
   } catch (error: unknown) {
