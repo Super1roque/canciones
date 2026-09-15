@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 type Pedido = {
   id: string;
   cancion_base: string;
+  estilo: string;
+  descripcionEstilo: string;
+  historia: string;
+  parodia: string;
   telefono: string;
   fecha: string;
   estado: 'pendiente' | 'entregada';
@@ -23,11 +27,56 @@ function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="modal">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-box modal-box-lg">{children}</div>
+    </div>
+  );
+}
+
+function CampoCopiable({ label, valor, mono = false }: { label: string; valor: string; mono?: boolean }) {
+  const [copiado, setCopiado] = useState(false);
+  function copiar() {
+    navigator.clipboard.writeText(valor).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+  return (
+    <div className="campo-copiable">
+      <div className="campo-copiable-header">
+        <span className="campo-copiable-label">{label}</span>
+        <button className="btn-icon-xs" onClick={copiar}>{copiado ? '✅ Copiado' : '📋 Copiar'}</button>
+      </div>
+      <div className={mono ? 'campo-copiable-body mono' : 'campo-copiable-body'}>{valor}</div>
+    </div>
+  );
+}
+
+function ModalPedido({ pedido: p, onClose }: { pedido: Pedido; onClose: () => void }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="modal-header">
+        <h3>Pedido de &quot;{p.cancion_base}&quot; — {p.telefono}</h3>
+        <button className="btn-close" onClick={onClose}>✕</button>
+      </div>
+      <div className="campos-creacion">
+        {p.estilo && <CampoCopiable label="🎼 Estilo" valor={p.estilo + (p.descripcionEstilo ? ` — ${p.descripcionEstilo}` : '')} />}
+        <CampoCopiable label="💡 Historia" valor={p.historia} />
+        <CampoCopiable label="🎤 Parodia generada" valor={p.parodia} mono />
+      </div>
+    </Modal>
+  );
+}
+
 export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [recargas, setRecargas] = useState<Recarga[]>([]);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState<string | null>(null);
+  const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -123,15 +172,18 @@ export default function AdminPedidosPage() {
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                     </div>
-                    {p.estado === 'entregada' ? (
-                      <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
-                        ✅ Entregada
-                      </span>
-                    ) : (
-                      <button className="btn-primary" disabled={ocupado === p.id} onClick={() => marcarEntregado(p.id)}>
-                        {ocupado === p.id ? 'Guardando...' : 'Marcar entregada'}
-                      </button>
-                    )}
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button className="btn-secondary" onClick={() => setPedidoAbierto(p)}>🔍 Revisar</button>
+                      {p.estado === 'entregada' ? (
+                        <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
+                          ✅ Entregada
+                        </span>
+                      ) : (
+                        <button className="btn-primary" disabled={ocupado === p.id} onClick={() => marcarEntregado(p.id)}>
+                          {ocupado === p.id ? 'Guardando...' : 'Marcar entregada'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -140,6 +192,8 @@ export default function AdminPedidosPage() {
         </section>
 
       </main>
+
+      {pedidoAbierto && <ModalPedido pedido={pedidoAbierto} onClose={() => setPedidoAbierto(null)} />}
     </div>
   );
 }
