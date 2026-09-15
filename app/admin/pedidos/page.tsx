@@ -23,6 +23,14 @@ type Recarga = {
   fecha: string;
 };
 
+type Verificacion = {
+  id: string;
+  telefono: string;
+  codigo: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  fecha: string;
+};
+
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
@@ -74,15 +82,21 @@ function ModalPedido({ pedido: p, onClose }: { pedido: Pedido; onClose: () => vo
 export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [recargas, setRecargas] = useState<Recarga[]>([]);
+  const [verificaciones, setVerificaciones] = useState<Verificacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    const [pRes, rRes] = await Promise.all([fetch('/api/admin/pedidos'), fetch('/api/admin/recargas')]);
+    const [pRes, rRes, vRes] = await Promise.all([
+      fetch('/api/admin/pedidos'),
+      fetch('/api/admin/recargas'),
+      fetch('/api/admin/verificaciones'),
+    ]);
     setPedidos(pRes.ok ? await pRes.json() : []);
     setRecargas(rRes.ok ? await rRes.json() : []);
+    setVerificaciones(vRes.ok ? await vRes.json() : []);
     setCargando(false);
   }, []);
 
@@ -110,7 +124,19 @@ export default function AdminPedidosPage() {
     setOcupado(null);
   }
 
+  async function resolverVerificacion(id: string, aprobar: boolean) {
+    setOcupado(id);
+    await fetch('/api/admin/verificaciones', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, aprobar }),
+    });
+    await cargar();
+    setOcupado(null);
+  }
+
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
+  const verificacionesPendientes = verificaciones.filter(v => v.estado === 'pendiente');
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -122,6 +148,42 @@ export default function AdminPedidosPage() {
       </header>
 
       <main className="main" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900, margin: '0 auto', padding: '1.5rem' }}>
+
+        <section className="panel" style={{ padding: '1.25rem' }}>
+          <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            Verificaciones de teléfono pendientes
+            {verificacionesPendientes.length > 0 && <span className="badge">{verificacionesPendientes.length}</span>}
+          </h2>
+          {cargando ? (
+            <p className="loading-msg">Cargando…</p>
+          ) : verificacionesPendientes.length === 0 ? (
+            <p className="empty-msg">No hay verificaciones pendientes.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {verificacionesPendientes.map(v => (
+                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>
+                      Teléfono declarado: {v.telefono} — código {v.codigo}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(v.fecha)}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--warning, #d99a2b)', marginTop: '0.2rem' }}>
+                      ⚠️ Aprobá solo si el mensaje de WhatsApp con ese código llegó de este mismo número.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, true)}>
+                      {ocupado === v.id ? '...' : '✅ Aprobar'}
+                    </button>
+                    <button className="btn-danger" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, false)}>
+                      ✕ Rechazar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

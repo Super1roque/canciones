@@ -1,95 +1,95 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
-import { auth } from '@/lib/firebaseClient';
 import styles from './tenant.module.css';
 
 // Producto pensado para Honduras — si no escriben un +código, se asume +504.
-function formatearE164(raw: string): string {
-  const limpio = raw.trim();
-  if (limpio.startsWith('+')) return limpio.replace(/[^\d+]/g, '');
-  return '+504' + limpio.replace(/\D/g, '');
-}
-
-function mensajeErrorEnvio(codigo: string): string {
-  if (codigo === 'auth/invalid-phone-number') return 'Ese número no parece válido — revisalo.';
-  if (codigo === 'auth/too-many-requests') return 'Demasiados intentos. Probá de nuevo en un rato.';
-  return 'No se pudo enviar el código. Intentá de nuevo.';
-}
-
-function mensajeErrorCodigo(codigo: string): string {
-  if (codigo === 'auth/invalid-verification-code') return 'Código incorrecto — revisalo.';
-  if (codigo === 'auth/code-expired') return 'El código venció. Pedí uno nuevo.';
-  return 'No se pudo verificar el código.';
+function formatearVisible(raw: string): string {
+  return raw.trim();
 }
 
 export default function LandingClient() {
   const router = useRouter();
-  const [paso, setPaso] = useState<'telefono' | 'codigo'>('telefono');
+  const [paso, setPaso] = useState<'telefono' | 'esperando'>('telefono');
   const [telefono, setTelefono] = useState('');
-  const [codigo, setCodigo] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const [verificando, setVerificando] = useState(false);
+  const [revisando, setRevisando] = useState(false);
   const [error, setError] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [rechazada, setRechazada] = useState(false);
 
-  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
-  const confirmacionRef = useRef<ConfirmationResult | null>(null);
+  const verificacionIdRef = useRef<string | null>(null);
+  const abiertoWhatsappRef = useRef(false);
 
-  async function handleEnviarCodigo(e: React.FormEvent) {
+  async function handleSolicitar(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setRechazada(false);
     setEnviando(true);
     try {
-      if (!recaptchaRef.current) {
-        recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
-      }
-      const confirmacion = await signInWithPhoneNumber(auth, formatearE164(telefono), recaptchaRef.current);
-      confirmacionRef.current = confirmacion;
-      setPaso('codigo');
-    } catch (err: unknown) {
-      const codigoError = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '';
-      setError(mensajeErrorEnvio(codigoError));
+      const res = await fetch('/api/tenants/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: formatearVisible(telefono) }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
+      verificacionIdRef.current = data.id;
+      setWhatsappUrl(data.whatsappUrl);
+      setPaso('esperando');
+    } catch {
+      setError('Error de conexión con el servidor');
     } finally {
       setEnviando(false);
     }
   }
 
-  async function handleVerificarCodigo(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setVerificando(true);
+  async function revisarEstado() {
+    const id = verificacionIdRef.current;
+    if (!id) return;
+    setRevisando(true);
     try {
-      if (!confirmacionRef.current) throw new Error('sin confirmación pendiente');
-      const credencial = await confirmacionRef.current.confirm(codigo);
-      const idToken = await credencial.user.getIdToken();
-
-      const res = await fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
+      const res = await fetch(`/api/tenants/verificar/${id}`);
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'No se pudo completar el registro'); return; }
-      router.push('/crear-parodia');
-    } catch (err: unknown) {
-      const codigoError = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '';
-      setError(mensajeErrorCodigo(codigoError));
+      if (data.estado === 'aprobada') {
+        router.push('/crear-parodia');
+        return;
+      }
+      if (data.estado === 'rechazada') {
+        setRechazada(true);
+      }
+    } catch {
+      // Silencioso — se reintenta en el próximo ciclo.
     } finally {
-      setVerificando(false);
+      setRevisando(false);
     }
+  }
+
+  // Polling mientras se espera la aprobación — cada 4s, más seguido que el
+  // del dashboard porque acá la persona está mirando la pantalla en vivo
+  // esperando poder arrancar.
+  useEffect(() => {
+    if (paso !== 'esperando') return;
+    const id = setInterval(revisarEstado, 4000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paso]);
+
+  function abrirWhatsapp() {
+    abiertoWhatsappRef.current = true;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   }
 
   function cambiarNumero() {
     setPaso('telefono');
-    setCodigo('');
     setError('');
-    confirmacionRef.current = null;
+    setRechazada(false);
+    verificacionIdRef.current = null;
   }
 
   return (
     <main className={styles.main}>
-      <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 420, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 440, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div>
           <div style={{ fontSize: '2.75rem', marginBottom: '0.5rem' }}>🤠🎶</div>
           <h1 className={styles.heroTitle} style={{ fontSize: '1.8rem', margin: '0 0 0.6rem' }}>
@@ -103,7 +103,7 @@ export default function LandingClient() {
         </div>
 
         {paso === 'telefono' ? (
-          <form onSubmit={handleEnviarCodigo} className={styles.formGroup}>
+          <form onSubmit={handleSolicitar} className={styles.formGroup}>
             <label htmlFor="telefono">Tu número de teléfono</label>
             <input
               id="telefono"
@@ -115,40 +115,56 @@ export default function LandingClient() {
               required
             />
             <p className={styles.textMuted} style={{ fontSize: '0.78rem', margin: 0 }}>
-              Te mandamos un código por SMS para confirmar que es tuyo. Ahí mismo te vamos a entregar tu parodia terminada, por WhatsApp.
+              Te vamos a pedir que confirmes por WhatsApp que es tuyo. Ahí mismo te entregamos tu parodia terminada.
             </p>
             <button type="submit" className={styles.btnPrimary} disabled={enviando} style={{ marginTop: '0.5rem' }}>
-              {enviando ? 'Enviando...' : '📲 Enviarme el código'}
+              {enviando ? 'Un momento...' : '📲 Continuar'}
             </button>
             {error && <p className={styles.error}>{error}</p>}
           </form>
         ) : (
-          <form onSubmit={handleVerificarCodigo} className={styles.formGroup}>
-            <label htmlFor="codigo">Código que te llegó por SMS</label>
-            <input
-              id="codigo"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className={styles.input}
-              placeholder="123456"
-              value={codigo}
-              onChange={e => setCodigo(e.target.value)}
-              style={{ textAlign: 'center', fontSize: '1.3rem', letterSpacing: '0.3em' }}
-              required
-            />
-            <button type="submit" className={styles.btnPrimary} disabled={verificando} style={{ marginTop: '0.5rem' }}>
-              {verificando ? 'Verificando...' : '🎤 Empezar mi parodia gratis'}
-            </button>
-            {error && <p className={styles.error}>{error}</p>}
-            <button type="button" className={styles.btnSecondary} onClick={cambiarNumero} style={{ marginTop: '0.25rem' }}>
-              ← Cambiar número
-            </button>
-          </form>
+          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
+            {rechazada ? (
+              <>
+                <span style={{ fontSize: '2rem' }}>😕</span>
+                <p className={styles.error} style={{ textAlign: 'center' }}>
+                  No pudimos confirmar ese número. Revisá que le hayas escrito desde el WhatsApp de ese mismo teléfono.
+                </p>
+                <button type="button" className={styles.btnSecondary} onClick={cambiarNumero}>
+                  ← Intentar de nuevo
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: 0 }}>
+                  Tocá el botón para confirmar por WhatsApp que <strong>{telefono}</strong> es tu número.
+                </p>
+                <button type="button" className={styles.btnPrimary} onClick={abrirWhatsapp} style={{ textDecoration: 'none' }}>
+                  💬 Confirmar por WhatsApp
+                </button>
+                <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>
+                  Se va a abrir WhatsApp con un mensaje ya escrito — solo tenés que enviarlo. Apenas lo confirmemos, esta pantalla arranca sola.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cr-text-muted)', fontSize: '0.82rem' }}>
+                  <span className="spinner" style={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    border: '2px solid var(--cr-border)', borderTopColor: 'var(--cr-gold)',
+                    display: 'inline-block', animation: 'spin 0.8s linear infinite',
+                  }} />
+                  Esperando confirmación...
+                </div>
+                <button type="button" className={styles.btnSecondary} onClick={revisarEstado} disabled={revisando}>
+                  {revisando ? 'Revisando...' : '🔄 Ya escribí, revisar ahora'}
+                </button>
+                <button type="button" className={styles.btnSecondary} onClick={cambiarNumero}>
+                  ← Cambiar número
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
-
-      <div id="recaptcha-container" />
+      <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
     </main>
   );
 }
