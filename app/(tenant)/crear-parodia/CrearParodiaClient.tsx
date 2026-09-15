@@ -141,7 +141,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
     <main className={styles.main} style={{ alignItems: 'flex-start', paddingTop: '1.5rem' }}>
       <div className={styles.crearGrid}>
         <aside className={styles.panel} style={{ padding: '1rem' }}>
-          <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una canción</h2>
+          <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una pista para tu canción</h2>
           <input
             type="search"
             className={styles.input}
@@ -197,7 +197,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
               </div>
 
               <button className={styles.btnPrimary} onClick={handleGenerar} disabled={generando}>
-                {generando ? 'Generando...' : '✨ Generar parodia'}
+                {generando ? '⏳ Generando...' : '✨ Generar parodia'}
               </button>
 
               {parodiaActual && (

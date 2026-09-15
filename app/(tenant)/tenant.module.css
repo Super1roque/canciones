@@ -49,9 +49,8 @@
   padding: 1.1rem 1.25rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  position: relative;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .logo {
@@ -60,6 +59,11 @@
   letter-spacing: 0.03em;
   color: var(--cr-gold);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .logo { font-size: 1.3rem; }
 }
 
 .main {

@@ -14,14 +14,14 @@ export default async function TenantLayout({ children }: { children: React.React
 
   return (
     <div className={`${styles.shell} ${rye.variable}`}>
-      <header className={styles.header} style={{ position: 'relative' }}>
+      <header className={styles.header}>
         <span className={styles.logo}>🎸 Canciones</span>
         {registrado && (
           <a
             href="/dashboard"
             style={{
-              position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)',
               color: 'var(--cr-gold)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}
           >
             💳 Mi cuenta
