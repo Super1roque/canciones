@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
@@ -49,12 +50,21 @@ function urlWhatsApp(monto: number, telefono: string) {
 }
 
 export default function DashboardClient({ tenant, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
+  const router = useRouter();
   const [pedidos] = useState(pedidosIniciales);
   const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [saliendo, setSaliendo] = useState(false);
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
+
+  async function cerrarSesion() {
+    setSaliendo(true);
+    await fetch('/api/tenants/logout', { method: 'POST' }).catch(() => {});
+    router.push('/');
+    router.refresh();
+  }
 
   async function pedirRecarga(monto: number) {
     setSolicitando(monto);
@@ -80,7 +90,19 @@ export default function DashboardClient({ tenant, pedidosIniciales }: { tenant: 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: 640 }}>
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
+            <button
+              onClick={cerrarSesion}
+              disabled={saliendo}
+              style={{
+                background: 'none', border: 'none', color: 'var(--cr-text-muted)', textDecoration: 'underline',
+                fontSize: '0.78rem', cursor: 'pointer', padding: 0, fontFamily: 'inherit',
+              }}
+            >
+              {saliendo ? 'Saliendo...' : 'Cerrar sesión'}
+            </button>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
               <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
