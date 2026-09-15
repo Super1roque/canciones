@@ -92,7 +92,11 @@ export default function LandingClient() {
   // — no reemplaza el ingreso manual, solo lo evita cuando se puede.
   useEffect(() => {
     if (paso !== 'codigo') return;
-    if (!('OTPCredential' in window)) return;
+    if (!('OTPCredential' in window)) {
+      setError('DEBUG: este navegador no tiene OTPCredential (WebOTP no soportado)');
+      return;
+    }
+    setError('DEBUG: WebOTP soportado, escuchando el SMS...');
 
     const abortController = new AbortController();
     navigator.credentials
