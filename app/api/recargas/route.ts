@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { crearSolicitudRecarga, listarRecargasPorTelefono, MONTOS_VALIDOS } from '@/lib/recargaService';
+import { avisarNuevaRecarga } from '@/lib/emailService';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
     }
 
     const recarga = await crearSolicitudRecarga(telefono, monto);
+
+    void avisarNuevaRecarga(telefono, monto);
+
     return NextResponse.json(recarga, { status: 201 });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { crearPedido, listarPedidosPorTelefono } from '@/lib/pedidoService';
+import { avisarNuevoPedido } from '@/lib/emailService';
 
 // Registro de canciones pedidas por clientes desde el flujo público de
 // /crear-parodia — colección separada de "parodias" (que es donde el admin
@@ -37,6 +38,8 @@ export async function POST(request: Request) {
     const pedido = await crearPedido(telefono, {
       cancion_base, estilo, descripcionEstilo, direccionGenerador, historia, parodia,
     });
+
+    void avisarNuevoPedido(telefono, cancion_base);
 
     return NextResponse.json(pedido, { status: 201 });
   } catch (error: unknown) {
