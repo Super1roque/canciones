@@ -155,6 +155,15 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
       <div className={styles.crearGrid}>
         <aside className={styles.panel} style={{ padding: '1rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una pista para tu canción</h2>
+          {tenant.ultimaParodia && (
+            <button
+              onClick={cargarUltima}
+              className={styles.btnSecondary}
+              style={{ width: '100%', marginBottom: '0.85rem', fontSize: '0.82rem', padding: '0.65rem 0.9rem' }}
+            >
+              📋 Cargar mi última parodia (&quot;{tenant.ultimaParodia.cancion_base}&quot;)
+            </button>
+          )}
           <input
             type="search"
             className={styles.input}
@@ -244,17 +253,9 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
               )}
             </>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
               <span style={{ fontSize: '2rem' }}>🎶</span>
-              <p className={styles.textMuted} style={{ margin: 0 }}>Elegí una canción de la lista para empezar</p>
-              {tenant.ultimaParodia && (
-                <>
-                  <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>— o —</p>
-                  <button className={styles.btnSecondary} onClick={cargarUltima}>
-                    📋 Cargar mi última parodia (&quot;{tenant.ultimaParodia.cancion_base}&quot;)
-                  </button>
-                </>
-              )}
+              <p className={styles.textMuted} style={{ marginTop: '0.5rem' }}>Elegí una canción de la lista para empezar</p>
             </div>
           )}
         </section>
