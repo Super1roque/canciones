@@ -1,5 +1,5 @@
 import { getDb } from './firebaseService';
-import { obtenerTenant, incrementarUsoTenant, descontarSaldo } from './tenantService';
+import { obtenerTenant, incrementarUsoTenant, descontarSaldo, guardarUltimaParodia } from './tenantService';
 
 const COLLECTION = 'pedidos';
 
@@ -76,6 +76,14 @@ export async function crearPedido(telefono: string, input: NuevoPedidoInput): Pr
 
   const docRef = await db.collection(COLLECTION).add(nuevo);
   if (usaGratis) await incrementarUsoTenant(telefono);
+  await guardarUltimaParodia(telefono, {
+    cancion_base: input.cancion_base,
+    estilo: input.estilo ?? '',
+    descripcionEstilo: input.descripcionEstilo ?? '',
+    direccionGenerador: input.direccionGenerador ?? '',
+    historia: input.historia,
+    parodia: input.parodia,
+  });
 
   return { id: docRef.id, ...nuevo };
 }

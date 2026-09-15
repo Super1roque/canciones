@@ -51,6 +51,19 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
     setEnviado(false);
   }
 
+  // Salta directo a "revisá y ajustá la letra" con la última parodia que
+  // este tenant mandó — sin volver a gastar en la IA solo para ver de
+  // nuevo algo que ya tenía. No hay "seleccionada" en este camino porque
+  // no guardamos el id de la canción original, solo el resultado final.
+  function cargarUltima() {
+    if (!tenant.ultimaParodia) return;
+    setSeleccionada(null);
+    setHistoria(tenant.ultimaParodia.historia);
+    setParodiaActual(tenant.ultimaParodia);
+    setLetraEditada(tenant.ultimaParodia.parodia);
+    setEnviado(false);
+  }
+
   async function handleGenerar() {
     if (!seleccionada) { showToast('Primero elegí una canción', 'error'); return; }
     if (historia.trim().length < 2) { showToast('Contanos la historia o al menos un nombre', 'error'); return; }
@@ -176,29 +189,37 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
         </aside>
 
         <section className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {seleccionada ? (
+          {seleccionada || parodiaActual ? (
             <>
               <div>
-                <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0 0 0.4rem' }}>{seleccionada.nombre}</h3>
-                <span className={styles.badge}>{seleccionada.estilo}</span>
+                <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0 0 0.4rem' }}>
+                  {seleccionada ? seleccionada.nombre : parodiaActual!.cancion_base}
+                </h3>
+                {(seleccionada?.estilo || parodiaActual?.estilo) && (
+                  <span className={styles.badge}>{seleccionada?.estilo ?? parodiaActual?.estilo}</span>
+                )}
               </div>
 
-              <div className={styles.formGroup}>
-                <label htmlFor="historia">2. Contanos la historia para tu parodia</label>
-                <textarea
-                  id="historia"
-                  rows={6}
-                  className={styles.textarea}
-                  style={{ minHeight: '9rem' }}
-                  placeholder="Ej: Un estudiante que odia los lunes, llega tarde a clases, se olvidó la tarea y su maestro es muy estricto...&#10;&#10;💡 También podés escribir solo el nombre de una persona y la parodia va a girar en torno a ella."
-                  value={historia}
-                  onChange={e => setHistoria(e.target.value)}
-                />
-              </div>
+              {seleccionada && (
+                <>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="historia">2. Contanos la historia para tu parodia</label>
+                    <textarea
+                      id="historia"
+                      rows={6}
+                      className={styles.textarea}
+                      style={{ minHeight: '9rem' }}
+                      placeholder="Ej: Un estudiante que odia los lunes, llega tarde a clases, se olvidó la tarea y su maestro es muy estricto...&#10;&#10;💡 También podés escribir solo el nombre de una persona y la parodia va a girar en torno a ella."
+                      value={historia}
+                      onChange={e => setHistoria(e.target.value)}
+                    />
+                  </div>
 
-              <button className={styles.btnPrimary} onClick={handleGenerar} disabled={generando}>
-                {generando ? '⏳ Generando...' : '✨ Generar parodia'}
-              </button>
+                  <button className={styles.btnPrimary} onClick={handleGenerar} disabled={generando}>
+                    {generando ? '⏳ Generando...' : '✨ Generar parodia'}
+                  </button>
+                </>
+              )}
 
               {parodiaActual && (
                 <div className={styles.formGroup}>
@@ -223,9 +244,17 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
               )}
             </>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <div style={{ textAlign: 'center', padding: '2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
               <span style={{ fontSize: '2rem' }}>🎶</span>
-              <p className={styles.textMuted} style={{ marginTop: '0.5rem' }}>Elegí una canción de la lista para empezar</p>
+              <p className={styles.textMuted} style={{ margin: 0 }}>Elegí una canción de la lista para empezar</p>
+              {tenant.ultimaParodia && (
+                <>
+                  <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>— o —</p>
+                  <button className={styles.btnSecondary} onClick={cargarUltima}>
+                    📋 Cargar mi última parodia (&quot;{tenant.ultimaParodia.cancion_base}&quot;)
+                  </button>
+                </>
+              )}
             </div>
           )}
         </section>

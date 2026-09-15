@@ -3,12 +3,23 @@ import { getDb } from './firebaseService';
 
 const COLLECTION = 'tenants';
 
+export interface UltimaParodia {
+  cancion_base: string;
+  estilo: string;
+  descripcionEstilo: string;
+  direccionGenerador: string;
+  historia: string;
+  parodia: string;
+  fecha: string;
+}
+
 export interface Tenant {
   telefono: string;
   fechaRegistro: string;
   cancionesGratisUsadas: number;
   cancionesGratisLimite: number;
   saldo: number;
+  ultimaParodia?: UltimaParodia;
 }
 
 // Deja solo dígitos — así "9999-8888", "+504 9999 8888" y "99998888" quedan
@@ -63,6 +74,15 @@ export async function agregarSaldo(telefono: string, monto: number): Promise<voi
   await db.collection(COLLECTION).doc(telefono).update({
     saldo: admin.firestore.FieldValue.increment(monto),
   });
+}
+
+// Se guarda al enviar un pedido — deja que el tenant arranque su próxima
+// canción desde acá en vez de escribir la historia de cero, sin gastar de
+// nuevo en la IA solo para volver a ver lo que ya tenía.
+export async function guardarUltimaParodia(telefono: string, datos: Omit<UltimaParodia, 'fecha'>): Promise<void> {
+  const db = getDb();
+  const ultimaParodia: UltimaParodia = { ...datos, fecha: new Date().toISOString() };
+  await db.collection(COLLECTION).doc(telefono).update({ ultimaParodia });
 }
 
 // Transacción (no un simple increment negativo) porque acá sí hay que
