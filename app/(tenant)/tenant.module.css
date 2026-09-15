@@ -5,41 +5,58 @@
    estilo. */
 
 .shell {
-  --cr-bg-1: #7a1620;
-  --cr-bg-2: #4a0e14;
+  --cr-bg-1: #9a1f2b;
+  --cr-bg-2: #5c0f18;
+  --cr-bg-3: #2c0a10;
   --cr-surface: #3a1216;
   --cr-surface-2: #4d1a1f;
   --cr-border: #7a3038;
   --cr-gold: #f2b705;
-  --cr-gold-soft: #f9d15c;
+  --cr-gold-soft: #ffd35c;
   --cr-green: #1f8a4c;
+  --cr-green-soft: #34c46f;
   --cr-text: #fdf3e0;
   --cr-text-muted: #e0b98f;
   --cr-error: #ff8a7a;
-  --cr-radius: 16px;
-  --cr-radius-sm: 10px;
+  --cr-radius: 20px;
+  --cr-radius-sm: 12px;
 
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 10%, rgba(242, 183, 5, 0.12), transparent 45%),
-    radial-gradient(circle at 85% 90%, rgba(31, 138, 76, 0.15), transparent 45%),
-    linear-gradient(160deg, var(--cr-bg-1) 0%, var(--cr-bg-2) 100%);
+    radial-gradient(ellipse 60% 45% at 12% 0%, rgba(242, 183, 5, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 100% 25%, rgba(31, 138, 76, 0.22), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 115%, rgba(255, 168, 60, 0.16), transparent 60%),
+    linear-gradient(160deg, var(--cr-bg-1) 0%, var(--cr-bg-2) 55%, var(--cr-bg-3) 100%);
   color: var(--cr-text);
   display: flex;
   flex-direction: column;
 }
 
+/* Franja tipo "papel picado" (banderines de fiesta mexicana) — un detalle
+   cultural genuino en vez de un degradé genérico, sin necesitar imágenes. */
+.shell::before {
+  content: '';
+  display: block;
+  height: 10px;
+  width: 100%;
+  background:
+    linear-gradient(135deg, transparent 50%, var(--cr-gold) 50%) 0 0/16px 16px repeat-x,
+    linear-gradient(-135deg, transparent 50%, var(--cr-green-soft) 50%) 8px 0/16px 16px repeat-x;
+  opacity: 0.85;
+}
+
 .header {
-  padding: 1.25rem 1.5rem;
+  padding: 1.1rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  position: relative;
 }
 
 .logo {
   font-family: var(--font-corrido, inherit);
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   letter-spacing: 0.03em;
   color: var(--cr-gold);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
@@ -50,14 +67,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .main { padding: 1.5rem; }
 }
 
 .panel {
+  position: relative;
   background: var(--cr-surface);
   border: 2px solid var(--cr-border);
   border-radius: var(--cr-radius);
-  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25), 0 20px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25), 0 24px 48px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--cr-gold), var(--cr-green-soft), var(--cr-gold));
 }
 
 .heroTitle {
@@ -65,6 +96,7 @@
   color: var(--cr-gold);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
   letter-spacing: 0.01em;
+  text-wrap: balance;
 }
 
 .textMuted {
@@ -80,27 +112,37 @@
 
 .formGroup label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cr-text-muted);
 }
 
+/* Mobile-first: 1rem (16px) evita que iOS haga zoom automático al enfocar
+   el campo, y el padding más generoso hace los toques más cómodos. */
 .input,
 .textarea {
+  width: 100%;
   background: var(--cr-surface-2);
   border: 2px solid var(--cr-border);
   border-radius: var(--cr-radius-sm);
   color: var(--cr-text);
   font-family: inherit;
-  font-size: 0.95rem;
-  padding: 0.7rem 0.9rem;
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
   resize: vertical;
   transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.textarea {
+  min-height: 7.5rem;
+  line-height: 1.55;
 }
 
 .input:focus,
 .textarea:focus {
   outline: none;
   border-color: var(--cr-gold);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.2);
 }
 
 .btnPrimary {
@@ -108,7 +150,7 @@
   color: #3a1216;
   border: none;
   border-radius: 999px;
-  padding: 0.85rem 1.6rem;
+  padding: 0.95rem 1.7rem;
   font-family: inherit;
   font-size: 1rem;
   font-weight: 800;
@@ -119,6 +161,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 48px;
+  text-decoration: none;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .btnPrimary { width: auto; }
 }
 
 .btnPrimary:hover {
@@ -140,11 +189,21 @@
   color: var(--cr-text);
   border: 2px solid var(--cr-border);
   border-radius: 999px;
-  padding: 0.7rem 1.3rem;
+  padding: 0.8rem 1.3rem;
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
+  min-height: 48px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .btnSecondary { width: auto; }
 }
 
 .btnSecondary:hover {
@@ -160,11 +219,30 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(242, 183, 5, 0.14);
-  border: 1px solid var(--cr-gold);
-  color: var(--cr-gold);
+  background: linear-gradient(135deg, rgba(242, 183, 5, 0.22), rgba(242, 183, 5, 0.1));
+  border: 1.5px solid var(--cr-gold);
+  color: var(--cr-gold-soft);
   border-radius: 999px;
-  padding: 0.35rem 0.8rem;
+  padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/* Grilla de /crear-parodia: apilada en mobile, dos columnas desde tablet
+   en adelante — antes era un grid fijo de dos columnas que apretaba todo
+   en pantallas chicas. */
+.crearGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 980px;
+  align-items: start;
+}
+
+@media (min-width: 760px) {
+  .crearGrid {
+    grid-template-columns: minmax(240px, 320px) 1fr;
+  }
 }

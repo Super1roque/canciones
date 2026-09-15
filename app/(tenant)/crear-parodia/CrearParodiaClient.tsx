@@ -116,6 +116,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
           <h2 className={styles.heroTitle} style={{ fontSize: '1.4rem', margin: 0 }}>Ya usaste tu canción gratis</h2>
           <p className={styles.textMuted}>Cada canción nueva cuesta L {COSTO_CANCION}. Comprá créditos para seguir pidiendo.</p>
           <a href="/dashboard" className={styles.btnPrimary}>💳 Comprar créditos</a>
+          <a href="/dashboard" className={styles.btnSecondary}>← Volver al dashboard</a>
         </div>
       </main>
     );
@@ -130,6 +131,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
           <p className={styles.textMuted} style={{ maxWidth: 380 }}>
             Ya tenemos la letra de tu parodia de &quot;{parodiaActual?.cancion_base}&quot;. Te la vamos a entregar por WhatsApp.
           </p>
+          <a href="/dashboard" className={styles.btnPrimary}>📋 Ir a mi dashboard</a>
         </div>
       </main>
     );
@@ -137,7 +139,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
 
   return (
     <main className={styles.main} style={{ alignItems: 'flex-start', paddingTop: '1.5rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: '1.25rem', width: '100%', maxWidth: 980, alignItems: 'start' }}>
+      <div className={styles.crearGrid}>
         <aside className={styles.panel} style={{ padding: '1rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una canción</h2>
           <input
@@ -185,8 +187,9 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                 <label htmlFor="historia">2. Contanos la historia para tu parodia</label>
                 <textarea
                   id="historia"
-                  rows={5}
+                  rows={6}
                   className={styles.textarea}
+                  style={{ minHeight: '9rem' }}
                   placeholder="Ej: Un estudiante que odia los lunes, llega tarde a clases, se olvidó la tarea y su maestro es muy estricto...&#10;&#10;💡 También podés escribir solo el nombre de una persona y la parodia va a girar en torno a ella."
                   value={historia}
                   onChange={e => setHistoria(e.target.value)}

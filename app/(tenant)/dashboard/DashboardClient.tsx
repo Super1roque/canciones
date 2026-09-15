@@ -116,7 +116,7 @@ export default function DashboardClient({ tenant, pedidosIniciales }: { tenant: 
               {MONTOS.map(monto => {
                 const bono = credito(monto) - monto;
                 return (
-                  <div key={monto} style={{ position: 'relative' }}>
+                  <div key={monto} style={{ position: 'relative', flex: '1 1 auto', minWidth: 140, maxWidth: 220 }}>
                     {bono > 0 && (
                       <span style={{
                         position: 'absolute', top: -12, right: -10, zIndex: 1,
@@ -127,7 +127,7 @@ export default function DashboardClient({ tenant, pedidosIniciales }: { tenant: 
                         🔥 +L{bono} gratis
                       </span>
                     )}
-                    <button className={styles.btnPrimary} onClick={() => pedirRecarga(monto)} disabled={solicitando === monto}>
+                    <button className={styles.btnPrimary} style={{ width: '100%' }} onClick={() => pedirRecarga(monto)} disabled={solicitando === monto}>
                       {solicitando === monto ? 'Enviando...' : `+ L ${monto}`}
                     </button>
                   </div>
