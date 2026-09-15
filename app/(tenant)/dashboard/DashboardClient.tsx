@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
@@ -49,15 +49,48 @@ function urlWhatsApp(monto: number, telefono: string) {
   return `https://wa.me/${DATOS_PAGO.whatsapp}?text=${encodeURIComponent(mensaje)}`;
 }
 
-export default function DashboardClient({ tenant, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
+export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
   const router = useRouter();
-  const [pedidos] = useState(pedidosIniciales);
+  const [tenant, setTenant] = useState(tenantInicial);
+  const [pedidos, setPedidos] = useState(pedidosIniciales);
   const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [saliendo, setSaliendo] = useState(false);
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
+
+  // Trae saldo y pedidos actualizados en segundo plano — así si el admin
+  // aprueba una recarga o marca un pedido como entregado, se refleja acá
+  // sin que el tenant tenga que recargar la página a mano. Solo mientras
+  // la pestaña está visible, para no gastar batería/datos de fondo.
+  useEffect(() => {
+    let cancelado = false;
+
+    async function actualizar() {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const [resPedidos, resTenant] = await Promise.all([
+          fetch('/api/pedidos'),
+          fetch('/api/tenants/me'),
+        ]);
+        if (cancelado) return;
+        if (resPedidos.ok) setPedidos(await resPedidos.json());
+        if (resTenant.ok) setTenant(await resTenant.json());
+      } catch {
+        // Silencioso — se reintenta en el próximo ciclo.
+      }
+    }
+
+    const intervalo = setInterval(actualizar, 15000);
+    document.addEventListener('visibilitychange', actualizar);
+
+    return () => {
+      cancelado = true;
+      clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', actualizar);
+    };
+  }, []);
 
   async function cerrarSesion() {
     setSaliendo(true);
