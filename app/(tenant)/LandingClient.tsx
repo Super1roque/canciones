@@ -34,6 +34,7 @@ export default function LandingClient() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
+      if (data.yaLogueado) { router.push('/crear-parodia'); return; }
       verificacionIdRef.current = data.id;
       setWhatsappUrl(data.whatsappUrl);
       setPaso('esperando');

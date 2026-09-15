@@ -39,6 +39,22 @@ export async function crearSolicitudVerificacion(telefono: string): Promise<Veri
   return { id: docRef.id, ...nuevo };
 }
 
+// Evita crear una solicitud nueva cada vez que alguien reintenta con el
+// mismo número — si ya hay una pendiente, se reusa esa en vez de
+// acumular varias (así no se le llena la cola al admin ni se manda a la
+// persona a abrir WhatsApp de nuevo con un código distinto).
+export async function obtenerVerificacionPendientePorTelefono(telefono: string): Promise<Verificacion | null> {
+  const db = getDb();
+  const snap = await db.collection(COLLECTION)
+    .where('telefono', '==', telefono)
+    .where('estado', '==', 'pendiente')
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return toVerificacion(doc.id, doc.data());
+}
+
 export async function obtenerVerificacion(id: string): Promise<Verificacion | null> {
   const db = getDb();
   const doc = await db.collection(COLLECTION).doc(id).get();

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { normalizarTelefono, telefonoValido } from '@/lib/tenantService';
-import { crearSolicitudVerificacion } from '@/lib/verificacionService';
+import { cookies } from 'next/headers';
+import { normalizarTelefono, telefonoValido, obtenerTenant } from '@/lib/tenantService';
+import { crearSolicitudVerificacion, obtenerVerificacionPendientePorTelefono } from '@/lib/verificacionService';
 import { ADMIN_WHATSAPP } from '@/lib/config';
 
 // Producto pensado para Honduras — si no escriben un +código, se asume 504.
@@ -19,6 +20,18 @@ function conCodigoPais(raw: string): string {
 // remitente real coincide con el teléfono que declaró acá.
 export async function POST(request: Request) {
   try {
+    // Si el navegador ya tiene una sesión de tenant válida, no tiene sentido
+    // (ni es deseable) mandarlo a re-verificar — eso solo le crea trabajo de
+    // más al admin cada vez que alguien ya logueado insiste con el botón.
+    const cookieStore = await cookies();
+    const telefonoSesion = cookieStore.get('tenant_phone')?.value;
+    if (telefonoSesion) {
+      const tenantExistente = await obtenerTenant(telefonoSesion);
+      if (tenantExistente) {
+        return NextResponse.json({ yaLogueado: true });
+      }
+    }
+
     const { telefono: rawTelefono } = await request.json();
     const telefono = normalizarTelefono(conCodigoPais(rawTelefono || ''));
 
@@ -26,8 +39,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Ese número no parece válido' }, { status: 400 });
     }
 
-    const verificacion = await crearSolicitudVerificacion(telefono);
-    const mensaje = `Hola, quiero confirmar mi registro en Canciones. Mi código es: ${verificacion.codigo}`;
+    // Reusa una solicitud pendiente existente en vez de acumular una nueva
+    // cada vez que alguien reintenta con el mismo número — evita llenarle
+    // la cola de aprobaciones al admin con pedidos repetidos.
+    const pendiente = await obtenerVerificacionPendientePorTelefono(telefono);
+    const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono);
+
+    const mensaje = `Mi código es: ${verificacion.codigo}, Quiero confirmar mi registro en Canciones`;
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
 
     return NextResponse.json({ id: verificacion.id, whatsappUrl }, { status: 201 });
