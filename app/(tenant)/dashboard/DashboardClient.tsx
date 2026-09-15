@@ -48,6 +48,24 @@ function urlWhatsApp(monto: number, telefono: string) {
   return `https://wa.me/${DATOS_PAGO.whatsapp}?text=${encodeURIComponent(mensaje)}`;
 }
 
+// Mismo patrón que RickyMath: Web Share API si el navegador la soporta
+// (la mayoría de móviles), y si no, directo a WhatsApp con la URL pegada
+// al texto — la audiencia de acá comparte por ahí de todas formas.
+const MENSAJE_COMPARTIR = '¡Hola! 👋 Te comparto Canciones — le contás una historia y en minutos tenés tu propia parodia de corrido, bien chistosa. ¡La primera te sale gratis!';
+
+async function compartirApp() {
+  const url = window.location.origin;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Canciones', text: MENSAJE_COMPARTIR, url });
+    } catch {
+      // El usuario canceló el selector — no hace falta avisar nada.
+    }
+    return;
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(`${MENSAJE_COMPARTIR} ${url}`)}`, '_blank');
+}
+
 export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
   const [tenant, setTenant] = useState(tenantInicial);
   const [pedidos, setPedidos] = useState(pedidosIniciales);
@@ -196,6 +214,19 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
               ))}
             </div>
           )}
+        </div>
+
+        <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
+          <button
+            onClick={compartirApp}
+            className={styles.btnSecondary}
+            style={{
+              background: 'linear-gradient(180deg, var(--cr-green-soft), var(--cr-green))',
+              color: '#fdf3e0', border: 'none', boxShadow: '0 4px 0 #0f5c32',
+            }}
+          >
+            📤 Compartir Canciones
+          </button>
         </div>
 
       </div>
