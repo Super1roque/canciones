@@ -103,12 +103,15 @@ export default function LandingClient() {
       })
       .then((cred: unknown) => {
         const code = (cred as { code?: string } | null)?.code;
+        setError('DEBUG WebOTP resolvió: ' + JSON.stringify(cred));
         if (code) {
           setCodigo(code);
           handleVerificarCodigo(undefined, code);
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        const e = err as { name?: string; message?: string } | undefined;
+        setError('DEBUG WebOTP falló: ' + (e?.name ?? '') + ' — ' + (e?.message ?? String(err)));
         // Cancelado, timeout, o sin soporte — se sigue completando a mano.
       });
 
