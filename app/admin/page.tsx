@@ -855,21 +855,21 @@ export default function Home() {
               </button>
             ))}
             <a href="/admin/pedidos" className="nav-btn">📦 Pedidos</a>
-            <a href="/admin/karaoke" className="nav-btn">🎤 Karaoke</a>
-            <a href="/admin/karaoke2" className="nav-btn">🎤 Karaoke 2</a>
-            <a href="/admin/video" className="nav-btn">🎬 Video</a>
-            <a href="/admin/video-letra" className="nav-btn">🎞️ Video Letra</a>
+            <a href="/admin/karaoke" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke</a>
+            <a href="/admin/karaoke2" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke 2</a>
+            <a href="/admin/video" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎬 Video</a>
+            <a href="/admin/video-letra" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎞️ Video Letra</a>
             <a href="/admin/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/admin/grabar" className="nav-btn">🎙️ Grabar</a>
             <a href="/admin/compartir" className="nav-btn">🔗 Compartir</a>
-            <a href="/admin/instrumento" className="nav-btn">🎹 Voz→Inst</a>
-            <a href="/admin/galimatias" className="nav-btn">🗣️ Galimatías</a>
-            <a href="/admin/cambialetra" className="nav-btn">📝 Cambia Letra</a>
-            <a href="/admin/intervalos" className="nav-btn">⏸️ Intervalos</a>
+            <a href="/admin/instrumento" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎹 Voz→Inst</a>
+            <a href="/admin/galimatias" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🗣️ Galimatías</a>
+            <a href="/admin/cambialetra" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">📝 Cambia Letra</a>
+            <a href="/admin/intervalos" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">⏸️ Intervalos</a>
             <a href="/admin/prompt-suno" className="nav-btn">🎛️ Prompts Suno</a>
             <a href="/admin/corrido" className="nav-btn">🎸 Corridos</a>
-            <a href="/admin/muestra" className="nav-btn">💧 Muestra</a>
-            <a href="/admin/muestra-video" className="nav-btn">🎬 Muestra Video</a>
+            <a href="/admin/muestra" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">💧 Muestra</a>
+            <a href="/admin/muestra-video" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎬 Muestra Video</a>
             <a href="/admin/pixel" className="nav-btn">🎨 Pixel Art</a>
           </nav>
         </div>

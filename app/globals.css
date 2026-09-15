@@ -63,6 +63,11 @@ body {
 .nav-btn:hover { color: var(--text); background: var(--surface2); }
 .nav-btn.active { color: var(--accent-soft); background: var(--accent-glow); border-color: var(--accent); }
 
+/* Herramientas que procesan audio/video con ffmpeg en el servidor — pesadas
+   para el plan Starter de Render, mejor usarlas desde localhost. */
+.nav-btn-heavy { color: var(--error); background: rgba(224, 93, 93, 0.1); border-color: rgba(224, 93, 93, 0.35); }
+.nav-btn-heavy:hover { color: var(--error); background: rgba(224, 93, 93, 0.2); border-color: var(--error); }
+
 /* ── MAIN ── */
 .main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 1.5rem; flex: 1; }
 
