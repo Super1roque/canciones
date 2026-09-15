@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
@@ -50,13 +49,11 @@ function urlWhatsApp(monto: number, telefono: string) {
 }
 
 export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
-  const router = useRouter();
   const [tenant, setTenant] = useState(tenantInicial);
   const [pedidos, setPedidos] = useState(pedidosIniciales);
   const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [saliendo, setSaliendo] = useState(false);
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
 
@@ -92,13 +89,6 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     };
   }, []);
 
-  async function cerrarSesion() {
-    setSaliendo(true);
-    await fetch('/api/tenants/logout', { method: 'POST' }).catch(() => {});
-    router.push('/');
-    router.refresh();
-  }
-
   async function pedirRecarga(monto: number) {
     setSolicitando(monto);
     setError('');
@@ -123,19 +113,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: 640 }}>
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
-            <button
-              onClick={cerrarSesion}
-              disabled={saliendo}
-              style={{
-                background: 'none', border: 'none', color: 'var(--cr-text-muted)', textDecoration: 'underline',
-                fontSize: '0.78rem', cursor: 'pointer', padding: 0, fontFamily: 'inherit',
-              }}
-            >
-              {saliendo ? 'Saliendo...' : 'Cerrar sesión'}
-            </button>
-          </div>
+          <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
               <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
@@ -161,10 +139,10 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                 rel="noopener noreferrer"
                 className={styles.btnPrimary}
                 style={{ textDecoration: 'none' }}
+                onClick={() => setRecargaPendiente(null)}
               >
                 💬 Avisar por WhatsApp que ya transferí
               </a>
-              <button className={styles.btnSecondary} onClick={() => setRecargaPendiente(null)}>Listo</button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
