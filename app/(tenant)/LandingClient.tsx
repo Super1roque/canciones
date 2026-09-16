@@ -43,6 +43,14 @@ export default function LandingClient() {
       // remarketing en Meta — separado del evento de registro real, que
       // recién se dispara cuando el admin aprueba la verificación.
       trackMetaPixel('Lead');
+      // Abre WhatsApp en el mismo momento, sin esperar un click aparte —
+      // antes había que tocar "Continuar" y DESPUÉS otro botón para recién
+      // ahí ir a WhatsApp, y ese paso de más era donde se perdían leads que
+      // nunca llegaban a mandar el mensaje. Sigue dentro del mismo gesto
+      // del usuario (el submit del form), así que el navegador no lo
+      // bloquea como popup.
+      window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer');
+      abiertoWhatsappRef.current = true;
     } catch {
       setError('Error de conexión con el servidor');
     } finally {
@@ -144,13 +152,13 @@ export default function LandingClient() {
             ) : (
               <>
                 <p style={{ margin: 0 }}>
-                  Tocá el botón para confirmar por WhatsApp que <strong>{telefono}</strong> es tu número.
+                  Ya te abrimos WhatsApp con un mensaje listo para confirmar que <strong>{telefono}</strong> es tu número — solo tenés que enviarlo.
                 </p>
-                <button type="button" className={styles.btnPrimary} onClick={abrirWhatsapp} style={{ textDecoration: 'none' }}>
-                  💬 Confirmar por WhatsApp
+                <button type="button" className={styles.btnSecondary} onClick={abrirWhatsapp} style={{ textDecoration: 'none' }}>
+                  💬 ¿No se abrió? Tocá acá
                 </button>
                 <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>
-                  Se va a abrir WhatsApp con un mensaje ya escrito — solo tenés que enviarlo. Apenas lo confirmemos, esta pantalla arranca sola.
+                  Apenas confirmemos que lo enviaste, esta pantalla arranca sola.
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cr-text-muted)', fontSize: '0.82rem' }}>
                   <span className="spinner" style={{
