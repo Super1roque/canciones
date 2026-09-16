@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
+import { trackMetaPixel } from '@/lib/metaPixel';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [500, 1000] as const;
@@ -76,6 +77,15 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
 
+  // El evento "Purchase" no se puede disparar desde donde el admin aprueba
+  // la recarga (quedaría atribuido a la sesión del admin, no a la del
+  // comprador) — mismo problema y misma solución que en RickyMath: se
+  // dispara acá, en el navegador del propio tenant, comparando el saldo
+  // contra el que tenía antes de este poll. Arranca desde el saldo real
+  // con el que se cargó la página, así que no duplica el aviso entre
+  // visitas ni sesiones distintas.
+  const saldoAnteriorRef = useRef(tenantInicial.saldo ?? 0);
+
   // Trae saldo y pedidos actualizados en segundo plano — así si el admin
   // aprueba una recarga o marca un pedido como entregado, se refleja acá
   // sin que el tenant tenga que recargar la página a mano. Solo mientras
@@ -92,7 +102,15 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         ]);
         if (cancelado) return;
         if (resPedidos.ok) setPedidos(await resPedidos.json());
-        if (resTenant.ok) setTenant(await resTenant.json());
+        if (resTenant.ok) {
+          const nuevoTenant = await resTenant.json();
+          const saldoNuevo = nuevoTenant.saldo ?? 0;
+          if (saldoNuevo > saldoAnteriorRef.current) {
+            trackMetaPixel('Purchase', { value: saldoNuevo - saldoAnteriorRef.current, currency: 'HNL' });
+          }
+          saldoAnteriorRef.current = saldoNuevo;
+          setTenant(nuevoTenant);
+        }
       } catch {
         // Silencioso — se reintenta en el próximo ciclo.
       }
@@ -128,11 +146,15 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     }
   }
 
-  // Recién acá se avisa al admin por correo — al crear la solicitud
-  // (pedirRecarga) todavía no hay ninguna intención real de pago.
+  // Recién acá se avisa al admin por correo y se dispara el pixel de Meta
+  // — al crear la solicitud (pedirRecarga) todavía no hay ninguna
+  // intención real de pago, recién acá el tenant confirma que va a pagar.
   function confirmarAvisoWhatsapp() {
     if (recargaIdPendiente) {
       fetch(`/api/recargas/${recargaIdPendiente}/avisar`, { method: 'POST' }).catch(() => {});
+    }
+    if (recargaPendiente) {
+      trackMetaPixel('InitiateCheckout', { value: recargaPendiente, currency: 'HNL' });
     }
     setRecargaPendiente(null);
     setRecargaIdPendiente(null);

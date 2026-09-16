@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './tenant.module.css';
+import { trackMetaPixel } from '@/lib/metaPixel';
 
 // Producto pensado para Honduras — si no escriben un +código, se asume +504.
 function formatearVisible(raw: string): string {
@@ -38,6 +39,10 @@ export default function LandingClient() {
       verificacionIdRef.current = data.id;
       setWhatsappUrl(data.whatsappUrl);
       setPaso('esperando');
+      // Señal de interés genuino (dejó su teléfono) para armar audiencias de
+      // remarketing en Meta — separado del evento de registro real, que
+      // recién se dispara cuando el admin aprueba la verificación.
+      trackMetaPixel('Lead');
     } catch {
       setError('Error de conexión con el servidor');
     } finally {
@@ -53,6 +58,7 @@ export default function LandingClient() {
       const res = await fetch(`/api/tenants/verificar/${id}`);
       const data = await res.json();
       if (data.estado === 'aprobada') {
+        trackMetaPixel('CompleteRegistration');
         router.push('/crear-parodia');
         return;
       }
