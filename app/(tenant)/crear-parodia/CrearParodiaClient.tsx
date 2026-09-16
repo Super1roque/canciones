@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
+import OnboardingVideo from './OnboardingVideo';
 
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
@@ -152,6 +153,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
 
   return (
     <main className={styles.main} style={{ alignItems: 'flex-start', paddingTop: '1.5rem' }}>
+      {!tenant.onboardingVisto && <OnboardingVideo />}
       <div className={styles.crearGrid}>
         <aside className={styles.panel} style={{ padding: '1rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una pista para tu canción</h2>

@@ -20,6 +20,7 @@ export interface Tenant {
   cancionesGratisLimite: number;
   saldo: number;
   ultimaParodia?: UltimaParodia;
+  onboardingVisto?: boolean;
 }
 
 // Deja solo dígitos — así "9999-8888", "+504 9999 8888" y "99998888" quedan
@@ -83,6 +84,14 @@ export async function guardarUltimaParodia(telefono: string, datos: Omit<UltimaP
   const db = getDb();
   const ultimaParodia: UltimaParodia = { ...datos, fecha: new Date().toISOString() };
   await db.collection(COLLECTION).doc(telefono).update({ ultimaParodia });
+}
+
+// Se llama apenas el tenant cierra el video de inducción — así no vuelve a
+// aparecer en visitas futuras, ni en otra pestaña/dispositivo (a diferencia
+// de guardarlo solo en localStorage, que es por navegador).
+export async function marcarOnboardingVisto(telefono: string): Promise<void> {
+  const db = getDb();
+  await db.collection(COLLECTION).doc(telefono).update({ onboardingVisto: true });
 }
 
 // Transacción (no un simple increment negativo) porque acá sí hay que
