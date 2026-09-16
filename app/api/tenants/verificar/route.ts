@@ -9,9 +9,17 @@ import { avisarNuevaVerificacion } from '@/lib/emailService';
 // Sin esto, el mismo número quedaría guardado distinto según cómo lo haya
 // tipeado la persona ("9999-8888" vs "+504 9999 8888"), partiendo en dos
 // tenants lo que debería ser la misma cuenta.
+//
+// Los números de Honduras son de 8 dígitos — si ya viene más largo (ej. un
+// hondureño en EE. UU. escribiendo su número de allá) asumimos que ya trae
+// su propio código de país y no le pisamos un "504" encima, aunque no haya
+// puesto el "+" (eso dejaba números como "865-604-9903" convertidos en
+// basura tipo "5048656049903").
 function conCodigoPais(raw: string): string {
   const limpio = raw.trim();
   if (limpio.startsWith('+')) return limpio;
+  const soloDigitos = limpio.replace(/\D/g, '');
+  if (soloDigitos.length > 8) return limpio;
   return '504' + limpio;
 }
 
