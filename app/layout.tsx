@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: 'Canciones — Generador de Parodias',
   description: 'Generador de parodias de canciones con IA',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Canciones' },
+  // Verifica la propiedad de corridos.online en Meta Business Manager —
+  // necesario para configurar Aggregated Event Measurement del pixel.
+  other: { 'facebook-domain-verification': '59gfvlrirtps27o5qgrigzgknsw70n' },
 };
 
 export const viewport: Viewport = {
