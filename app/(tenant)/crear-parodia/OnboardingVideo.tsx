@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styles from '../tenant.module.css';
 
 const VIDEO_URL = 'https://storage.googleapis.com/canciones-56dab.firebasestorage.app/onboarding/corridos-instructivo.mp4';
@@ -10,10 +10,16 @@ const VIDEO_URL = 'https://storage.googleapis.com/canciones-56dab.firebasestorag
 // dispositivo o si borra los datos del navegador.
 export default function OnboardingVideo() {
   const [visible, setVisible] = useState(true);
+  const [reproduciendo, setReproduciendo] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   function cerrar() {
     setVisible(false);
     fetch('/api/tenants/onboarding', { method: 'POST' }).catch(() => {});
+  }
+
+  function reproducir() {
+    videoRef.current?.play();
   }
 
   if (!visible) return null;
@@ -38,13 +44,37 @@ export default function OnboardingVideo() {
         <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
           <span className={styles.badge}>🤔 ¿Y ahora qué hago?</span>
         </div>
-        <video
-          src={VIDEO_URL}
-          controls
-          playsInline
-          onEnded={cerrar}
-          style={{ width: '100%', borderRadius: 12, display: 'block', background: '#000' }}
-        />
+        <div style={{ position: 'relative' }}>
+          <video
+            ref={videoRef}
+            src={VIDEO_URL}
+            controls
+            playsInline
+            onPlay={() => setReproduciendo(true)}
+            onPause={() => setReproduciendo(false)}
+            onEnded={cerrar}
+            style={{ width: '100%', borderRadius: 12, display: 'block', background: '#000' }}
+          />
+          {!reproduciendo && (
+            <button
+              onClick={reproducir}
+              aria-label="Reproducir video"
+              style={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                width: 76, height: 76, borderRadius: '50%',
+                background: 'rgba(242, 183, 5, 0.92)', border: '3px solid rgba(253, 243, 224, 0.9)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+              }}
+            >
+              <span style={{
+                width: 0, height: 0, marginLeft: 6,
+                borderTop: '16px solid transparent', borderBottom: '16px solid transparent',
+                borderLeft: '26px solid #3a1216',
+              }} />
+            </button>
+          )}
+        </div>
         <p className={styles.textMuted} style={{ fontSize: '0.78rem', textAlign: 'center', margin: '0.75rem 0 0' }}>
           Mirá este video rápido y arrancá con tu primera canción 🎸
         </p>
