@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { normalizarTelefono, telefonoValido, obtenerTenant } from '@/lib/tenantService';
 import { crearSolicitudVerificacion, obtenerVerificacionPendientePorTelefono } from '@/lib/verificacionService';
 import { ADMIN_WHATSAPP } from '@/lib/config';
+import { avisarNuevaVerificacion } from '@/lib/emailService';
 
 // Producto pensado para Honduras — si no escriben un +código, se asume 504.
 // Sin esto, el mismo número quedaría guardado distinto según cómo lo haya
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     // la cola de aprobaciones al admin con pedidos repetidos.
     const pendiente = await obtenerVerificacionPendientePorTelefono(telefono);
     const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono);
+    if (!pendiente) void avisarNuevaVerificacion(telefono);
 
     const mensaje = `Mi código es: ${verificacion.codigo}, Quiero confirmar mi registro en Canciones`;
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;

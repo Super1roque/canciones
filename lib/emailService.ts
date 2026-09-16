@@ -38,6 +38,26 @@ export async function avisarNuevoPedido(telefono: string, cancionBase: string): 
   }
 }
 
+export async function avisarNuevaVerificacion(telefono: string): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  try {
+    const { error } = await resend.emails.send({
+      from: 'Canciones <onboarding@resend.dev>',
+      to: ADMIN_EMAIL,
+      subject: `Nueva verificación de teléfono — ${telefono}`,
+      html: `
+        <p>El número <strong>${telefono}</strong> pidió verificarse y va a mandarte un código por WhatsApp.</p>
+        <p>Aprobalo solo si el mensaje de WhatsApp llegó de ese mismo número.</p>
+        <p><a href="https://corridos.online/admin/pedidos">Revisar en el panel de admin →</a></p>
+      `,
+    });
+    if (error) console.error('Resend devolvió un error al avisar de la verificación:', error);
+  } catch (e) {
+    console.error('avisarNuevaVerificacion falló:', e);
+  }
+}
+
 export async function avisarNuevaRecarga(telefono: string, monto: number): Promise<void> {
   const resend = getResend();
   if (!resend) return;
