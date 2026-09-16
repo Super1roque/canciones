@@ -164,11 +164,11 @@ export default function AdminPedidosPage() {
                 <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
                   <div>
                     <div style={{ fontWeight: 600 }}>
-                      Teléfono declarado: {v.telefono} — código {v.codigo}
+                      Teléfono declarado: {v.telefono}
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(v.fecha)}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--warning, #d99a2b)', marginTop: '0.2rem' }}>
-                      ⚠️ Aprobá solo si el mensaje de WhatsApp con ese código llegó de este mismo número.
+                      ⚠️ Aprobá solo si el WhatsApp llegó de este mismo número.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>

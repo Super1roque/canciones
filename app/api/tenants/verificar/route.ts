@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono);
     if (!pendiente) void avisarNuevaVerificacion(telefono);
 
-    const mensaje = `Mi código es: ${verificacion.codigo}, Quiero confirmar mi registro en Canciones`;
+    const mensaje = 'Por favor deme acceso a probar a hacer mi propio corrido';
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
 
     return NextResponse.json({ id: verificacion.id, whatsappUrl }, { status: 201 });
