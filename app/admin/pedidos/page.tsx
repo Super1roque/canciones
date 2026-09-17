@@ -87,8 +87,10 @@ export default function AdminPedidosPage() {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
+  // Separado del "cargando" a propósito — el refresco automático de fondo
+  // no debe hacer parpadear la lista con el mensaje de "Cargando…" cada
+  // vez que se ejecuta, eso queda solo para la primera carga real.
+  const cargarSilencioso = useCallback(async () => {
     const [pRes, rRes, vRes] = await Promise.all([
       fetch('/api/admin/pedidos'),
       fetch('/api/admin/recargas'),
@@ -97,10 +99,31 @@ export default function AdminPedidosPage() {
     setPedidos(pRes.ok ? await pRes.json() : []);
     setRecargas(rRes.ok ? await rRes.json() : []);
     setVerificaciones(vRes.ok ? await vRes.json() : []);
-    setCargando(false);
   }, []);
 
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    await cargarSilencioso();
+    setCargando(false);
+  }, [cargarSilencioso]);
+
   useEffect(() => { cargar(); }, [cargar]);
+
+  // Refresca solo mientras la pestaña está visible, así no hace falta
+  // apretar F5 para ver un pedido/recarga/verificación que acaba de
+  // entrar — igual que el polling del dashboard del tenant.
+  useEffect(() => {
+    function revisar() {
+      if (document.visibilityState !== 'visible') return;
+      cargarSilencioso();
+    }
+    const intervalo = setInterval(revisar, 15000);
+    document.addEventListener('visibilitychange', revisar);
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', revisar);
+    };
+  }, [cargarSilencioso]);
 
   async function marcarEntregado(id: string) {
     setOcupado(id);
@@ -109,7 +132,7 @@ export default function AdminPedidosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
-    await cargar();
+    await cargarSilencioso();
     setOcupado(null);
   }
 
@@ -120,7 +143,7 @@ export default function AdminPedidosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, aprobar }),
     });
-    await cargar();
+    await cargarSilencioso();
     setOcupado(null);
   }
 
@@ -131,7 +154,7 @@ export default function AdminPedidosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, aprobar }),
     });
-    await cargar();
+    await cargarSilencioso();
     setOcupado(null);
   }
 
