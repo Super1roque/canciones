@@ -73,6 +73,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [recargaIdPendiente, setRecargaIdPendiente] = useState<string | null>(null);
+  const [montoAConfirmar, setMontoAConfirmar] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
@@ -126,7 +127,15 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     };
   }, []);
 
-  async function pedirRecarga(monto: number) {
+  // Se crea la recarga y se avisa al admin por correo recién acá, después
+  // de que el tenant aceptó la advertencia de "Continuar" — antes el
+  // correo salía apenas confirmaba por WhatsApp, pero esa app queda fuera
+  // de nuestro control (podía abrirse y nunca mandar el mensaje). Este
+  // paso de confirmación explícito es lo único que sí podemos garantizar
+  // que el tenant vio antes de que el admin reciba el aviso.
+  async function confirmarRecarga() {
+    if (!montoAConfirmar) return;
+    const monto = montoAConfirmar;
     setSolicitando(monto);
     setError('');
     try {
@@ -136,26 +145,23 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         body: JSON.stringify({ monto }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
+      if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); setMontoAConfirmar(null); return; }
+      fetch(`/api/recargas/${data.id}/avisar`, { method: 'POST' }).catch(() => {});
+      trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
       setRecargaPendiente(monto);
       setRecargaIdPendiente(data.id);
+      setMontoAConfirmar(null);
     } catch {
       setError('Error de conexión con el servidor');
+      setMontoAConfirmar(null);
     } finally {
       setSolicitando(null);
     }
   }
 
-  // Recién acá se avisa al admin por correo y se dispara el pixel de Meta
-  // — al crear la solicitud (pedirRecarga) todavía no hay ninguna
-  // intención real de pago, recién acá el tenant confirma que va a pagar.
-  function confirmarAvisoWhatsapp() {
-    if (recargaIdPendiente) {
-      fetch(`/api/recargas/${recargaIdPendiente}/avisar`, { method: 'POST' }).catch(() => {});
-    }
-    if (recargaPendiente) {
-      trackMetaPixel('InitiateCheckout', { value: recargaPendiente, currency: 'HNL' });
-    }
+  // El botón de WhatsApp ya no manda el aviso (eso pasó al confirmar
+  // arriba) — solo cierra la pantalla de instrucciones de pago.
+  function cerrarInstruccionesPago() {
     setRecargaPendiente(null);
     setRecargaIdPendiente(null);
   }
@@ -191,7 +197,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                 rel="noopener noreferrer"
                 className={styles.btnPrimary}
                 style={{ textDecoration: 'none' }}
-                onClick={confirmarAvisoWhatsapp}
+                onClick={cerrarInstruccionesPago}
               >
                 💬 Avisar por WhatsApp que ya transferí
               </a>
@@ -212,7 +218,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                         🔥 +L{bono} gratis
                       </span>
                     )}
-                    <button className={styles.btnPrimary} style={{ width: '100%' }} onClick={() => pedirRecarga(monto)} disabled={solicitando === monto}>
+                    <button className={styles.btnPrimary} style={{ width: '100%' }} onClick={() => setMontoAConfirmar(monto)} disabled={solicitando === monto}>
                       {solicitando === monto ? 'Enviando...' : `+ L ${monto}`}
                     </button>
                   </div>
@@ -264,6 +270,35 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         </div>
 
       </div>
+
+      {montoAConfirmar && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.8)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div className={styles.panel} style={{ maxWidth: 420, width: '100%', padding: '1.75rem', textAlign: 'center' }}>
+            <span style={{ fontSize: '2.5rem' }}>⚠️</span>
+            <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0.75rem 0 1rem' }}>
+              Estás avisando que vas a recargar L {montoAConfirmar}
+            </h3>
+            <p style={{ margin: '0 0 1.5rem', lineHeight: 1.6 }}>
+              Le vamos a avisar al administrador que vas a hacer este depósito. Vas a tener que <strong>comprobarlo con el voucher de la transferencia</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <button
+                className={styles.btnPrimary}
+                onClick={confirmarRecarga}
+                disabled={solicitando === montoAConfirmar}
+              >
+                {solicitando === montoAConfirmar ? 'Avisando...' : '✅ Sí, voy a depositar — Continuar'}
+              </button>
+              <button className={styles.btnSecondary} onClick={() => setMontoAConfirmar(null)} disabled={solicitando === montoAConfirmar}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
