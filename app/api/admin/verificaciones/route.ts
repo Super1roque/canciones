@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { listarVerificacionesPendientes, resolverVerificacion } from '@/lib/verificacionService';
+import { obtenerOCrearTenant } from '@/lib/tenantService';
 
 export async function GET() {
   const verificaciones = await listarVerificacionesPendientes();
@@ -13,7 +14,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
     }
 
-    await resolverVerificacion(id, aprobar);
+    const verificacion = await resolverVerificacion(id, aprobar);
+
+    // La cuenta se crea acá mismo, no solo cuando el navegador del tenant
+    // hace polling y ve "aprobada" — si esa persona ya cerró la pestaña o
+    // dejó de esperar antes de que el admin aprobara, esta era la única
+    // vez que la cuenta se llegaba a crear. Ahora queda creada apenas se
+    // aprueba, sin depender de que nadie siga mirando la pantalla.
+    if (aprobar) await obtenerOCrearTenant(verificacion.telefono);
+
     return NextResponse.json({ ok: true });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
