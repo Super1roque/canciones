@@ -855,6 +855,7 @@ export default function Home() {
               </button>
             ))}
             <a href="/admin/pedidos" className="nav-btn">📦 Pedidos</a>
+            <a href="/admin/tenants" className="nav-btn">👥 Tenants</a>
             <a href="/admin/karaoke" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke</a>
             <a href="/admin/karaoke2" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke 2</a>
             <a href="/admin/video" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎬 Video</a>

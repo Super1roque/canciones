@@ -86,6 +86,16 @@ export async function guardarUltimaParodia(telefono: string, datos: Omit<UltimaP
   await db.collection(COLLECTION).doc(telefono).update({ ultimaParodia });
 }
 
+// Para el panel de admin — ordenado por fecha de registro, más reciente
+// primero, así lo último que pasó queda arriba sin tener que buscarlo.
+export async function listarTodosTenants(): Promise<Tenant[]> {
+  const db = getDb();
+  const snap = await db.collection(COLLECTION).get();
+  return snap.docs
+    .map(d => d.data() as Tenant)
+    .sort((a, b) => (b.fechaRegistro || '').localeCompare(a.fechaRegistro || ''));
+}
+
 // Se llama apenas el tenant cierra el video de inducción — así no vuelve a
 // aparecer en visitas futuras, ni en otra pestaña/dispositivo (a diferencia
 // de guardarlo solo en localStorage, que es por navegador).
