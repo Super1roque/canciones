@@ -23,6 +23,16 @@ function conCodigoPais(raw: string): string {
   return '504' + limpio;
 }
 
+// Los celulares de Honduras son 8 dígitos y siempre empiezan con 3, 8 o 9
+// — filtra typos evidentes ("999-888", un dígito de más, etc.) antes de
+// crear ninguna solicitud o mandar el correo de aviso. Solo aplica cuando
+// el número terminó siendo tratado como de Honduras (504 + 8 dígitos); un
+// número extranjero más largo no pasa por acá.
+function esCelularHondurasValido(telefono: string): boolean {
+  if (!telefono.startsWith('504')) return true;
+  return /^[389]\d{7}$/.test(telefono.slice(3));
+}
+
 // Reemplaza el registro por SMS (poco confiable con las operadoras locales)
 // por una confirmación manual: la persona manda un mensaje de WhatsApp con
 // un código desde su propio número, y el admin aprueba viendo que el
@@ -46,6 +56,9 @@ export async function POST(request: Request) {
 
     if (!telefonoValido(telefono)) {
       return NextResponse.json({ error: 'Ese número no parece válido' }, { status: 400 });
+    }
+    if (!esCelularHondurasValido(telefono)) {
+      return NextResponse.json({ error: 'Ese no parece un celular de Honduras válido — revisá que tenga 8 dígitos y empiece con 3, 8 o 9' }, { status: 400 });
     }
 
     // Reusa una solicitud pendiente existente en vez de acumular una nueva

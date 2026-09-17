@@ -14,6 +14,16 @@ function generarCodigo(): string {
   return String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
 }
 
+const VEINTICUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
+
+// Una solicitud "pendiente" que nadie confirmó en 24 horas se descarta
+// sola — evita que se acumulen para siempre solicitudes fantasma en el
+// panel del admin (typos, gente que se arrepintió, o alguien probando con
+// un número que no es el suyo).
+function estaExpirada(fecha: string): boolean {
+  return Date.now() - new Date(fecha).getTime() > VEINTICUATRO_HORAS_MS;
+}
+
 function toVerificacion(id: string, data: FirebaseFirestore.DocumentData): Verificacion {
   return {
     id,
@@ -52,7 +62,12 @@ export async function obtenerVerificacionPendientePorTelefono(telefono: string):
     .get();
   if (snap.empty) return null;
   const doc = snap.docs[0];
-  return toVerificacion(doc.id, doc.data());
+  const data = doc.data();
+  if (estaExpirada(data.fecha)) {
+    await doc.ref.update({ estado: 'rechazada' });
+    return null;
+  }
+  return toVerificacion(doc.id, data);
 }
 
 export async function obtenerVerificacion(id: string): Promise<Verificacion | null> {
@@ -65,9 +80,17 @@ export async function obtenerVerificacion(id: string): Promise<Verificacion | nu
 export async function listarVerificacionesPendientes(): Promise<Verificacion[]> {
   const db = getDb();
   const snap = await db.collection(COLLECTION).where('estado', '==', 'pendiente').get();
-  return snap.docs
-    .map(d => toVerificacion(d.id, d.data()))
-    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  const vigentes: Verificacion[] = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (estaExpirada(data.fecha)) {
+      await doc.ref.update({ estado: 'rechazada' });
+      continue;
+    }
+    vigentes.push(toVerificacion(doc.id, data));
+  }
+  return vigentes.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
 
 export async function resolverVerificacion(id: string, aprobar: boolean): Promise<Verificacion> {
