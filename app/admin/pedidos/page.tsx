@@ -35,6 +35,11 @@ function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function urlEnviarCodigo(telefono: string, codigo: string): string {
+  const mensaje = `Tu código de acceso a corridos.online es: ${codigo}\nUsalo en "¿Ya tenés un código de acceso?" si alguna vez perdés la sesión.`;
+  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+}
+
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="modal">
@@ -194,8 +199,17 @@ export default function AdminPedidosPage() {
                       ⚠️ Aprobá solo si el WhatsApp llegó de este mismo número.
                     </div>
                     <div style={{ marginTop: '0.4rem', maxWidth: 220 }}>
-                      <CampoCopiable label="Código (pasalo por WhatsApp al aprobar)" valor={v.codigo} mono />
+                      <CampoCopiable label="Código de acceso" valor={v.codigo} mono />
                     </div>
+                    <a
+                      href={urlEnviarCodigo(v.telefono, v.codigo)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.78rem', textDecoration: 'none', display: 'inline-block', marginTop: '0.4rem' }}
+                    >
+                      📲 Enviarle el código por WhatsApp
+                    </a>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, true)}>
