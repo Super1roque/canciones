@@ -8,10 +8,16 @@ type Tenant = {
   cancionesGratisLimite: number;
   saldo: number;
   ultimaParodia?: { cancion_base: string };
+  codigoAcceso: string | null;
 };
 
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function urlEnviarCodigo(telefono: string, codigo: string): string {
+  const mensaje = `Tu código de acceso a corridos.online es: ${codigo}\nUsalo en "¿Ya tenés un código de acceso?" si alguna vez perdés la sesión.`;
+  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
 export default function AdminTenantsPage() {
@@ -67,6 +73,7 @@ export default function AdminTenantsPage() {
                     <th style={{ padding: '0.5rem 0.75rem' }}>Saldo</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Gratis usada</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Última parodia</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>Código de acceso</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -83,6 +90,21 @@ export default function AdminTenantsPage() {
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>{t.cancionesGratisUsadas}/{t.cancionesGratisLimite}</td>
                       <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{t.ultimaParodia?.cancion_base || '—'}</td>
+                      <td style={{ padding: '0.6rem 0.75rem' }}>
+                        {t.codigoAcceso ? (
+                          <a
+                            href={urlEnviarCodigo(t.telefono, t.codigoAcceso)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary"
+                            style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                          >
+                            📲 {t.codigoAcceso}
+                          </a>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>vencido</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

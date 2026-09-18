@@ -134,3 +134,26 @@ export async function verificarCodigoAcceso(telefono: string, codigo: string): P
   }
   return false;
 }
+
+// Para el panel de admin (/admin/tenants) — permite reencontrar el código de
+// alguien que ya fue aprobado hace tiempo, sin depender de que la solicitud
+// siga apareciendo en la cola de "pendientes" (de ahí desaparece apenas se
+// aprueba). Devuelve el más reciente que todavía esté dentro de los 7 días.
+export async function obtenerCodigoVigente(telefono: string): Promise<string | null> {
+  const db = getDb();
+  const snap = await db.collection(COLLECTION)
+    .where('telefono', '==', telefono)
+    .where('estado', '==', 'aprobada')
+    .get();
+
+  let masReciente: { codigo: string; fechaResolucion: string } | null = null;
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    const fechaResolucion = data.fechaResolucion ?? data.fecha;
+    if (Date.now() - new Date(fechaResolucion).getTime() > SIETE_DIAS_MS) continue;
+    if (!masReciente || fechaResolucion > masReciente.fechaResolucion) {
+      masReciente = { codigo: data.codigo, fechaResolucion };
+    }
+  }
+  return masReciente?.codigo ?? null;
+}
