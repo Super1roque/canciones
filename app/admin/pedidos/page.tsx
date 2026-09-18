@@ -152,12 +152,17 @@ export default function AdminPedidosPage() {
     setOcupado(null);
   }
 
-  async function resolverVerificacion(id: string, aprobar: boolean) {
-    setOcupado(id);
+  async function resolverVerificacion(v: Verificacion, aprobar: boolean) {
+    // Se abre ANTES del fetch, en el mismo click, para que el navegador no
+    // lo bloquee como popup — y porque la tarjeta (con su botón de
+    // WhatsApp aparte) desaparece de la lista apenas se aprueba, así que
+    // no se puede depender de que el admin haga los dos clicks en orden.
+    if (aprobar) window.open(urlEnviarCodigo(v.telefono, v.codigo), '_blank', 'noopener,noreferrer');
+    setOcupado(v.id);
     await fetch('/api/admin/verificaciones', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, aprobar }),
+      body: JSON.stringify({ id: v.id, aprobar }),
     });
     await cargarSilencioso();
     setOcupado(null);
@@ -201,21 +206,15 @@ export default function AdminPedidosPage() {
                     <div style={{ marginTop: '0.4rem', maxWidth: 220 }}>
                       <CampoCopiable label="Código de acceso" valor={v.codigo} mono />
                     </div>
-                    <a
-                      href={urlEnviarCodigo(v.telefono, v.codigo)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary"
-                      style={{ fontSize: '0.78rem', textDecoration: 'none', display: 'inline-block', marginTop: '0.4rem' }}
-                    >
-                      📲 Enviarle el código por WhatsApp
-                    </a>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.35rem 0 0' }}>
+                      Al aprobar se abre WhatsApp con el código ya escrito para ese número.
+                    </p>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, true)}>
-                      {ocupado === v.id ? '...' : '✅ Aprobar'}
+                    <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v, true)}>
+                      {ocupado === v.id ? '...' : '✅ Aprobar y enviar código'}
                     </button>
-                    <button className="btn-danger" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, false)}>
+                    <button className="btn-danger" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v, false)}>
                       ✕ Rechazar
                     </button>
                   </div>
