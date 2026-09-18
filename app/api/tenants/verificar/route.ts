@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { normalizarTelefono, telefonoValido, obtenerTenant, conCodigoPais, esCelularHondurasValido } from '@/lib/tenantService';
 import { crearSolicitudVerificacion, obtenerVerificacionPendientePorTelefono } from '@/lib/verificacionService';
-import { ADMIN_WHATSAPP } from '@/lib/config';
+import { ADMIN_WHATSAPP, MENSAJE_VERIFICACION } from '@/lib/config';
 import { avisarNuevaVerificacion } from '@/lib/emailService';
 
 // Reemplaza el registro por SMS (poco confiable con las operadoras locales)
@@ -40,8 +40,7 @@ export async function POST(request: Request) {
     const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono);
     if (!pendiente) void avisarNuevaVerificacion(telefono);
 
-    const mensaje = 'Por favor deme acceso a probar a hacer mi propio corrido';
-    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(MENSAJE_VERIFICACION)}`;
 
     return NextResponse.json({ id: verificacion.id, whatsappUrl }, { status: 201 });
   } catch (error: unknown) {

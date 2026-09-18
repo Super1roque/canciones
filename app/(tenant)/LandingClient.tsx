@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './tenant.module.css';
 import { trackMetaPixel } from '@/lib/metaPixel';
+import { MENSAJE_VERIFICACION } from '@/lib/config';
 
 // Producto pensado para Honduras — si no escriben un +código, se asume +504.
 function formatearVisible(raw: string): string {
@@ -11,7 +12,7 @@ function formatearVisible(raw: string): string {
 
 export default function LandingClient() {
   const router = useRouter();
-  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo'>('telefono');
+  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo' | 'confirmarWhatsapp'>('telefono');
   const [telefono, setTelefono] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [revisando, setRevisando] = useState(false);
@@ -44,7 +45,12 @@ export default function LandingClient() {
           return;
         }
       }
-      await solicitarVerificacion();
+      // No se manda a WhatsApp automático todavía — primero se le explica
+      // POR QUÉ hace falta ese paso y QUÉ mensaje va a mandar. Sin esto,
+      // algunas personas no entendían que el mensaje de WhatsApp era
+      // obligatorio (no solo un botón más) y nunca llegaban a enviarlo,
+      // dejando la solicitud sin forma de aprobarse.
+      setPaso('confirmarWhatsapp');
     } finally {
       setEnviando(false);
     }
@@ -162,7 +168,33 @@ export default function LandingClient() {
           </p>
         </div>
 
-        {paso === 'sugerirCodigo' ? (
+        {paso === 'confirmarWhatsapp' ? (
+          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
+            <span style={{ fontSize: '2rem' }}>📲</span>
+            <p style={{ margin: 0 }}>
+              Para darte acceso necesitamos que nos confirmes por WhatsApp que <strong>{telefono}</strong> es tu número y que querés probar el sistema.
+            </p>
+            <p className={styles.textMuted} style={{ fontSize: '0.85rem', margin: 0 }}>
+              Te vamos a abrir WhatsApp con este mensaje ya escrito — es necesario que se lo des a <strong>Enviar</strong>, si no, no vamos a poder aprobarte:
+            </p>
+            <p style={{
+              margin: 0, padding: '0.75rem 1rem', borderRadius: 10, textAlign: 'left',
+              background: 'var(--cr-surface-2)', border: '2px solid var(--cr-border)', fontStyle: 'italic',
+            }}>
+              &ldquo;{MENSAJE_VERIFICACION}&rdquo;
+            </p>
+            <button type="button" className={styles.btnPrimary} disabled={enviando} onClick={solicitarVerificacion}>
+              {enviando ? 'Un momento...' : '💬 Abrir WhatsApp y enviarlo'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaso('telefono')}
+              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer' }}
+            >
+              ← Volver
+            </button>
+          </div>
+        ) : paso === 'sugerirCodigo' ? (
           <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
             <span style={{ fontSize: '2rem' }}>🔑</span>
             <p style={{ margin: 0 }}>
