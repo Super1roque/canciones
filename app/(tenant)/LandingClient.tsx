@@ -11,7 +11,7 @@ function formatearVisible(raw: string): string {
 
 export default function LandingClient() {
   const router = useRouter();
-  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo'>('telefono');
+  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo'>('telefono');
   const [telefono, setTelefono] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [revisando, setRevisando] = useState(false);
@@ -31,6 +31,26 @@ export default function LandingClient() {
     e.preventDefault();
     setError('');
     setRechazada(false);
+    setEnviando(true);
+    try {
+      // Antes de mandarlo a repetir todo el trámite de WhatsApp, se fija si
+      // ese número ya tiene cuenta y un código de acceso vigente — si es
+      // así, se lo sugiere como atajo en vez de crear una solicitud nueva.
+      const chk = await fetch(`/api/tenants/tiene-codigo?telefono=${encodeURIComponent(formatearVisible(telefono))}`);
+      if (chk.ok) {
+        const chkData = await chk.json();
+        if (chkData.tieneCodigo) {
+          setPaso('sugerirCodigo');
+          return;
+        }
+      }
+      await solicitarVerificacion();
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function solicitarVerificacion() {
     setEnviando(true);
     try {
       const res = await fetch('/api/tenants/verificar', {
@@ -142,7 +162,24 @@ export default function LandingClient() {
           </p>
         </div>
 
-        {paso === 'telefono' ? (
+        {paso === 'sugerirCodigo' ? (
+          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
+            <span style={{ fontSize: '2rem' }}>🔑</span>
+            <p style={{ margin: 0 }}>
+              El número <strong>{telefono}</strong> ya tiene una cuenta. Si guardaste el código que te mandamos por WhatsApp la última vez, podés entrar directo con él.
+            </p>
+            <button
+              type="button"
+              className={styles.btnPrimary}
+              onClick={() => { setTelefonoCodigo(telefono); setPaso('codigo'); }}
+            >
+              🔓 Sí, tengo el código
+            </button>
+            <button type="button" className={styles.btnSecondary} disabled={enviando} onClick={solicitarVerificacion}>
+              {enviando ? 'Un momento...' : '📲 No lo tengo, verificar por WhatsApp'}
+            </button>
+          </div>
+        ) : paso === 'telefono' ? (
           <form onSubmit={handleSolicitar} className={styles.formGroup}>
             <label htmlFor="telefono">Tu número de teléfono</label>
             <input
