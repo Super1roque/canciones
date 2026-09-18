@@ -8,6 +8,7 @@ export interface Verificacion {
   codigo: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   fecha: string;
+  fechaResolucion?: string;
 }
 
 function generarCodigo(): string {
@@ -15,6 +16,7 @@ function generarCodigo(): string {
 }
 
 const VEINTICUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
+const SIETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Una solicitud "pendiente" que nadie confirmó en 24 horas se descarta
 // sola — evita que se acumulen para siempre solicitudes fantasma en el
@@ -31,6 +33,7 @@ function toVerificacion(id: string, data: FirebaseFirestore.DocumentData): Verif
     codigo: data.codigo,
     estado: data.estado,
     fecha: data.fecha,
+    fechaResolucion: data.fechaResolucion,
   };
 }
 
@@ -103,6 +106,31 @@ export async function resolverVerificacion(id: string, aprobar: boolean): Promis
   if (data.estado !== 'pendiente') throw new Error('VERIFICACION_YA_RESUELTA');
 
   const estado = aprobar ? ('aprobada' as const) : ('rechazada' as const);
-  await ref.update({ estado });
-  return toVerificacion(id, { ...data, estado });
+  const fechaResolucion = new Date().toISOString();
+  await ref.update({ estado, fechaResolucion });
+  return toVerificacion(id, { ...data, estado, fechaResolucion });
+}
+
+// El "código de acceso" — el mismo que se generó al pedir la verificación
+// — deja entrar directo a alguien que ya fue aprobado pero perdió la
+// sesión (cerró la pestaña antes de que el admin aprobara, cambió de
+// celular, etc.) sin tener que repetir todo el trámite de WhatsApp. El
+// admin se lo pasa a mano respondiendo el mismo WhatsApp al aprobar.
+// Vence a los 7 días para que no quede como una llave abierta para
+// siempre si alguien la comparte sin querer.
+export async function verificarCodigoAcceso(telefono: string, codigo: string): Promise<boolean> {
+  const db = getDb();
+  const snap = await db.collection(COLLECTION)
+    .where('telefono', '==', telefono)
+    .where('estado', '==', 'aprobada')
+    .get();
+
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (data.codigo !== codigo) continue;
+    const fechaResolucion = data.fechaResolucion ?? data.fecha;
+    if (Date.now() - new Date(fechaResolucion).getTime() > SIETE_DIAS_MS) continue;
+    return true;
+  }
+  return false;
 }

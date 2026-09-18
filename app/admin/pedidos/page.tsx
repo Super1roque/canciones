@@ -193,6 +193,9 @@ export default function AdminPedidosPage() {
                     <div style={{ fontSize: '0.78rem', color: 'var(--warning, #d99a2b)', marginTop: '0.2rem' }}>
                       ⚠️ Aprobá solo si el WhatsApp llegó de este mismo número.
                     </div>
+                    <div style={{ marginTop: '0.4rem', maxWidth: 220 }}>
+                      <CampoCopiable label="Código (pasalo por WhatsApp al aprobar)" valor={v.codigo} mono />
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v.id, true)}>

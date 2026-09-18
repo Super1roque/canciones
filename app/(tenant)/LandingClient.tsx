@@ -11,13 +11,18 @@ function formatearVisible(raw: string): string {
 
 export default function LandingClient() {
   const router = useRouter();
-  const [paso, setPaso] = useState<'telefono' | 'esperando'>('telefono');
+  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo'>('telefono');
   const [telefono, setTelefono] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [revisando, setRevisando] = useState(false);
   const [error, setError] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
   const [rechazada, setRechazada] = useState(false);
+
+  const [telefonoCodigo, setTelefonoCodigo] = useState('');
+  const [codigo, setCodigo] = useState('');
+  const [enviandoCodigo, setEnviandoCodigo] = useState(false);
+  const [errorCodigo, setErrorCodigo] = useState('');
 
   const verificacionIdRef = useRef<string | null>(null);
   const abiertoWhatsappRef = useRef(false);
@@ -102,6 +107,26 @@ export default function LandingClient() {
     verificacionIdRef.current = null;
   }
 
+  async function handleVerificarCodigo(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorCodigo('');
+    setEnviandoCodigo(true);
+    try {
+      const res = await fetch('/api/tenants/verificar-codigo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: formatearVisible(telefonoCodigo), codigo }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrorCodigo(data.error || 'No se pudo verificar el código'); return; }
+      router.push('/crear-parodia');
+    } catch {
+      setErrorCodigo('Error de conexión con el servidor');
+    } finally {
+      setEnviandoCodigo(false);
+    }
+  }
+
   return (
     <main className={styles.main}>
       <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 440, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -136,6 +161,51 @@ export default function LandingClient() {
               {enviando ? 'Un momento...' : '📲 Continuar'}
             </button>
             {error && <p className={styles.error}>{error}</p>}
+            <button
+              type="button"
+              onClick={() => { setPaso('codigo'); setErrorCodigo(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer', marginTop: '0.25rem' }}
+            >
+              ¿Ya tenés un código de acceso? Ingresalo acá
+            </button>
+          </form>
+        ) : paso === 'codigo' ? (
+          <form onSubmit={handleVerificarCodigo} className={styles.formGroup}>
+            <label htmlFor="telefonoCodigo">Tu número de teléfono</label>
+            <input
+              id="telefonoCodigo"
+              type="tel"
+              className={styles.input}
+              placeholder="Ej: 9999-8888"
+              value={telefonoCodigo}
+              onChange={e => setTelefonoCodigo(e.target.value)}
+              required
+            />
+            <label htmlFor="codigo">Código de acceso</label>
+            <input
+              id="codigo"
+              type="text"
+              inputMode="numeric"
+              className={styles.input}
+              placeholder="123456"
+              value={codigo}
+              onChange={e => setCodigo(e.target.value)}
+              required
+            />
+            <p className={styles.textMuted} style={{ fontSize: '0.78rem', margin: 0 }}>
+              Es el código que te pasamos por WhatsApp cuando confirmamos tu número.
+            </p>
+            <button type="submit" className={styles.btnPrimary} disabled={enviandoCodigo} style={{ marginTop: '0.5rem' }}>
+              {enviandoCodigo ? 'Verificando...' : '🔓 Entrar'}
+            </button>
+            {errorCodigo && <p className={styles.error}>{errorCodigo}</p>}
+            <button
+              type="button"
+              onClick={() => { setPaso('telefono'); setErrorCodigo(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer' }}
+            >
+              ← Volver
+            </button>
           </form>
         ) : (
           <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
