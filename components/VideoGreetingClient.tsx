@@ -2,17 +2,20 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function SaludoFindeClient() {
+// Página de "saludo compartible" genérica — mismo diseño para /saludofinde,
+// /yavioquefaciles y cualquier otra que use este mismo formato: foto en
+// círculo con botón de play, y al tocar pasa a un reproductor vertical.
+export default function VideoGreetingClient({ videoSrc, posterSrc }: { videoSrc: string; posterSrc: string }) {
   const router = useRouter();
   const [reproduciendo, setReproduciendo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // El <video> está SIEMPRE montado (nunca se crea recién al hacer click) —
   // así el .play() se llama de forma síncrona, dentro del mismo gesto del
-  // click. Antes se montaba condicionalmente y el .play() quedaba diferido
-  // a un requestAnimationFrame, que a veces el navegador ya no contaba
-  // como parte del gesto del usuario y bloqueaba la reproducción en
-  // silencio (se quedaba trabado en 0:00).
+  // click. Si se monta condicionalmente y el .play() queda diferido a un
+  // requestAnimationFrame, el navegador a veces ya no lo cuenta como parte
+  // del gesto del usuario y bloquea la reproducción en silencio (se queda
+  // trabado en 0:00).
   function reproducir() {
     videoRef.current?.play();
     setReproduciendo(true);
@@ -55,8 +58,8 @@ export default function SaludoFindeClient() {
       }}>
         <video
           ref={videoRef}
-          src="/saludofinde/video.mp4"
-          poster="/saludofinde/poster.png"
+          src={videoSrc}
+          poster={posterSrc}
           controls={reproduciendo}
           playsInline
           onEnded={alTerminar}

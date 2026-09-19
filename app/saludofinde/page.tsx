@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import SaludoFindeClient from './SaludoFindeClient';
+import VideoGreetingClient from '@/components/VideoGreetingClient';
 
 // Tarjeta minimalista para compartir por WhatsApp — misma idea que /ir:
 // sin descripción, con una imagen armada a mano (la foto + un botón de
@@ -25,5 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function SaludoFindePage() {
-  return <SaludoFindeClient />;
+  return <VideoGreetingClient videoSrc="/saludofinde/video.mp4" posterSrc="/saludofinde/poster.png" />;
 }
