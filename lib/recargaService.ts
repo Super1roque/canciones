@@ -6,11 +6,11 @@ const COLLECTION = 'recargas';
 export const MONTOS_VALIDOS = [300, 500, 1000] as const;
 
 // Promo "flash": quien paga L 500 recibe L 600 de saldo, y quien paga
-// L 1000 recibe L 1200. El monto pagado y el crédito otorgado quedan como
+// L 1000 recibe L 1300. El monto pagado y el crédito otorgado quedan como
 // campos separados en la recarga — así el admin ve claramente cuánto era
 // el bono, y si el monto no tiene bono definido acá (como L 300), se
 // acredita 1 a 1.
-const CREDITO_POR_MONTO: Record<number, number> = { 500: 600, 1000: 1200 };
+const CREDITO_POR_MONTO: Record<number, number> = { 500: 600, 1000: 1300 };
 
 function calcularCredito(monto: number): number {
   return CREDITO_POR_MONTO[monto] ?? monto;

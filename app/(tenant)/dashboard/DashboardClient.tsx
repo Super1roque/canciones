@@ -9,7 +9,7 @@ const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoServ
 const MONTOS = [300, 500, 1000] as const;
 
 // Promo "flash": debe coincidir con CREDITO_POR_MONTO en lib/recargaService.ts
-const CREDITO_POR_MONTO: Record<number, number> = { 500: 600, 1000: 1200 };
+const CREDITO_POR_MONTO: Record<number, number> = { 500: 600, 1000: 1300 };
 function credito(monto: number) {
   return CREDITO_POR_MONTO[monto] ?? monto;
 }
