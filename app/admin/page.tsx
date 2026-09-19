@@ -863,6 +863,7 @@ export default function Home() {
             <a href="/admin/recortar" className="nav-btn">✂️ Recortar</a>
             <a href="/admin/grabar" className="nav-btn">🎙️ Grabar</a>
             <a href="/admin/compartir" className="nav-btn">🔗 Compartir</a>
+            <a href="/admin/compartir-cancion" className="nav-btn">🎤 Compartir Canción</a>
             <a href="/admin/instrumento" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎹 Voz→Inst</a>
             <a href="/admin/galimatias" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🗣️ Galimatías</a>
             <a href="/admin/cambialetra" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">📝 Cambia Letra</a>
