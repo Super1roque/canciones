@@ -6,10 +6,10 @@ import type { Pedido } from '@/lib/pedidoService';
 import { trackMetaPixel } from '@/lib/metaPixel';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
-const MONTOS = [500, 1000] as const;
+const MONTOS = [300, 500, 1000] as const;
 
 // Promo "flash": debe coincidir con CREDITO_POR_MONTO en lib/recargaService.ts
-const CREDITO_POR_MONTO: Record<number, number> = { 500: 500, 1000: 1200 };
+const CREDITO_POR_MONTO: Record<number, number> = { 500: 600, 1000: 1200 };
 function credito(monto: number) {
   return CREDITO_POR_MONTO[monto] ?? monto;
 }
