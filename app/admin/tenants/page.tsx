@@ -20,6 +20,13 @@ function urlEnviarCodigo(telefono: string, codigo: string): string {
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
+// Sin texto prellenado a propósito — este es para cualquier otro tipo de
+// mensaje (avisos, soporte, promos), no el código de acceso, así que se
+// abre la conversación en blanco y el admin escribe lo que corresponda.
+function urlEnviarMensaje(telefono: string): string {
+  return `https://wa.me/${telefono}`;
+}
+
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -74,6 +81,7 @@ export default function AdminTenantsPage() {
                     <th style={{ padding: '0.5rem 0.75rem' }}>Gratis usada</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Última parodia</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Código de acceso</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,6 +112,17 @@ export default function AdminTenantsPage() {
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>vencido</span>
                         )}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.75rem' }}>
+                        <a
+                          href={urlEnviarMensaje(t.telefono)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-secondary"
+                          style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                        >
+                          💬 Mensaje
+                        </a>
                       </td>
                     </tr>
                   ))}
