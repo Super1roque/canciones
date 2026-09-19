@@ -1,4 +1,7 @@
-const CACHE_NAME = 'canciones-v1';
+// Subir la versión purga el caché viejo en `activate` — necesario acá porque
+// ese caché viejo quedó con respuestas 404 guardadas para siempre (ver bug
+// de abajo: antes se guardaba cualquier respuesta, incluidos los errores).
+const CACHE_NAME = 'canciones-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -21,13 +24,20 @@ self.addEventListener('fetch', (event) => {
   // Los assets con hash en el nombre (_next/static) nunca cambian de
   // contenido para la misma URL — cache-first es seguro y rápido, sin
   // riesgo de que quede pegada una versión vieja después de un deploy.
+  //
+  // Solo se guarda en caché si la respuesta fue exitosa (response.ok) — si
+  // no, un 404 pasajero (por ejemplo, pedir un chunk justo durante la
+  // ventana de un deploy) quedaba guardado para siempre y rompía la página
+  // en cada visita futura, aunque el archivo real ya existiera.
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy).catch(() => {}));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy).catch(() => {}));
+          }
           return response;
         });
       }),
@@ -41,8 +51,10 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy).catch(() => {}));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy).catch(() => {}));
+        }
         return response;
       })
       .catch(() =>
