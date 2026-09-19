@@ -3,6 +3,7 @@ import { getDb, getStorageBucket } from '@/lib/firebaseService';
 import { transcribirPalabras } from '@/lib/deepgramService';
 
 export const runtime = 'nodejs';
+export const maxDuration = 120; // hasta 2 min — canción completa, igual que /api/transcribe
 
 // Colección separada de `audio_shares` (esa es el teaser de pago de
 // /escuchar — 2 reproducciones y se borra). Acá el objetivo es viralizar,
@@ -27,6 +28,21 @@ export async function POST(request: Request) {
       metadata: { contentType: file.type || 'audio/mpeg' },
     });
 
+    // Letra sincronizada — se espera acá mismo, antes de responder. Se
+    // probó primero sin esperar (fire-and-forget, como el aviso de Telegram
+    // de /api/audio/[id]), pero en producción Render corta esa tarea de
+    // fondo apenas se manda la respuesta — nunca llegaba a guardar las
+    // cues. Igual que /api/transcribe, que sí funciona de forma síncrona.
+    // Si falla, el doc se guarda igual pero sin `cues` — el reproductor ya
+    // sabe mostrar el ecualizador en ese caso.
+    const transcripcion = await transcribirPalabras(
+      buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+      file.type || 'audio/mpeg'
+    );
+    if (!('cues' in transcripcion)) {
+      console.error('canciones-compartidas transcripción:', transcripcion.error);
+    }
+
     const db = getDb();
     await db.collection('canciones_compartidas').doc(id).set({
       titulo,
@@ -34,23 +50,7 @@ export async function POST(request: Request) {
       contentType: file.type || 'audio/mpeg',
       size: buffer.length,
       fecha: new Date().toISOString(),
-    });
-
-    // Letra sincronizada — se transcribe en segundo plano, sin bloquear esta
-    // respuesta (una canción completa puede tardar más de un minuto con
-    // Deepgram). El link para compartir sale ya mismo; las cues quedan
-    // disponibles un rato después. Si falla, el doc simplemente se queda
-    // sin `cues` — el reproductor ya sabe mostrar el ecualizador en ese caso.
-    transcribirPalabras(
-      buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
-      file.type || 'audio/mpeg'
-    ).then(result => {
-      if ('cues' in result) {
-        return db.collection('canciones_compartidas').doc(id).update({ cues: result.cues });
-      }
-      console.error('canciones-compartidas transcripción:', result.error);
-    }).catch(err => {
-      console.error('canciones-compartidas transcripción:', err instanceof Error ? err.message : err);
+      ...('cues' in transcripcion ? { cues: transcripcion.cues } : {}),
     });
 
     return NextResponse.json({ id });

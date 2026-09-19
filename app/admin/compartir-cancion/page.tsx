@@ -115,7 +115,7 @@ export default function CompartirCancionPage() {
                 disabled={uploading}
                 style={{ marginTop: '1.25rem', width: '100%', opacity: uploading ? 0.6 : 1, fontSize: '1rem', padding: '0.75rem' }}
               >
-                {uploading ? '⏳ Subiendo...' : '🔗 Generar enlace'}
+                {uploading ? '⏳ Subiendo y preparando la letra (puede tardar hasta 2 min)...' : '🔗 Generar enlace'}
               </button>
             )}
           </>
@@ -143,7 +143,7 @@ export default function CompartirCancionPage() {
             </div>
 
             <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', textAlign: 'center', marginTop: '1rem' }}>
-              🎤 La letra sincronizada se activa sola en uno o dos minutos — no hace falta esperar para compartir el link.
+              🎤 Ya se preparó la letra sincronizada — el link está listo para compartir.
             </p>
 
             <button
