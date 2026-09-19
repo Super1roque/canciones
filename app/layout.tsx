@@ -22,7 +22,10 @@ export const metadata: Metadata = {
     description: DESCRIPCION,
     url: 'https://corridos.online',
     siteName: 'Canciones',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    // JPEG, no PNG — el rastreador de WhatsApp parece fallar en silencio
+    // (muestra título/descripción pero sin imagen) con el PNG de 747KB;
+    // el mismo diseño en JPEG pesa ~170KB y sí se ve.
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, type: 'image/jpeg' }],
     locale: 'es_HN',
     type: 'website',
   },
@@ -30,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: TITULO,
     description: DESCRIPCION,
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 
