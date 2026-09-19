@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
+import { transcribirPalabras } from '@/lib/deepgramService';
 
 export const runtime = 'nodejs';
 
@@ -33,6 +34,23 @@ export async function POST(request: Request) {
       contentType: file.type || 'audio/mpeg',
       size: buffer.length,
       fecha: new Date().toISOString(),
+    });
+
+    // Letra sincronizada — se transcribe en segundo plano, sin bloquear esta
+    // respuesta (una canción completa puede tardar más de un minuto con
+    // Deepgram). El link para compartir sale ya mismo; las cues quedan
+    // disponibles un rato después. Si falla, el doc simplemente se queda
+    // sin `cues` — el reproductor ya sabe mostrar el ecualizador en ese caso.
+    transcribirPalabras(
+      buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+      file.type || 'audio/mpeg'
+    ).then(result => {
+      if ('cues' in result) {
+        return db.collection('canciones_compartidas').doc(id).update({ cues: result.cues });
+      }
+      console.error('canciones-compartidas transcripción:', result.error);
+    }).catch(err => {
+      console.error('canciones-compartidas transcripción:', err instanceof Error ? err.message : err);
     });
 
     return NextResponse.json({ id });

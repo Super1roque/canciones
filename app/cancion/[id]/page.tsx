@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
+import type { Cue } from '@/lib/deepgramService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string };
+  return doc.data() as { titulo: string; cues?: Cue[] };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -59,6 +60,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       audioApiUrl={`/api/canciones-compartidas/${id}`}
       posterSrc="/cancion-compartida/poster.png"
       titulo={cancion.titulo}
+      cues={cancion.cues}
     />
   );
 }

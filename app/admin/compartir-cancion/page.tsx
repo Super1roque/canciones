@@ -142,6 +142,10 @@ export default function CompartirCancionPage() {
               </button>
             </div>
 
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', textAlign: 'center', marginTop: '1rem' }}>
+              🎤 La letra sincronizada se activa sola en uno o dos minutos — no hace falta esperar para compartir el link.
+            </p>
+
             <button
               className="kk-mode-btn"
               onClick={() => { setFile(null); setTitulo(''); setShareUrl(''); }}

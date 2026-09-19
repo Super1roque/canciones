@@ -1,16 +1,41 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Cue } from '@/lib/deepgramService';
 
 // Hermano de VideoGreetingClient.tsx, pero para audio — mismo círculo con
 // botón de play sobre el tema mariachi/corrido, pensado para viralizar
 // canciones generadas: se puede escuchar (no descargar) y al terminar
 // manda a corridos.online para que quien la recibió pueda registrarse.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo }: { audioApiUrl: string; posterSrc: string; titulo: string }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[] }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
+  const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
+  const cueIndexRef = useRef(0);
+
+  // Ventana deslizante de palabras (unas antes, la actual, unas después) en
+  // vez de auto-scroll con scrollIntoView — más simple y confiable en los
+  // navegadores/WebViews de celular (WhatsApp in-app, Android WebView) donde
+  // se va a abrir esto, que es justo donde el auto-scroll centrado suele
+  // fallar. El puntero solo avanza hacia adelante porque este reproductor
+  // no tiene barra de búsqueda nativa — el tiempo del audio nunca retrocede.
+  function actualizarVentana() {
+    if (!cues || cues.length === 0) return;
+    const t = audioRef.current?.currentTime ?? 0;
+    let i = cueIndexRef.current;
+    while (i < cues.length - 1 && cues[i].end < t) i++;
+    cueIndexRef.current = i;
+
+    const desde = Math.max(0, i - 4);
+    const hasta = Math.min(cues.length, i + 5);
+    setVentana({
+      antes: cues.slice(desde, i).map(c => c.text).join(' '),
+      actual: cues[i]?.text ?? '',
+      despues: cues.slice(i + 1, hasta).map(c => c.text).join(' '),
+    });
+  }
 
   // El audio no se sirve como un link directo descargable — se trae como
   // blob a través de la API (mismo patrón que AudioPlayer.tsx de
@@ -55,6 +80,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo }: 
   }
 
   const reproduciendo = estado === 'reproduciendo';
+  const hayLetra = reproduciendo && !!cues?.length && !!ventana;
 
   return (
     <main style={{
@@ -106,7 +132,16 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo }: 
 
       <h1 style={{ fontSize: '1.15rem', margin: 0, maxWidth: '90vw' }}>{titulo}</h1>
 
-      {reproduciendo ? (
+      {hayLetra ? (
+        <p style={{
+          margin: 0, maxWidth: '92vw', fontSize: '1.05rem', lineHeight: 1.5,
+          color: '#e0b98f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {ventana!.antes ? ventana!.antes + ' ' : ''}
+          <strong style={{ color: '#ffd35c', fontSize: '1.2rem' }}>{ventana!.actual}</strong>
+          {ventana!.despues ? ' ' + ventana!.despues : ''}
+        </p>
+      ) : reproduciendo ? (
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '28px' }}>
           {[0, 1, 2, 3, 4].map(i => (
             <span
@@ -126,7 +161,12 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo }: 
         </p>
       )}
 
-      <audio ref={audioRef} onEnded={alTerminar} onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))} />
+      <audio
+        ref={audioRef}
+        onEnded={alTerminar}
+        onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))}
+        onTimeUpdate={actualizarVentana}
+      />
       <style>{'@keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }'}</style>
     </main>
   );
