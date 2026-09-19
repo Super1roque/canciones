@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   description: '',
   openGraph: {
     title: 'corridos.online',
-    images: [{ url: '/saludofinde/og-image.jpg', width: 1200, height: 630, type: 'image/jpeg' }],
+    // Vertical (9:16) en vez del 1200x630 horizontal habitual — hace juego
+    // con el video real, que también es vertical (celular).
+    images: [{ url: '/saludofinde/og-image-vertical.jpg', width: 720, height: 1280, type: 'image/jpeg' }],
     url: 'https://corridos.online/saludofinde',
     siteName: 'Canciones',
     type: 'website',
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'corridos.online',
-    images: ['/saludofinde/og-image.jpg'],
+    images: ['/saludofinde/og-image-vertical.jpg'],
   },
 };
 
