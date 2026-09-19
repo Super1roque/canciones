@@ -106,11 +106,28 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo }: 
 
       <h1 style={{ fontSize: '1.15rem', margin: 0, maxWidth: '90vw' }}>{titulo}</h1>
 
-      <p style={{ margin: 0, color: '#e0b98f', fontSize: '0.9rem' }}>
-        {estado === 'cargando' ? 'Cargando...' : reproduciendo ? 'Sonando 🎶' : estado === 'pausado' ? 'Pausado' : 'Tocá para escuchar'}
-      </p>
+      {reproduciendo ? (
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '28px' }}>
+          {[0, 1, 2, 3, 4].map(i => (
+            <span
+              key={i}
+              style={{
+                width: '5px', borderRadius: '3px',
+                background: 'linear-gradient(180deg, #ffd35c, #f2b705)',
+                animation: `eqBar ${0.7 + (i % 3) * 0.15}s ease-in-out infinite`,
+                animationDelay: `${i * 0.08}s`,
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <p style={{ margin: 0, color: '#e0b98f', fontSize: '0.9rem' }}>
+          {estado === 'cargando' ? 'Cargando...' : estado === 'pausado' ? 'Pausado' : 'Tocá para escuchar'}
+        </p>
+      )}
 
       <audio ref={audioRef} onEnded={alTerminar} onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))} />
+      <style>{'@keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }'}</style>
     </main>
   );
 }
