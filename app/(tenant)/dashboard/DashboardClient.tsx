@@ -128,11 +128,8 @@ async function compartirApp() {
 export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
   const [tenant, setTenant] = useState(tenantInicial);
   const [pedidos, setPedidos] = useState(pedidosIniciales);
-  const [solicitando, setSolicitando] = useState<number | null>(null);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
-  const [recargaIdPendiente, setRecargaIdPendiente] = useState<string | null>(null);
   const [montoAConfirmar, setMontoAConfirmar] = useState<number | null>(null);
-  const [error, setError] = useState('');
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
 
@@ -185,17 +182,27 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     };
   }, []);
 
-  // Se crea la recarga y se avisa al admin por correo recién acá, después
-  // de que el tenant aceptó la advertencia de "Continuar" — antes el
-  // correo salía apenas confirmaba por WhatsApp, pero esa app queda fuera
-  // de nuestro control (podía abrirse y nunca mandar el mensaje). Este
-  // paso de confirmación explícito es lo único que sí podemos garantizar
-  // que el tenant vio antes de que el admin reciba el aviso.
-  async function confirmarRecarga() {
+  // "Continuar" en el modal de advertencia solo pasa a mostrar los datos
+  // de depósito — todavía no crea nada ni avisa al admin. El pedido de
+  // recarga recién se crea cuando el tenant le da a "Avisar por WhatsApp
+  // que ya transferí" (ver alAvisarWhatsApp), que es la señal real de que
+  // ya hizo el depósito, no solo de que miró el monto.
+  function confirmarRecarga() {
     if (!montoAConfirmar) return;
-    const monto = montoAConfirmar;
-    setSolicitando(monto);
-    setError('');
+    setRecargaPendiente(montoAConfirmar);
+    setMontoAConfirmar(null);
+  }
+
+  // Abre WhatsApp en el mismo click (antes de cualquier await, para que el
+  // navegador no lo bloquee como popup) y recién ahí crea la recarga y
+  // avisa al admin por correo — esta es la señal real de que el tenant ya
+  // transfirió, no cuando apenas vio el monto o los datos de depósito.
+  async function alAvisarWhatsApp() {
+    if (!recargaPendiente) return;
+    const monto = recargaPendiente;
+    window.open(urlWhatsApp(monto, tenant.telefono), '_blank', 'noopener,noreferrer');
+    setRecargaPendiente(null);
+
     try {
       const res = await fetch('/api/recargas', {
         method: 'POST',
@@ -203,25 +210,12 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         body: JSON.stringify({ monto }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); setMontoAConfirmar(null); return; }
+      if (!res.ok) return;
       fetch(`/api/recargas/${data.id}/avisar`, { method: 'POST' }).catch(() => {});
       trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
-      setRecargaPendiente(monto);
-      setRecargaIdPendiente(data.id);
-      setMontoAConfirmar(null);
     } catch {
-      setError('Error de conexión con el servidor');
-      setMontoAConfirmar(null);
-    } finally {
-      setSolicitando(null);
+      // Silencioso — ya se abrió WhatsApp, no hay nada más que mostrarle acá.
     }
-  }
-
-  // El botón de WhatsApp ya no manda el aviso (eso pasó al confirmar
-  // arriba) — solo cierra la pantalla de instrucciones de pago.
-  function cerrarInstruccionesPago() {
-    setRecargaPendiente(null);
-    setRecargaIdPendiente(null);
   }
 
   return (
@@ -250,16 +244,9 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
             <div className={styles.formGroup}>
               <p style={{ margin: 0 }}>Transferí a esta cuenta:</p>
               <DatosDeposito monto={recargaPendiente} />
-              <a
-                href={urlWhatsApp(recargaPendiente, tenant.telefono)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.btnPrimary}
-                style={{ textDecoration: 'none' }}
-                onClick={cerrarInstruccionesPago}
-              >
+              <button type="button" className={styles.btnPrimary} onClick={alAvisarWhatsApp}>
                 💬 Avisar por WhatsApp que ya transferí
-              </a>
+              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -277,15 +264,14 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                         🔥 +L{bono} gratis
                       </span>
                     )}
-                    <button className={styles.btnPrimary} style={{ width: '100%' }} onClick={() => setMontoAConfirmar(monto)} disabled={solicitando === monto}>
-                      {solicitando === monto ? 'Enviando...' : `+ L ${monto}`}
+                    <button className={styles.btnPrimary} style={{ width: '100%' }} onClick={() => setMontoAConfirmar(monto)}>
+                      + L {monto}
                     </button>
                   </div>
                 );
               })}
             </div>
           )}
-          {error && <p className={styles.error}>{error}</p>}
         </div>
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -338,23 +324,19 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
           <div className={styles.panel} style={{ maxWidth: 420, width: '100%', padding: '1.75rem', textAlign: 'center' }}>
             <span style={{ fontSize: '2.5rem' }}>⚠️</span>
             <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0.75rem 0 1rem' }}>
-              Estás avisando que vas a recargar L {montoAConfirmar}
+              Vas a recargar L {montoAConfirmar}
             </h3>
             <p style={{ margin: '0 0 1.25rem', lineHeight: 1.6 }}>
-              Le vamos a avisar al administrador que vas a hacer este depósito. Vas a tener que <strong>comprobarlo con el voucher de la transferencia</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
+              A continuación vas a ver los datos para hacer el depósito. Una vez que transfieras, avisale al administrador por WhatsApp — ahí es cuando se registra tu pedido. Vas a tener que <strong>comprobarlo con el voucher de la transferencia</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
             </p>
             <div style={{ marginBottom: '1.25rem' }}>
               <DatosDeposito monto={montoAConfirmar} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <button
-                className={styles.btnPrimary}
-                onClick={confirmarRecarga}
-                disabled={solicitando === montoAConfirmar}
-              >
-                {solicitando === montoAConfirmar ? 'Avisando...' : '✅ Sí, voy a depositar — Continuar'}
+              <button className={styles.btnPrimary} onClick={confirmarRecarga}>
+                ✅ Sí, voy a depositar — Continuar
               </button>
-              <button className={styles.btnSecondary} onClick={() => setMontoAConfirmar(null)} disabled={solicitando === montoAConfirmar}>
+              <button className={styles.btnSecondary} onClick={() => setMontoAConfirmar(null)}>
                 Cancelar
               </button>
             </div>
