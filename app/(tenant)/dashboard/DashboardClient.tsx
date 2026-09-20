@@ -37,13 +37,6 @@ const DATOS_PAGO = {
   whatsapp: '50496895978',
 };
 
-function instruccionesPago(monto: number) {
-  const creditoTotal = credito(monto);
-  const bono = creditoTotal - monto;
-  const lineaBono = bono > 0 ? `\n\n🔥 Con esta recarga recibís L ${creditoTotal} de saldo (L ${bono} de bono gratis).` : '';
-  return `Transferí L ${monto} a:\n\n${DATOS_PAGO.banco}\nCuenta: ${DATOS_PAGO.cuenta}\nA nombre de: ${DATOS_PAGO.titular}\nCédula: ${DATOS_PAGO.cedula}${lineaBono}`;
-}
-
 function urlWhatsApp(monto: number, telefono: string) {
   const mensaje = `Hola, ya transferí L ${monto} para recargar mi saldo en Canciones (mi número: ${telefono}).`;
   return `https://wa.me/${DATOS_PAGO.whatsapp}?text=${encodeURIComponent(mensaje)}`;
@@ -53,6 +46,71 @@ function urlWhatsApp(monto: number, telefono: string) {
 // (la mayoría de móviles), y si no, directo a WhatsApp con la URL pegada
 // al texto — la audiencia de acá comparte por ahí de todas formas.
 const MENSAJE_COMPARTIR = '¡Hola! 👋 Te comparto Canciones — le contás una historia y en minutos tenés tu propia parodia de corrido, bien especial para ti. ¡La primera te sale gratis!';
+
+// Número de cuenta y nombre en grande, aparte del resto — es lo que la
+// persona tiene que copiar bien en su app bancaria, así que no puede quedar
+// mezclado con el resto del texto como una línea más.
+function DatosDeposito({ monto }: { monto: number }) {
+  const [copiado, setCopiado] = useState(false);
+  const creditoTotal = credito(monto);
+  const bono = creditoTotal - monto;
+
+  function copiarCuenta() {
+    navigator.clipboard.writeText(DATOS_PAGO.cuenta).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+
+  return (
+    <div style={{
+      background: 'var(--cr-surface-2)', border: '2px solid var(--cr-gold)', borderRadius: 14,
+      padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', textAlign: 'left',
+    }}>
+      <div className={styles.textMuted} style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+        🏦 {DATOS_PAGO.banco}
+      </div>
+
+      <div>
+        <div className={styles.textMuted} style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
+          Número de cuenta
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{
+            fontSize: '1.7rem', fontWeight: 800, color: 'var(--cr-gold)', letterSpacing: '0.04em',
+            fontFamily: 'monospace', lineHeight: 1.1, wordBreak: 'break-all',
+          }}>
+            {DATOS_PAGO.cuenta}
+          </div>
+          <button type="button" onClick={copiarCuenta} className={styles.btnSecondary} style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem', minHeight: 'auto' }}>
+            {copiado ? '✅' : '📋 Copiar'}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div className={styles.textMuted} style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
+          A nombre de
+        </div>
+        <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>{DATOS_PAGO.titular}</div>
+        <div className={styles.textMuted} style={{ fontSize: '0.8rem', marginTop: '0.15rem' }}>Cédula: {DATOS_PAGO.cedula}</div>
+      </div>
+
+      <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>
+        Monto a transferir: <span style={{ color: 'var(--cr-gold)' }}>L {monto}</span>
+      </div>
+
+      {bono > 0 && (
+        <div style={{
+          background: 'rgba(31,138,76,0.16)', border: '1.5px solid var(--cr-green)', borderRadius: 10,
+          padding: '0.5rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--cr-green-soft)',
+        }}>
+          🔥 Con esta recarga recibís L {creditoTotal} de saldo (L {bono} de bono gratis)
+        </div>
+      )}
+    </div>
+  );
+}
 
 async function compartirApp() {
   const url = window.location.origin;
@@ -190,7 +248,8 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
           <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>Comprar créditos</h2>
           {recargaPendiente ? (
             <div className={styles.formGroup}>
-              <p style={{ whiteSpace: 'pre-line', margin: 0 }}>{instruccionesPago(recargaPendiente)}</p>
+              <p style={{ margin: 0 }}>Transferí a esta cuenta:</p>
+              <DatosDeposito monto={recargaPendiente} />
               <a
                 href={urlWhatsApp(recargaPendiente, tenant.telefono)}
                 target="_blank"
@@ -281,9 +340,12 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
             <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0.75rem 0 1rem' }}>
               Estás avisando que vas a recargar L {montoAConfirmar}
             </h3>
-            <p style={{ margin: '0 0 1.5rem', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 1.25rem', lineHeight: 1.6 }}>
               Le vamos a avisar al administrador que vas a hacer este depósito. Vas a tener que <strong>comprobarlo con el voucher de la transferencia</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
             </p>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <DatosDeposito monto={montoAConfirmar} />
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <button
                 className={styles.btnPrimary}
