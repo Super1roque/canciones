@@ -12,6 +12,7 @@ type Pedido = {
   fecha: string;
   estado: 'pendiente' | 'entregada';
   costo: number;
+  cancionCompartidaId?: string;
 };
 
 type Recarga = {
@@ -68,7 +69,33 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, onClose }: { pedido: Pedido; onClose: () => void }) {
+function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onClose: () => void; onVinculado: () => void }) {
+  const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [errorSubida, setErrorSubida] = useState('');
+
+  async function subirCancion() {
+    if (!archivo) return;
+    setSubiendo(true);
+    setErrorSubida('');
+    try {
+      const fd = new FormData();
+      fd.append('file', archivo);
+      fd.append('titulo', p.cancion_base);
+      fd.append('pedidoId', p.id);
+      const res = await fetch('/api/canciones-compartidas/upload', { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setErrorSubida(data.error || `Error al subir (${res.status})`); return; }
+      setCancionCompartidaId(data.id);
+      onVinculado();
+    } catch {
+      setErrorSubida('Error de conexión');
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
   return (
     <Modal onClose={onClose}>
       <div className="modal-header">
@@ -79,6 +106,27 @@ function ModalPedido({ pedido: p, onClose }: { pedido: Pedido; onClose: () => vo
         {p.estilo && <CampoCopiable label="🎼 Estilo" valor={p.estilo + (p.descripcionEstilo ? ` — ${p.descripcionEstilo}` : '')} />}
         <CampoCopiable label="💡 Historia" valor={p.historia} />
         <CampoCopiable label="🎤 Parodia generada" valor={p.parodia} mono />
+
+        {cancionCompartidaId ? (
+          <CampoCopiable label="🎧 Link para escuchar" valor={`https://corridos.online/cancion/${cancionCompartidaId}`} />
+        ) : (
+          <div className="campo-copiable">
+            <div className="campo-copiable-header">
+              <span className="campo-copiable-label">🎧 Compartir esta canción (mp3, hasta 20 MB)</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', padding: '0.5rem 0' }}>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={e => setArchivo(e.target.files?.[0] ?? null)}
+              />
+              <button className="btn-primary" disabled={!archivo || subiendo} onClick={subirCancion}>
+                {subiendo ? '⏳ Subiendo y preparando la letra...' : '🔗 Generar link'}
+              </button>
+            </div>
+            {errorSubida && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>⚠️ {errorSubida}</p>}
+          </div>
+        )}
       </div>
     </Modal>
   );
@@ -294,7 +342,7 @@ export default function AdminPedidosPage() {
 
       </main>
 
-      {pedidoAbierto && <ModalPedido pedido={pedidoAbierto} onClose={() => setPedidoAbierto(null)} />}
+      {pedidoAbierto && <ModalPedido pedido={pedidoAbierto} onClose={() => setPedidoAbierto(null)} onVinculado={cargarSilencioso} />}
     </div>
   );
 }

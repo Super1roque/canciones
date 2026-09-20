@@ -289,12 +289,25 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                     <div style={{ fontWeight: 700 }}>{p.cancion_base}</div>
                     <div className={styles.textMuted} style={{ fontSize: '0.78rem' }}>{formatFecha(p.fecha)}</div>
                   </div>
-                  <span
-                    className={styles.badge}
-                    style={p.estado === 'entregada' ? { background: 'rgba(31,138,76,0.14)', borderColor: 'var(--cr-green)', color: 'var(--cr-green)' } : undefined}
-                  >
-                    {p.estado === 'entregada' ? '✅ Entregada' : '⏳ Pendiente'}
-                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {p.cancionCompartidaId && (
+                      <a
+                        href={`/cancion/${p.cancionCompartidaId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.btnSecondary}
+                        style={{ textDecoration: 'none', fontSize: '0.82rem', padding: '0.5rem 0.9rem', minHeight: 'auto' }}
+                      >
+                        🎧 Escuchar
+                      </a>
+                    )}
+                    <span
+                      className={styles.badge}
+                      style={p.estado === 'entregada' ? { background: 'rgba(31,138,76,0.14)', borderColor: 'var(--cr-green)', color: 'var(--cr-green)' } : undefined}
+                    >
+                      {p.estado === 'entregada' ? '✅ Entregada' : '⏳ Pendiente'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

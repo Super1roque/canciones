@@ -17,6 +17,7 @@ export interface Pedido {
   fecha: string;
   estado: 'pendiente' | 'entregada';
   costo: number;
+  cancionCompartidaId?: string;
 }
 
 type NuevoPedidoInput = {
@@ -43,6 +44,7 @@ function toPedido(id: string, data: FirebaseFirestore.DocumentData): Pedido {
     // "pendiente" y "gratis" — no hace falta migrar datos viejos.
     estado: data.estado ?? 'pendiente',
     costo: data.costo ?? 0,
+    cancionCompartidaId: data.cancionCompartidaId,
   };
 }
 
@@ -109,4 +111,12 @@ export async function listarTodosPedidos(): Promise<Pedido[]> {
 export async function marcarPedidoEntregado(id: string): Promise<void> {
   const db = getDb();
   await db.collection(COLLECTION).doc(id).update({ estado: 'entregada' });
+}
+
+// Guarda en el pedido el id del doc de `canciones_compartidas` que le
+// corresponde, para que el tenant pueda volver a escucharla desde su
+// dashboard sin depender de que el admin le reenvíe el link.
+export async function vincularCancionCompartida(pedidoId: string, cancionCompartidaId: string): Promise<void> {
+  const db = getDb();
+  await db.collection(COLLECTION).doc(pedidoId).update({ cancionCompartidaId });
 }
