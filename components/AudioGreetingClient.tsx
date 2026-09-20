@@ -65,6 +65,24 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     }
   }
 
+  // Mismo patrón que "Compartir Canciones" del dashboard: Web Share API si
+  // el navegador la soporta (la mayoría de móviles, que es donde se abre
+  // esto), y si no, directo a WhatsApp. Comparte la URL de ESTA canción
+  // puntual (no la app en general), para que la cadena de compartidos siga.
+  async function compartirCancion() {
+    const url = window.location.href;
+    const mensaje = `🎵 Escuchá "${titulo}" — me la hicieron en corridos.online 🤠`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: titulo, text: mensaje, url });
+      } catch {
+        // El usuario canceló el selector — no hace falta avisar nada.
+      }
+      return;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${mensaje} ${url}`)}`, '_blank');
+  }
+
   // Si ya es tenant logueado, lo deja directo en su dashboard. Si no —el
   // caso más común acá, porque quien recibe el link compartido casi nunca
   // es tenant todavía— lo manda a la landing para que se registre. Así
@@ -160,6 +178,19 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           {estado === 'cargando' ? 'Cargando...' : estado === 'pausado' ? 'Pausado' : 'Tocá para escuchar'}
         </p>
       )}
+
+      <button
+        type="button"
+        onClick={compartirCancion}
+        style={{
+          marginTop: '0.5rem', padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999,
+          background: 'linear-gradient(180deg, #34c46f, #1f8a4c)', color: '#fdf3e0',
+          fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
+          boxShadow: '0 4px 0 #0f5c32', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+        }}
+      >
+        📤 Compartir esta canción
+      </button>
 
       <audio
         ref={audioRef}
