@@ -65,22 +65,21 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     }
   }
 
-  // Mismo patrón que "Compartir Canciones" del dashboard: Web Share API si
-  // el navegador la soporta (la mayoría de móviles, que es donde se abre
-  // esto), y si no, directo a WhatsApp. Comparte la URL de ESTA canción
-  // puntual (no la app en general), para que la cadena de compartidos siga.
+  // Comparte solo la URL, sin texto aparte — la tarjeta minimalista de la
+  // página (imagen + título, sin descripción) es la que habla. Agregar un
+  // "text" acá hace que WhatsApp lo muestre como un mensaje de más arriba
+  // del link en vez de dejar que la tarjeta sea lo único que se vea.
   async function compartirCancion() {
     const url = window.location.href;
-    const mensaje = `🎵 Escuchá "${titulo}" — me la hicieron en corridos.online 🤠`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: titulo, text: mensaje, url });
+        await navigator.share({ url });
       } catch {
         // El usuario canceló el selector — no hace falta avisar nada.
       }
       return;
     }
-    window.open(`https://wa.me/?text=${encodeURIComponent(`${mensaje} ${url}`)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
   }
 
   // Si ya es tenant logueado, lo deja directo en su dashboard. Si no —el
