@@ -41,6 +41,12 @@ function urlEnviarCodigo(telefono: string, codigo: string): string {
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
+const MENSAJE_AVISO_PROCESO_DEFAULT = 'Su canción ya está en proceso. Le llegará por este medio — cuando el sistema está muy cargado, suele demorar hasta una hora.';
+
+function urlAvisoProceso(telefono: string, mensaje: string): string {
+  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+}
+
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="modal">
@@ -78,6 +84,9 @@ function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onCl
   const [tituloCompartir, setTituloCompartir] = useState(p.cancion_base);
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState('');
+  // Editable porque a veces conviene ajustarlo al caso (ej. avisar que ya
+  // se entregó, o dar un tiempo distinto) antes de mandarlo.
+  const [mensajeAviso, setMensajeAviso] = useState(MENSAJE_AVISO_PROCESO_DEFAULT);
 
   async function subirCancion() {
     if (!archivo) return;
@@ -108,6 +117,30 @@ function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onCl
         <button className="btn-close" onClick={onClose}>✕</button>
       </div>
       <div className="campos-creacion">
+        <div className="campo-copiable">
+          <div className="campo-copiable-header">
+            <span className="campo-copiable-label">📲 Avisar que está en proceso</span>
+          </div>
+          <textarea
+            value={mensajeAviso}
+            onChange={e => setMensajeAviso(e.target.value)}
+            rows={3}
+            className="input"
+            style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+          />
+          <div style={{ paddingTop: '0.5rem' }}>
+            <a
+              href={urlAvisoProceso(p.telefono, mensajeAviso)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{ textDecoration: 'none', display: 'inline-block' }}
+            >
+              📲 Abrir WhatsApp y avisar
+            </a>
+          </div>
+        </div>
+
         {p.estilo && <CampoCopiable label="🎼 Estilo" valor={p.estilo + (p.descripcionEstilo ? ` — ${p.descripcionEstilo}` : '')} />}
         <CampoCopiable label="💡 Historia" valor={p.historia} />
         <CampoCopiable label="🎤 Parodia generada" valor={p.parodia} mono />
