@@ -1,8 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+type CancionCompartida = {
+  id: string;
+  titulo: string;
+  fecha: string;
+  reproducciones: number;
+};
 
 function fmtSize(bytes: number) {
   return bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatFecha(iso: string) {
+  return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export default function CompartirCancionPage() {
@@ -13,6 +24,21 @@ export default function CompartirCancionPage() {
   const [copied, setCopied] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
+
+  // Para medir viralización: cuántas veces se reprodujo cada canción
+  // compartida, no solo la más reciente — así se puede comparar entre sí.
+  const [canciones, setCanciones] = useState<CancionCompartida[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  const cargarCanciones = useCallback(() => {
+    return fetch('/api/admin/canciones-compartidas')
+      .then(res => res.json())
+      .then(data => setCanciones(Array.isArray(data) ? data : []));
+  }, []);
+
+  useEffect(() => {
+    cargarCanciones().finally(() => setCargando(false));
+  }, [cargarCanciones]);
 
   function handleFile(f: File) {
     if (!f.type.startsWith('audio/')) { setError('Solo se aceptan archivos de audio'); return; }
@@ -32,6 +58,7 @@ export default function CompartirCancionPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || `Error al subir (${res.status})`); return; }
       setShareUrl(`${window.location.origin}/cancion/${data.id}`);
+      cargarCanciones();
     } catch {
       setError('Error de conexión');
     } finally {
@@ -153,6 +180,38 @@ export default function CompartirCancionPage() {
             >
               + Compartir otra canción
             </button>
+          </div>
+        )}
+
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '2.5rem 0 0.75rem' }}>📊 Reproducciones</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1rem' }}>
+          Cuántas veces se abrió cada link — cada apertura cuenta una sola vez por visita, no importa si se pausa o se repite.
+        </p>
+        {cargando ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Cargando…</p>
+        ) : canciones.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Todavía no se compartió ninguna canción.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {canciones.map(c => (
+              <div
+                key={c.id}
+                style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem',
+                  border: '1px solid var(--border)', borderRadius: 10, padding: '0.65rem 0.9rem',
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.titulo}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{formatFecha(c.fecha)}</div>
+                </div>
+                <div className="badge" style={{ whiteSpace: 'nowrap' }}>
+                  ▶️ {c.reproducciones}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
