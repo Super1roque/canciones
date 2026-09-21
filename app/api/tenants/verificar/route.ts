@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { normalizarTelefono, telefonoValido, obtenerTenant, conCodigoPais, esCelularHondurasValido } from '@/lib/tenantService';
-import { crearSolicitudVerificacion, obtenerVerificacionPendientePorTelefono } from '@/lib/verificacionService';
+import { crearSolicitudVerificacion, obtenerVerificacionPendientePorTelefono, obtenerCodigoVigente } from '@/lib/verificacionService';
 import { ADMIN_WHATSAPP, MENSAJE_VERIFICACION } from '@/lib/config';
 import { avisarNuevaVerificacion } from '@/lib/emailService';
 
@@ -37,7 +37,13 @@ export async function POST(request: Request) {
     // cada vez que alguien reintenta con el mismo número — evita llenarle
     // la cola de aprobaciones al admin con pedidos repetidos.
     const pendiente = await obtenerVerificacionPendientePorTelefono(telefono);
-    const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono);
+    // Si ya tiene un código aprobado vigente (ej. de un alta rápida previa
+    // que nunca llegó a usar), la nueva solicitud hereda ese mismo código
+    // en vez de que al aprobarla nazca un código distinto — el admin sigue
+    // confirmando por WhatsApp igual que siempre, solo que ya no le queda
+    // un segundo código "enterrado" sin darse cuenta.
+    const codigoVigente = pendiente ? undefined : await obtenerCodigoVigente(telefono);
+    const verificacion = pendiente ?? await crearSolicitudVerificacion(telefono, codigoVigente ?? undefined);
     if (!pendiente) void avisarNuevaVerificacion(telefono);
 
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(MENSAJE_VERIFICACION)}`;

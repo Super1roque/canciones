@@ -40,11 +40,11 @@ function toVerificacion(id: string, data: FirebaseFirestore.DocumentData): Verif
 // El teléfono acá es el que la persona TIPEÓ en el formulario — todavía sin
 // confirmar. Recién se confía en él si el admin aprueba viendo que el
 // mensaje de WhatsApp llegó justo de ese número (ver resolverVerificacion).
-export async function crearSolicitudVerificacion(telefono: string): Promise<Verificacion> {
+export async function crearSolicitudVerificacion(telefono: string, codigoExistente?: string): Promise<Verificacion> {
   const db = getDb();
   const nuevo = {
     telefono,
-    codigo: generarCodigo(),
+    codigo: codigoExistente ?? generarCodigo(),
     estado: 'pendiente' as const,
     fecha: new Date().toISOString(),
   };
