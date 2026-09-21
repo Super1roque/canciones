@@ -72,17 +72,22 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
 function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onClose: () => void; onVinculado: () => void }) {
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
   const [archivo, setArchivo] = useState<File | null>(null);
+  // Precargado con el nombre de la canción base, pero editable — a veces
+  // conviene compartirla con un título distinto (ej. con el nombre de la
+  // persona en vez de solo la canción original).
+  const [tituloCompartir, setTituloCompartir] = useState(p.cancion_base);
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState('');
 
   async function subirCancion() {
     if (!archivo) return;
+    if (!tituloCompartir.trim()) { setErrorSubida('Ponele un título a la canción'); return; }
     setSubiendo(true);
     setErrorSubida('');
     try {
       const fd = new FormData();
       fd.append('file', archivo);
-      fd.append('titulo', p.cancion_base);
+      fd.append('titulo', tituloCompartir.trim());
       fd.append('pedidoId', p.id);
       const res = await fetch('/api/canciones-compartidas/upload', { method: 'POST', body: fd });
       const data = await res.json().catch(() => ({}));
@@ -113,6 +118,16 @@ function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onCl
           <div className="campo-copiable">
             <div className="campo-copiable-header">
               <span className="campo-copiable-label">🎧 Compartir esta canción (mp3, hasta 20 MB)</span>
+            </div>
+            <div style={{ padding: '0.5rem 0 0.25rem' }}>
+              <input
+                type="text"
+                value={tituloCompartir}
+                onChange={e => setTituloCompartir(e.target.value)}
+                placeholder="Título de la canción"
+                className="input"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', padding: '0.5rem 0' }}>
               <input
