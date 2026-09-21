@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 type Tenant = {
   telefono: string;
@@ -27,17 +27,59 @@ function urlEnviarMensaje(telefono: string): string {
   return `https://wa.me/${telefono}`;
 }
 
+function urlAltaRapida(telefono: string, codigo: string): string {
+  const mensaje = `Con gusto te presentamos la aplicación https://corridos.online — Para ingresar vas a necesitar tu número de teléfono y tu código de acceso: ${codigo}`;
+  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+}
+
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [telefonoAlta, setTelefonoAlta] = useState('');
+  const [creandoAlta, setCreandoAlta] = useState(false);
+  const [errorAlta, setErrorAlta] = useState('');
+  const [altaCreada, setAltaCreada] = useState<{ telefono: string; codigo: string } | null>(null);
+
+  const cargarTenants = useCallback(() => {
+    return fetch('/api/admin/tenants')
+      .then(res => res.json())
+      .then(data => setTenants(Array.isArray(data) ? data : []));
+  }, []);
 
   useEffect(() => {
-    fetch('/api/admin/tenants')
-      .then(res => res.json())
-      .then(data => setTenants(Array.isArray(data) ? data : []))
-      .finally(() => setCargando(false));
-  }, []);
+    cargarTenants().finally(() => setCargando(false));
+  }, [cargarTenants]);
+
+  // Fast-track: dado el número que un prospecto ya escribió por WhatsApp
+  // (ej. desde el anuncio), crea la cuenta ya aprobada. El código llega
+  // recién de la respuesta del servidor — no se puede abrir WhatsApp
+  // automático en ese momento (ya no es un gesto directo del usuario, los
+  // navegadores lo bloquean como popup), así que se muestra un botón para
+  // que el admin lo abra con un click, mismo patrón que el resto de esta
+  // tabla (columna "Código de acceso").
+  async function altaRapida() {
+    if (!telefonoAlta.trim()) return;
+    setCreandoAlta(true);
+    setErrorAlta('');
+    setAltaCreada(null);
+    try {
+      const res = await fetch('/api/admin/alta-rapida', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: telefonoAlta.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrorAlta(data.error || 'No se pudo crear la cuenta'); return; }
+      setAltaCreada({ telefono: data.telefono, codigo: data.codigo });
+      setTelefonoAlta('');
+      await cargarTenants();
+    } catch {
+      setErrorAlta('Error de conexión con el servidor');
+    } finally {
+      setCreandoAlta(false);
+    }
+  }
 
   const filtrados = tenants.filter(t => t.telefono.includes(busqueda.replace(/\D/g, '')));
 
@@ -51,6 +93,48 @@ export default function AdminTenantsPage() {
       </header>
 
       <main className="main" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900, margin: '0 auto', padding: '1.5rem' }}>
+        <section className="panel" style={{ padding: '1.25rem' }}>
+          <h2 style={{ margin: '0 0 0.5rem' }}>⚡ Alta rápida</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.75rem' }}>
+            Para alguien que ya te escribió por WhatsApp (ej. desde el anuncio) — crea la cuenta ya aprobada y le abre WhatsApp con el código de acceso listo.
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <input
+              type="tel"
+              placeholder="Número de teléfono…"
+              value={telefonoAlta}
+              onChange={e => setTelefonoAlta(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') altaRapida(); }}
+              className="input"
+              style={{ flex: '1 1 200px', boxSizing: 'border-box' }}
+            />
+            <button className="btn-primary" disabled={creandoAlta || !telefonoAlta.trim()} onClick={altaRapida}>
+              {creandoAlta ? '⏳ Creando...' : '⚡ Crear cuenta y enviar código'}
+            </button>
+          </div>
+          {errorAlta && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '0.5rem' }}>⚠️ {errorAlta}</p>}
+          {altaCreada && (
+            <div style={{
+              marginTop: '0.75rem', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--success)', background: 'rgba(78,201,160,0.08)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
+            }}>
+              <span style={{ fontSize: '0.85rem' }}>
+                ✅ Cuenta creada para <strong>{altaCreada.telefono}</strong> — código <strong>{altaCreada.codigo}</strong>
+              </span>
+              <a
+                href={urlAltaRapida(altaCreada.telefono, altaCreada.codigo)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
+              >
+                📲 Abrir WhatsApp y enviar
+              </a>
+            </div>
+          )}
+        </section>
+
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             Tenants registrados
