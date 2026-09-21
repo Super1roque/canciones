@@ -32,6 +32,13 @@ type Verificacion = {
   fecha: string;
 };
 
+type CancionCompartida = {
+  id: string;
+  titulo: string;
+  fecha: string;
+  reproducciones: number;
+};
+
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
@@ -75,7 +82,7 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; onClose: () => void; onVinculado: () => void }) {
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
   const [archivo, setArchivo] = useState<File | null>(null);
   // Precargado con el nombre de la canción base, pero editable — a veces
@@ -146,7 +153,12 @@ function ModalPedido({ pedido: p, onClose, onVinculado }: { pedido: Pedido; onCl
         <CampoCopiable label="🎤 Parodia generada" valor={p.parodia} mono />
 
         {cancionCompartidaId ? (
-          <CampoCopiable label="🎧 Link para escuchar" valor={`https://corridos.online/cancion/${cancionCompartidaId}`} />
+          <>
+            <CampoCopiable label="🎧 Link para escuchar" valor={`https://corridos.online/cancion/${cancionCompartidaId}`} />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.5rem 0 0' }}>
+              ▶️ Reproducida {reproducciones ?? 0} {reproducciones === 1 ? 'vez' : 'veces'}
+            </p>
+          </>
         ) : (
           <div className="campo-copiable">
             <div className="campo-copiable-header">
@@ -184,6 +196,7 @@ export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [recargas, setRecargas] = useState<Recarga[]>([]);
   const [verificaciones, setVerificaciones] = useState<Verificacion[]>([]);
+  const [cancionesCompartidas, setCancionesCompartidas] = useState<CancionCompartida[]>([]);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
@@ -192,14 +205,16 @@ export default function AdminPedidosPage() {
   // no debe hacer parpadear la lista con el mensaje de "Cargando…" cada
   // vez que se ejecuta, eso queda solo para la primera carga real.
   const cargarSilencioso = useCallback(async () => {
-    const [pRes, rRes, vRes] = await Promise.all([
+    const [pRes, rRes, vRes, ccRes] = await Promise.all([
       fetch('/api/admin/pedidos'),
       fetch('/api/admin/recargas'),
       fetch('/api/admin/verificaciones'),
+      fetch('/api/admin/canciones-compartidas'),
     ]);
     setPedidos(pRes.ok ? await pRes.json() : []);
     setRecargas(rRes.ok ? await rRes.json() : []);
     setVerificaciones(vRes.ok ? await vRes.json() : []);
+    setCancionesCompartidas(ccRes.ok ? await ccRes.json() : []);
   }, []);
 
   const cargar = useCallback(async () => {
@@ -266,6 +281,7 @@ export default function AdminPedidosPage() {
 
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
   const verificacionesPendientes = verificaciones.filter(v => v.estado === 'pendiente');
+  const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -370,6 +386,11 @@ export default function AdminPedidosPage() {
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      {p.cancionCompartidaId && (
+                        <span className="badge" title="Veces que se reprodujo el link compartido">
+                          ▶️ {reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
+                        </span>
+                      )}
                       <button className="btn-secondary" onClick={() => setPedidoAbierto(p)}>🔍 Revisar</button>
                       {p.estado === 'entregada' ? (
                         <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
@@ -390,7 +411,14 @@ export default function AdminPedidosPage() {
 
       </main>
 
-      {pedidoAbierto && <ModalPedido pedido={pedidoAbierto} onClose={() => setPedidoAbierto(null)} onVinculado={cargarSilencioso} />}
+      {pedidoAbierto && (
+        <ModalPedido
+          pedido={pedidoAbierto}
+          reproducciones={pedidoAbierto.cancionCompartidaId ? reproduccionesPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
+          onClose={() => setPedidoAbierto(null)}
+          onVinculado={cargarSilencioso}
+        />
+      )}
     </div>
   );
 }
