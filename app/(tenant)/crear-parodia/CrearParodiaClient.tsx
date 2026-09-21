@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import OnboardingVideo from './OnboardingVideo';
@@ -25,6 +25,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
+  const seccionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (saldoInsuficiente) { setCargando(false); return; }
@@ -45,11 +46,24 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
     setToast({ msg, type });
   }
 
+  // En mobile el grid pasa a una sola columna (ver .crearGrid en
+  // tenant.module.css, breakpoint 760px) — la lista de canciones queda
+  // arriba y el formulario de historia abajo, fuera de la pantalla. Sin
+  // este scroll, al elegir una pista el usuario se queda viendo la misma
+  // lista sin notar que ya apareció el paso siguiente debajo.
+  function scrollASeccion() {
+    if (window.innerWidth >= 760) return;
+    requestAnimationFrame(() => {
+      seccionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function seleccionarCancion(c: Cancion) {
     setSeleccionada(c);
     setParodiaActual(null);
     setLetraEditada('');
     setEnviado(false);
+    scrollASeccion();
   }
 
   // Salta directo a "revisá y ajustá la letra" con la última parodia que
@@ -63,6 +77,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
     setParodiaActual(tenant.ultimaParodia);
     setLetraEditada(tenant.ultimaParodia.parodia);
     setEnviado(false);
+    scrollASeccion();
   }
 
   async function handleGenerar() {
@@ -199,7 +214,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
           </div>
         </aside>
 
-        <section className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <section ref={seccionRef} className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {seleccionada || parodiaActual ? (
             <>
               <div>
