@@ -7,12 +7,18 @@ type Tenant = {
   cancionesGratisUsadas: number;
   cancionesGratisLimite: number;
   saldo: number;
-  ultimaParodia?: { cancion_base: string };
+  ultimaParodia?: { cancion_base: string; fecha: string };
   codigoAcceso: string | null;
 };
 
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Para ubicar de un vistazo quién lleva tiempo sin usar la app — más
+// legible que la fecha completa cuando lo que importa es "hace cuánto".
+function diasDesde(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
 }
 
 function urlEnviarCodigo(telefono: string, codigo: string): string {
@@ -40,6 +46,10 @@ export default function AdminTenantsPage() {
   const [creandoAlta, setCreandoAlta] = useState(false);
   const [errorAlta, setErrorAlta] = useState('');
   const [altaCreada, setAltaCreada] = useState<{ telefono: string; codigo: string } | null>(null);
+  // 'asc' en esta columna = los más inactivos primero (fecha más vieja o
+  // nunca usada) — es el orden que sirve para el caso real: ubicar rápido
+  // a quién hay que reactivar.
+  const [ordenActividad, setOrdenActividad] = useState<'asc' | 'desc' | null>(null);
 
   const cargarTenants = useCallback(() => {
     return fetch('/api/admin/tenants')
@@ -81,7 +91,21 @@ export default function AdminTenantsPage() {
     }
   }
 
-  const filtrados = tenants.filter(t => t.telefono.includes(busqueda.replace(/\D/g, '')));
+  const filtrados = tenants
+    .filter(t => t.telefono.includes(busqueda.replace(/\D/g, '')))
+    .sort((a, b) => {
+      if (!ordenActividad) return 0;
+      // Sin ultimaParodia = nunca la usaron — siempre va primero al ordenar
+      // "más inactivos primero" (asc), porque es peor que cualquier fecha vieja.
+      const fa = a.ultimaParodia?.fecha ?? '';
+      const fb = b.ultimaParodia?.fecha ?? '';
+      const cmp = fa.localeCompare(fb);
+      return ordenActividad === 'asc' ? cmp : -cmp;
+    });
+
+  function alternarOrden() {
+    setOrdenActividad(o => (o === 'asc' ? 'desc' : 'asc'));
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -163,7 +187,15 @@ export default function AdminTenantsPage() {
                     <th style={{ padding: '0.5rem 0.75rem' }}>Registrado</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Saldo</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Gratis usada</th>
-                    <th style={{ padding: '0.5rem 0.75rem' }}>Última parodia</th>
+                    <th
+                      style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                      onClick={alternarOrden}
+                      title="Ordenar por inactividad"
+                    >
+                      Última parodia
+                      {ordenActividad === 'asc' && ' ▲'}
+                      {ordenActividad === 'desc' && ' ▼'}
+                    </th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Código de acceso</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
                   </tr>
@@ -181,7 +213,16 @@ export default function AdminTenantsPage() {
                         ) : `L ${t.saldo ?? 0}`}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>{t.cancionesGratisUsadas}/{t.cancionesGratisLimite}</td>
-                      <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{t.ultimaParodia?.cancion_base || '—'}</td>
+                      <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>
+                        {t.ultimaParodia?.fecha ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            <span>{t.ultimaParodia.cancion_base}</span>
+                            <span style={{ fontSize: '0.72rem' }}>
+                              {formatFecha(t.ultimaParodia.fecha)} · hace {diasDesde(t.ultimaParodia.fecha)} día{diasDesde(t.ultimaParodia.fecha) === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                        ) : '—'}
+                      </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
                         {t.codigoAcceso ? (
                           <a
