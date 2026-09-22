@@ -91,6 +91,7 @@ function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedi
   const [tituloCompartir, setTituloCompartir] = useState(p.cancion_base);
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState('');
+  const [desvinculando, setDesvinculando] = useState(false);
   // Editable porque a veces conviene ajustarlo al caso (ej. avisar que ya
   // se entregó, o dar un tiempo distinto) antes de mandarlo.
   const [mensajeAviso, setMensajeAviso] = useState(MENSAJE_AVISO_PROCESO_DEFAULT);
@@ -114,6 +115,30 @@ function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedi
       setErrorSubida('Error de conexión');
     } finally {
       setSubiendo(false);
+    }
+  }
+
+  // Para cuando se subió el audio equivocado — borra el link y el archivo
+  // por completo (no queda huérfano) y deja el modal como si nunca se
+  // hubiera generado, para poder subir el correcto.
+  async function quitarEnlace() {
+    if (!cancionCompartidaId) return;
+    if (!confirm('¿Quitar este enlace? Se borra el audio subido y el pedido queda sin link, como si nunca se hubiera generado.')) return;
+    setDesvinculando(true);
+    try {
+      const res = await fetch('/api/admin/pedidos/desvincular-cancion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedidoId: p.id }),
+      });
+      if (!res.ok) { setErrorSubida('No se pudo quitar el enlace'); return; }
+      setCancionCompartidaId(undefined);
+      setTituloCompartir(p.cancion_base);
+      onVinculado();
+    } catch {
+      setErrorSubida('Error de conexión');
+    } finally {
+      setDesvinculando(false);
     }
   }
 
@@ -155,9 +180,19 @@ function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedi
         {cancionCompartidaId ? (
           <>
             <CampoCopiable label="🎧 Link para escuchar" valor={`https://corridos.online/cancion/${cancionCompartidaId}`} />
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.5rem 0 0' }}>
-              ▶️ Reproducida {reproducciones ?? 0} {reproducciones === 1 ? 'vez' : 'veces'}
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-0.5rem 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                ▶️ Reproducida {reproducciones ?? 0} {reproducciones === 1 ? 'vez' : 'veces'}
+              </p>
+              <button
+                className="btn-secondary"
+                disabled={desvinculando}
+                onClick={quitarEnlace}
+                style={{ fontSize: '0.78rem' }}
+              >
+                {desvinculando ? '...' : '🗑️ Subí el audio equivocado — quitar enlace'}
+              </button>
+            </div>
           </>
         ) : (
           <div className="campo-copiable">
@@ -184,9 +219,9 @@ function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedi
                 {subiendo ? '⏳ Subiendo y preparando la letra...' : '🔗 Generar link'}
               </button>
             </div>
-            {errorSubida && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>⚠️ {errorSubida}</p>}
           </div>
         )}
+        {errorSubida && <p style={{ color: 'var(--error)', fontSize: '0.85rem' }}>⚠️ {errorSubida}</p>}
       </div>
     </Modal>
   );

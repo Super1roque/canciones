@@ -1,3 +1,4 @@
+import admin from 'firebase-admin';
 import { getDb } from './firebaseService';
 import { obtenerTenant, incrementarUsoTenant, descontarSaldo, guardarUltimaParodia } from './tenantService';
 
@@ -119,4 +120,20 @@ export async function marcarPedidoEntregado(id: string): Promise<void> {
 export async function vincularCancionCompartida(pedidoId: string, cancionCompartidaId: string): Promise<void> {
   const db = getDb();
   await db.collection(COLLECTION).doc(pedidoId).update({ cancionCompartidaId });
+}
+
+// Para deshacer una subida equivocada (ej. se subió el audio de otro
+// pedido) — quita el vínculo del pedido para que el modal vuelva a
+// mostrar el formulario de subida, devolviendo el id que tenía para que
+// el llamador decida si también borra ese doc/archivo de
+// canciones_compartidas.
+export async function desvincularCancionCompartida(pedidoId: string): Promise<{ cancionCompartidaId?: string }> {
+  const db = getDb();
+  const ref = db.collection(COLLECTION).doc(pedidoId);
+  const doc = await ref.get();
+  if (!doc.exists) throw new Error('PEDIDO_NO_ENCONTRADO');
+
+  const cancionCompartidaId = doc.data()!.cancionCompartidaId as string | undefined;
+  await ref.update({ cancionCompartidaId: admin.firestore.FieldValue.delete() });
+  return { cancionCompartidaId };
 }
