@@ -6,6 +6,7 @@ type Tenant = {
   fechaRegistro: string;
   cancionesGratisUsadas: number;
   cancionesGratisLimite: number;
+  ultimaInvitacion?: { fecha: string };
 };
 
 const DIAS_MINIMOS_DEFAULT = 5;
@@ -34,7 +35,18 @@ function urlInvitar(telefono: string, codigo: string, plantilla: string): string
 
 type EstadoFila = { estado: 'idle' } | { estado: 'preparando' } | { estado: 'listo'; codigo: string } | { estado: 'error' };
 
-function FilaTenant({ t, plantilla }: { t: Tenant; plantilla: string }) {
+// Marca la invitación como enviada en el mismo click que abre WhatsApp —
+// no bloquea la navegación (no hay preventDefault), es solo un aviso al
+// servidor de que esto ya se mandó.
+function marcarInvitado(telefono: string) {
+  fetch('/api/admin/tenants/invitar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telefono }),
+  }).catch(() => {});
+}
+
+function FilaTenant({ t, plantilla, onInvitado }: { t: Tenant; plantilla: string; onInvitado: (telefono: string) => void }) {
   const [fila, setFila] = useState<EstadoFila>({ estado: 'idle' });
 
   // Genera un código fresco (mismo mecanismo que "Alta rápida") en vez de
@@ -63,6 +75,11 @@ function FilaTenant({ t, plantilla }: { t: Tenant; plantilla: string }) {
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
           Registrado {formatFecha(t.fechaRegistro)} · hace {diasDesde(t.fechaRegistro)} días sin usar su prueba gratis
         </div>
+        {t.ultimaInvitacion && (
+          <div style={{ fontSize: '0.75rem', color: 'var(--warning, #d99a2b)', marginTop: '0.15rem' }}>
+            ✉️ Ya invitado — {formatFecha(t.ultimaInvitacion.fecha)} (hace {diasDesde(t.ultimaInvitacion.fecha)} días)
+          </div>
+        )}
       </div>
       {fila.estado === 'listo' ? (
         <a
@@ -71,8 +88,9 @@ function FilaTenant({ t, plantilla }: { t: Tenant; plantilla: string }) {
           rel="noopener noreferrer"
           className="btn-primary"
           style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
+          onClick={() => { marcarInvitado(t.telefono); onInvitado(t.telefono); }}
         >
-          📲 Abrir WhatsApp y enviar
+          {t.ultimaInvitacion ? '📲 Volver a invitar' : '📲 Abrir WhatsApp y enviar'}
         </a>
       ) : (
         <button className="btn-secondary" disabled={fila.estado === 'preparando'} onClick={prepararInvitacion}>
@@ -88,6 +106,11 @@ export default function ReactivarPage() {
   const [cargando, setCargando] = useState(true);
   const [diasMinimos, setDiasMinimos] = useState(DIAS_MINIMOS_DEFAULT);
   const [plantilla, setPlantilla] = useState(MENSAJE_INVITACION_DEFAULT);
+  const [ocultarInvitados, setOcultarInvitados] = useState(false);
+
+  const marcarLocal = useCallback((telefono: string) => {
+    setTenants(prev => prev.map(t => t.telefono === telefono ? { ...t, ultimaInvitacion: { fecha: new Date().toISOString() } } : t));
+  }, []);
 
   const cargar = useCallback(() => {
     return fetch('/api/admin/tenants')
@@ -100,8 +123,9 @@ export default function ReactivarPage() {
   const sinActivar = useMemo(() => {
     return tenants
       .filter(t => (t.cancionesGratisUsadas ?? 0) === 0 && diasDesde(t.fechaRegistro) >= diasMinimos)
+      .filter(t => !ocultarInvitados || !t.ultimaInvitacion)
       .sort((a, b) => a.fechaRegistro.localeCompare(b.fechaRegistro));
-  }, [tenants, diasMinimos]);
+  }, [tenants, diasMinimos, ocultarInvitados]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -147,10 +171,16 @@ export default function ReactivarPage() {
         </section>
 
         <section className="panel" style={{ padding: '1.25rem' }}>
-          <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            Sin activar hace {diasMinimos}+ días
-            {!cargando && <span className="badge">{sinActivar.length}</span>}
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              Sin activar hace {diasMinimos}+ días
+              {!cargando && <span className="badge">{sinActivar.length}</span>}
+            </h2>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={ocultarInvitados} onChange={e => setOcultarInvitados(e.target.checked)} />
+              Ocultar a quienes ya invité
+            </label>
+          </div>
           {cargando ? (
             <p className="loading-msg">Cargando…</p>
           ) : sinActivar.length === 0 ? (
@@ -158,7 +188,7 @@ export default function ReactivarPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {sinActivar.map(t => (
-                <FilaTenant key={t.telefono} t={t} plantilla={plantilla} />
+                <FilaTenant key={t.telefono} t={t} plantilla={plantilla} onInvitado={marcarLocal} />
               ))}
             </div>
           )}

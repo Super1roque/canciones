@@ -21,6 +21,7 @@ export interface Tenant {
   saldo: number;
   ultimaParodia?: UltimaParodia;
   onboardingVisto?: boolean;
+  ultimaInvitacion?: { fecha: string };
 }
 
 // Deja solo dígitos — así "9999-8888", "+504 9999 8888" y "99998888" quedan
@@ -112,6 +113,17 @@ export async function guardarUltimaParodia(telefono: string, datos: Omit<UltimaP
   const db = getDb();
   const ultimaParodia: UltimaParodia = { ...datos, fecha: new Date().toISOString() };
   await db.collection(COLLECTION).doc(telefono).update({ ultimaParodia });
+}
+
+// Se guarda al mandar una invitación de reactivación desde /admin/reactivar
+// — así el admin ve quién ya fue contactado y no lo vuelve a molestar sin
+// darse cuenta.
+export async function guardarInvitacionReactivacion(telefono: string): Promise<void> {
+  const db = getDb();
+  await db.collection(COLLECTION).doc(telefono).set(
+    { ultimaInvitacion: { fecha: new Date().toISOString() } },
+    { merge: true }
+  );
 }
 
 // Para el panel de admin — ordenado por fecha de registro, más reciente
