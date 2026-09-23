@@ -29,10 +29,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
     }
 
-    // El aviso por correo se manda recién cuando el tenant confirma por
-    // WhatsApp (ver /api/recargas/[id]/avisar) — no acá, para no generar
-    // avisos falsos de gente que solo toca el monto para ver cómo
-    // funciona sin llegar a pagar ni avisar nada.
+    // Ya no se manda ningún aviso por correo acá — el "voy a depositar"
+    // del tenant no es un depósito confirmado (hubo casos de gente que
+    // avisaba sin haber pagado). El admin acredita el saldo a mano desde
+    // /admin/tenants recién después de confirmar el comprobante que le
+    // llega por WhatsApp; esta solicitud queda solo como registro de que
+    // alguien dijo que iba a pagar.
     const recarga = await crearSolicitudRecarga(telefono, monto);
 
     return NextResponse.json(recarga, { status: 201 });

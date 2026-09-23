@@ -56,13 +56,6 @@ export async function crearSolicitudRecarga(telefono: string, monto: number): Pr
   return { id: docRef.id, ...nuevo };
 }
 
-export async function obtenerRecarga(id: string): Promise<Recarga | null> {
-  const db = getDb();
-  const doc = await db.collection(COLLECTION).doc(id).get();
-  if (!doc.exists) return null;
-  return toRecarga(doc.id, doc.data()!);
-}
-
 export async function listarRecargasPorTelefono(telefono: string): Promise<Recarga[]> {
   const db = getDb();
   const snap = await db.collection(COLLECTION).where('telefono', '==', telefono).get();

@@ -194,9 +194,13 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   }
 
   // Abre WhatsApp en el mismo click (antes de cualquier await, para que el
-  // navegador no lo bloquee como popup) y recién ahí crea la recarga y
-  // avisa al admin por correo — esta es la señal real de que el tenant ya
-  // transfirió, no cuando apenas vio el monto o los datos de depósito.
+  // navegador no lo bloquee como popup) y recién ahí crea la recarga —
+  // esta es la señal real de que el tenant ya transfirió, no cuando apenas
+  // vio el monto o los datos de depósito. Ya no se avisa por correo acá:
+  // el "voy a depositar" no es un depósito confirmado (hubo casos de
+  // gente que avisa sin haber pagado) — el admin solo acredita saldo a
+  // mano desde /admin/tenants una vez que confirma el comprobante por
+  // WhatsApp.
   async function alAvisarWhatsApp() {
     if (!recargaPendiente) return;
     const monto = recargaPendiente;
@@ -209,9 +213,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monto }),
       });
-      const data = await res.json();
       if (!res.ok) return;
-      fetch(`/api/recargas/${data.id}/avisar`, { method: 'POST' }).catch(() => {});
       trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
     } catch {
       // Silencioso — ya se abrió WhatsApp, no hay nada más que mostrarle acá.

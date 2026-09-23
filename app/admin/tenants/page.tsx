@@ -38,6 +38,78 @@ function urlAltaRapida(telefono: string, codigo: string): string {
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
+// Función exclusiva del admin para acreditar saldo directo, sin pasar por
+// ninguna solicitud del tenant — pensada para usarse recién después de
+// confirmar el comprobante de depósito que llega por WhatsApp, no en base
+// a lo que el tenant reporte dentro de la app (de ahí venían los "pedidos
+// de depósito" falsos).
+function CeldaSaldo({ telefono, saldo, onActualizado }: { telefono: string; saldo: number; onActualizado: () => void }) {
+  const [editando, setEditando] = useState(false);
+  const [monto, setMonto] = useState('');
+  const [guardando, setGuardando] = useState(false);
+
+  async function agregar() {
+    const n = Number(monto);
+    if (!n || n <= 0) return;
+    setGuardando(true);
+    try {
+      const res = await fetch('/api/admin/tenants/agregar-saldo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono, monto: n }),
+      });
+      if (res.ok) {
+        setEditando(false);
+        setMonto('');
+        onActualizado();
+      }
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  if (editando) {
+    return (
+      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+        <input
+          type="number"
+          min={1}
+          placeholder="L"
+          value={monto}
+          onChange={e => setMonto(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') agregar(); if (e.key === 'Escape') setEditando(false); }}
+          className="input"
+          style={{ width: 64, padding: '0.25rem 0.4rem', fontSize: '0.78rem' }}
+          autoFocus
+        />
+        <button className="btn-primary" disabled={guardando || !monto} onClick={agregar} style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}>
+          {guardando ? '...' : '✓'}
+        </button>
+        <button className="btn-secondary" onClick={() => { setEditando(false); setMonto(''); }} style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}>
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      {saldo > 0 ? (
+        <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
+          L {saldo}
+        </span>
+      ) : `L ${saldo ?? 0}`}
+      <button
+        className="btn-icon-xs"
+        title="Agregar saldo manualmente (solo tras confirmar el comprobante de depósito por WhatsApp)"
+        onClick={() => setEditando(true)}
+      >
+        ➕
+      </button>
+    </div>
+  );
+}
+
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -206,11 +278,7 @@ export default function AdminTenantsPage() {
                       <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>{t.telefono}</td>
                       <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{formatFecha(t.fechaRegistro)}</td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
-                        {t.saldo > 0 ? (
-                          <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
-                            L {t.saldo}
-                          </span>
-                        ) : `L ${t.saldo ?? 0}`}
+                        <CeldaSaldo telefono={t.telefono} saldo={t.saldo} onActualizado={cargarTenants} />
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>{t.cancionesGratisUsadas}/{t.cancionesGratisLimite}</td>
                       <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>

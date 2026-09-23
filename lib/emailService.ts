@@ -57,25 +57,3 @@ export async function avisarNuevaVerificacion(telefono: string): Promise<void> {
     console.error('avisarNuevaVerificacion falló:', e);
   }
 }
-
-export async function avisarNuevaRecarga(telefono: string, monto: number): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
-  try {
-    const { error } = await resend.emails.send({
-      from: 'Canciones <onboarding@resend.dev>',
-      to: ADMIN_EMAIL,
-      subject: `Recarga pendiente de verificar — ${telefono}`,
-      html: `
-        <p>El tenant <strong>${telefono}</strong> solicitó una recarga y necesita que la verifiques.</p>
-        <ul>
-          <li><strong>Monto:</strong> L. ${monto}</li>
-        </ul>
-        <p><a href="https://corridos.online/admin/pedidos">Revisar en el panel de admin →</a></p>
-      `,
-    });
-    if (error) console.error('Resend devolvió un error al avisar de la recarga:', error);
-  } catch (e) {
-    console.error('avisarNuevaRecarga falló:', e);
-  }
-}
