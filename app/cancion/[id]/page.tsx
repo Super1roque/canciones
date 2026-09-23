@@ -10,7 +10,28 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; cues?: Cue[] };
+  return doc.data() as { titulo: string; cues?: Cue[]; fecha: string };
+}
+
+const HORAS_GRATIS = 72;
+
+// El gratis-por-3-días es para el dueño de la canción (quien la pidió),
+// no para cualquiera que reciba el link — por eso se resuelve vía el
+// pedido vinculado, no por la sesión de quien esté mirando la página.
+// Las subidas sueltas (sin pedido, ej. /admin/compartir-cancion) no tienen
+// dueño y quedan sin restricción, tal como ya funcionaban antes de esto.
+async function estaRestringida(id: string, fechaCancion: string): Promise<boolean> {
+  const db = getDb();
+  const edadHoras = (Date.now() - new Date(fechaCancion).getTime()) / (1000 * 60 * 60);
+  if (edadHoras <= HORAS_GRATIS) return false;
+
+  const pedidosSnap = await db.collection('pedidos').where('cancionCompartidaId', '==', id).limit(1).get();
+  if (pedidosSnap.empty) return false;
+
+  const telefono = pedidosSnap.docs[0].data().telefono as string;
+  const tenantDoc = await db.collection('tenants').doc(telefono).get();
+  const premium = tenantDoc.exists && tenantDoc.data()?.plan === 'premium';
+  return !premium;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -55,12 +76,15 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
     );
   }
 
+  const restringida = await estaRestringida(id, cancion.fecha);
+
   return (
     <AudioGreetingClient
       audioApiUrl={`/api/canciones-compartidas/${id}`}
       posterSrc="/cancion-compartida/poster.png"
       titulo={cancion.titulo}
       cues={cancion.cues}
+      restringida={restringida}
     />
   );
 }
