@@ -459,30 +459,40 @@ export default function AdminPedidosPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {pedidos.map(p => (
                 <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(160px, 1fr) 130px 55px 90px 115px',
+                    alignItems: 'center', gap: '0.75rem',
+                  }}>
                     <div>
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div>
                       {p.cancionCompartidaId && fechaCancionPorId.has(p.cancionCompartidaId) && (
                         <BarraLimiteGratis
                           fechaCancion={fechaCancionPorId.get(p.cancionCompartidaId)!}
                           premium={planPorTelefono.get(p.telefono) === 'premium'}
                         />
                       )}
+                    </div>
+                    <div>
                       {p.cancionCompartidaId && (
-                        <span className="badge" title="Veces que se reprodujo el link compartido">
+                        <span className="badge" title="Veces que se reprodujo el link compartido" style={{ whiteSpace: 'nowrap' }}>
                           ▶️ {reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
                         </span>
                       )}
-                      <button className="btn-secondary" onClick={() => setPedidoAbierto(p)}>🔍 Revisar</button>
+                    </div>
+                    <div>
+                      <button className="btn-secondary" onClick={() => setPedidoAbierto(p)} style={{ whiteSpace: 'nowrap' }}>🔍 Revisar</button>
+                    </div>
+                    <div>
                       {p.estado === 'entregada' ? (
-                        <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
+                        <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)', whiteSpace: 'nowrap' }}>
                           ✅ Entregada
                         </span>
                       ) : (
-                        <button className="btn-primary" disabled={ocupado === p.id} onClick={() => marcarEntregado(p.id)}>
+                        <button className="btn-primary" disabled={ocupado === p.id} onClick={() => marcarEntregado(p.id)} style={{ whiteSpace: 'nowrap' }}>
                           {ocupado === p.id ? 'Guardando...' : 'Marcar entregada'}
                         </button>
                       )}
