@@ -159,7 +159,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           <strong
             key={ventana!.indice}
             className="palabra-actual"
-            style={{ color: '#ffd35c', fontSize: '1.2rem', display: 'inline-block' }}
+            style={{ color: '#ffd35c', fontSize: '1.45rem', display: 'inline-block' }}
           >
             {ventana!.actual}
           </strong>
@@ -207,8 +207,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
       <style>{`
         @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
         @keyframes pulsoPalabra {
-          0% { transform: scale(0.75); opacity: 0.6; }
-          55% { transform: scale(1.18); }
+          0% { transform: scale(0.65); opacity: 0.6; }
+          50% { transform: scale(1.4); }
           100% { transform: scale(1); opacity: 1; }
         }
         .palabra-actual { animation: pulsoPalabra 0.32s cubic-bezier(.34,1.56,.64,1); }
