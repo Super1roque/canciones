@@ -39,8 +39,47 @@ type CancionCompartida = {
   reproducciones: number;
 };
 
+type TenantPlan = {
+  telefono: string;
+  plan?: 'freemium' | 'premium';
+};
+
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Mismo tope que el paywall real de /cancion/[id] (ver
+// app/cancion/[id]/page.tsx) — esta barra es solo para que el admin vea
+// de un vistazo a quién le falta poco o ya se le venció, no decide nada
+// por su cuenta.
+const HORAS_LIMITE_GRATIS = 72;
+
+function horasDesde(iso: string): number {
+  return (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60);
+}
+
+function BarraLimiteGratis({ fechaCancion, premium }: { fechaCancion: string; premium: boolean }) {
+  if (premium) {
+    return <span style={{ fontSize: '0.72rem', color: '#f2b705', whiteSpace: 'nowrap' }}>⭐ Premium — sin límite</span>;
+  }
+
+  const horas = horasDesde(fechaCancion);
+  const vencida = horas >= HORAS_LIMITE_GRATIS;
+  const pct = Math.min(100, (horas / HORAS_LIMITE_GRATIS) * 100);
+  const color = vencida ? 'var(--error)' : horas >= HORAS_LIMITE_GRATIS * 0.85 ? '#d99a2b' : 'var(--success)';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 130 }} title={`Se sube el ${HORAS_LIMITE_GRATIS}h del límite gratis`}>
+      <div style={{ width: '100%', height: 6, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999 }} />
+      </div>
+      <span style={{ fontSize: '0.7rem', color: vencida ? 'var(--error)' : 'var(--text-muted)' }}>
+        {vencida
+          ? `🔒 Bloqueada hace ${Math.floor(horas - HORAS_LIMITE_GRATIS)}h`
+          : `${Math.floor(horas)}h / ${HORAS_LIMITE_GRATIS}h`}
+      </span>
+    </div>
+  );
 }
 
 function urlEnviarCodigo(telefono: string, codigo: string): string {
@@ -232,6 +271,7 @@ export default function AdminPedidosPage() {
   const [recargas, setRecargas] = useState<Recarga[]>([]);
   const [verificaciones, setVerificaciones] = useState<Verificacion[]>([]);
   const [cancionesCompartidas, setCancionesCompartidas] = useState<CancionCompartida[]>([]);
+  const [tenants, setTenants] = useState<TenantPlan[]>([]);
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
@@ -240,16 +280,18 @@ export default function AdminPedidosPage() {
   // no debe hacer parpadear la lista con el mensaje de "Cargando…" cada
   // vez que se ejecuta, eso queda solo para la primera carga real.
   const cargarSilencioso = useCallback(async () => {
-    const [pRes, rRes, vRes, ccRes] = await Promise.all([
+    const [pRes, rRes, vRes, ccRes, tRes] = await Promise.all([
       fetch('/api/admin/pedidos'),
       fetch('/api/admin/recargas'),
       fetch('/api/admin/verificaciones'),
       fetch('/api/admin/canciones-compartidas'),
+      fetch('/api/admin/tenants'),
     ]);
     setPedidos(pRes.ok ? await pRes.json() : []);
     setRecargas(rRes.ok ? await rRes.json() : []);
     setVerificaciones(vRes.ok ? await vRes.json() : []);
     setCancionesCompartidas(ccRes.ok ? await ccRes.json() : []);
+    setTenants(tRes.ok ? await tRes.json() : []);
   }, []);
 
   const cargar = useCallback(async () => {
@@ -317,6 +359,8 @@ export default function AdminPedidosPage() {
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
   const verificacionesPendientes = verificaciones.filter(v => v.estado === 'pendiente');
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
+  const fechaCancionPorId = new Map(cancionesCompartidas.map(c => [c.id, c.fecha]));
+  const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'Inter, sans-serif' }}>
@@ -420,7 +464,13 @@ export default function AdminPedidosPage() {
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {p.cancionCompartidaId && fechaCancionPorId.has(p.cancionCompartidaId) && (
+                        <BarraLimiteGratis
+                          fechaCancion={fechaCancionPorId.get(p.cancionCompartidaId)!}
+                          premium={planPorTelefono.get(p.telefono) === 'premium'}
+                        />
+                      )}
                       {p.cancionCompartidaId && (
                         <span className="badge" title="Veces que se reprodujo el link compartido">
                           ▶️ {reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
