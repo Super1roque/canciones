@@ -10,7 +10,7 @@ import type { Cue } from '@/lib/deepgramService';
 export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[] }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
-  const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string } | null>(null);
+  const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string; indice: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
   const cueIndexRef = useRef(0);
@@ -34,6 +34,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
       antes: cues.slice(desde, i).map(c => c.text).join(' '),
       actual: cues[i]?.text ?? '',
       despues: cues.slice(i + 1, hasta).map(c => c.text).join(' '),
+      indice: i,
     });
   }
 
@@ -155,7 +156,13 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           color: '#e0b98f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {ventana!.antes ? ventana!.antes + ' ' : ''}
-          <strong style={{ color: '#ffd35c', fontSize: '1.2rem' }}>{ventana!.actual}</strong>
+          <strong
+            key={ventana!.indice}
+            className="palabra-actual"
+            style={{ color: '#ffd35c', fontSize: '1.2rem', display: 'inline-block' }}
+          >
+            {ventana!.actual}
+          </strong>
           {ventana!.despues ? ' ' + ventana!.despues : ''}
         </p>
       ) : reproduciendo ? (
@@ -197,7 +204,18 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))}
         onTimeUpdate={actualizarVentana}
       />
-      <style>{'@keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }'}</style>
+      <style>{`
+        @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
+        @keyframes pulsoPalabra {
+          0% { transform: scale(0.75); opacity: 0.6; }
+          55% { transform: scale(1.18); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .palabra-actual { animation: pulsoPalabra 0.32s cubic-bezier(.34,1.56,.64,1); }
+        @media (prefers-reduced-motion: reduce) {
+          .palabra-actual { animation: none; }
+        }
+      `}</style>
     </main>
   );
 }
