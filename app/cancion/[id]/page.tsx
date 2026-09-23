@@ -19,19 +19,28 @@ const HORAS_GRATIS = 72;
 // no para cualquiera que reciba el link — por eso se resuelve vía el
 // pedido vinculado, no por la sesión de quien esté mirando la página.
 // Las subidas sueltas (sin pedido, ej. /admin/compartir-cancion) no tienen
-// dueño y quedan sin restricción, tal como ya funcionaban antes de esto.
-async function estaRestringida(id: string, fechaCancion: string): Promise<boolean> {
+// dueño y quedan sin restricción ni límite de descarga.
+//
+// `restringida` y `descargable` son cosas distintas a propósito: la
+// escucha es gratis durante las primeras 72h aunque el dueño no sea
+// premium, pero la descarga es un privilegio exclusivo de premium sin
+// importar la edad de la canción — antes ambas dependían de la misma
+// bandera y una canción recién subida de un tenant freemium terminaba
+// mostrando igual el botón de descargar.
+async function obtenerAccesoCancion(id: string, fechaCancion: string): Promise<{ restringida: boolean; descargable: boolean }> {
   const db = getDb();
-  const edadHoras = (Date.now() - new Date(fechaCancion).getTime()) / (1000 * 60 * 60);
-  if (edadHoras <= HORAS_GRATIS) return false;
-
   const pedidosSnap = await db.collection('pedidos').where('cancionCompartidaId', '==', id).limit(1).get();
-  if (pedidosSnap.empty) return false;
+  if (pedidosSnap.empty) return { restringida: false, descargable: true };
 
   const telefono = pedidosSnap.docs[0].data().telefono as string;
   const tenantDoc = await db.collection('tenants').doc(telefono).get();
   const premium = tenantDoc.exists && tenantDoc.data()?.plan === 'premium';
-  return !premium;
+
+  const edadHoras = (Date.now() - new Date(fechaCancion).getTime()) / (1000 * 60 * 60);
+  return {
+    restringida: !premium && edadHoras > HORAS_GRATIS,
+    descargable: premium,
+  };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -76,7 +85,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const restringida = await estaRestringida(id, cancion.fecha);
+  const { restringida, descargable } = await obtenerAccesoCancion(id, cancion.fecha);
 
   return (
     <AudioGreetingClient
@@ -85,6 +94,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       titulo={cancion.titulo}
       cues={cancion.cues}
       restringida={restringida}
+      descargable={descargable}
     />
   );
 }

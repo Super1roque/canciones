@@ -14,7 +14,7 @@ const SEGUNDOS_GRATIS = 10;
 // base a la edad de la canción y si el tenant dueño del pedido es
 // premium — acá solo se aplica el corte a los 10s y se arma la pantalla
 // de recarga, sin decidir de nuevo la regla de negocio.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida, descargable }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean; descargable: boolean }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string; indice: number } | null>(null);
@@ -63,7 +63,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   // El audio no se sirve como un link directo descargable — se trae como
   // blob a través de la API (mismo patrón que AudioPlayer.tsx de
   // /escuchar), así nunca queda expuesta una URL de archivo real. La
-  // descarga (cuando no está restringida) reusa este mismo blob.
+  // descarga (cuando `descargable` es true) reusa este mismo blob.
   async function alTocar() {
     const a = audioRef.current;
     if (!a) return;
@@ -324,7 +324,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           📤 Compartir esta canción
         </button>
 
-        {!restringida && audioListo && (
+        {descargable && audioListo && (
           <button
             type="button"
             onClick={descargar}
