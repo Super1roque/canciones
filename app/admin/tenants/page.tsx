@@ -9,6 +9,7 @@ type Tenant = {
   saldo: number;
   ultimaParodia?: { cancion_base: string; fecha: string };
   codigoAcceso: string | null;
+  plan?: 'freemium' | 'premium';
 };
 
 function formatFecha(iso: string) {
@@ -275,7 +276,14 @@ export default function AdminTenantsPage() {
                 <tbody>
                   {filtrados.map(t => (
                     <tr key={t.telefono} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>{t.telefono}</td>
+                      <td style={{ padding: '0.6rem 0.75rem' }}>
+                        <div style={{ fontWeight: 600 }}>{t.telefono}</div>
+                        {t.plan === 'premium' ? (
+                          <span style={{ fontSize: '0.7rem', color: '#f2b705' }}>⭐ Premium</span>
+                        ) : (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Freemium</span>
+                        )}
+                      </td>
                       <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{formatFecha(t.fechaRegistro)}</td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
                         <CeldaSaldo telefono={t.telefono} saldo={t.saldo} onActualizado={cargarTenants} />

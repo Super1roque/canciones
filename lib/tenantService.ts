@@ -22,6 +22,9 @@ export interface Tenant {
   ultimaParodia?: UltimaParodia;
   onboardingVisto?: boolean;
   ultimaInvitacion?: { fecha: string };
+  // Sin este campo (tenants creados antes de que existiera) se trata como
+  // 'freemium' — no hace falta migrar datos viejos.
+  plan?: 'freemium' | 'premium';
 }
 
 // Deja solo dígitos — así "9999-8888", "+504 9999 8888" y "99998888" quedan
@@ -84,6 +87,7 @@ export async function obtenerOCrearTenant(telefono: string): Promise<Tenant> {
     cancionesGratisUsadas: 0,
     cancionesGratisLimite: 1,
     saldo: 0,
+    plan: 'freemium',
   };
   await ref.set(nuevo);
   return nuevo;
@@ -98,11 +102,15 @@ export async function incrementarUsoTenant(telefono: string): Promise<void> {
   });
 }
 
-// Se usa cuando el admin aprueba una recarga — solo suma, sin validar nada.
+// Se usa cuando el admin acredita saldo (a mano o aprobando una recarga) —
+// solo suma, sin validar nada. Cualquier depósito, sin importar el monto,
+// pasa al tenant a premium para siempre — no se revierte aunque el saldo
+// vuelva a 0.
 export async function agregarSaldo(telefono: string, monto: number): Promise<void> {
   const db = getDb();
   await db.collection(COLLECTION).doc(telefono).update({
     saldo: admin.firestore.FieldValue.increment(monto),
+    plan: 'premium',
   });
 }
 
