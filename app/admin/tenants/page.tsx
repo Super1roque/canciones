@@ -111,6 +111,127 @@ function CeldaSaldo({ telefono, saldo, onActualizado }: { telefono: string; sald
   );
 }
 
+type PedidoResumen = { id: string; cancion_base: string; fecha: string; estado: string; tieneLink: boolean };
+type RecargaResumen = { id: string; monto: number; credito: number; estado: string; fecha: string };
+type InfoBorrado = {
+  tenant: Tenant;
+  pedidos: PedidoResumen[];
+  recargas: RecargaResumen[];
+  verificacionesCount: number;
+};
+
+function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="modal">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-box">{children}</div>
+    </div>
+  );
+}
+
+// Muestra la misma info que antes había que revisar a mano en Firestore
+// (pedidos, recargas, verificaciones) antes de borrar un tenant, y pide
+// confirmación explícita — nunca borra directo al click del basurero.
+function ModalConfirmarBorrado({ telefono, onClose, onBorrado }: { telefono: string; onClose: () => void; onBorrado: () => void }) {
+  const [info, setInfo] = useState<InfoBorrado | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [borrando, setBorrando] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/admin/tenants/${telefono}`)
+      .then(res => res.json())
+      .then(data => setInfo(data))
+      .catch(() => setError('No se pudo cargar la información'))
+      .finally(() => setCargando(false));
+  }, [telefono]);
+
+  async function confirmar() {
+    setBorrando(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/tenants/${telefono}`, { method: 'DELETE' });
+      if (!res.ok) { setError('No se pudo borrar el tenant'); return; }
+      onBorrado();
+      onClose();
+    } catch {
+      setError('Error de conexión');
+    } finally {
+      setBorrando(false);
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="modal-header">
+        <h3>¿Borrar el tenant {telefono}?</h3>
+        <button className="btn-close" onClick={onClose}>✕</button>
+      </div>
+
+      {cargando ? (
+        <p className="loading-msg">Cargando…</p>
+      ) : !info ? (
+        <p style={{ color: 'var(--error)' }}>⚠️ No se pudo cargar la información de este tenant.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.88rem' }}>
+          <div>
+            Registrado {formatFecha(info.tenant.fechaRegistro)} · saldo <strong>L {info.tenant.saldo}</strong> · {info.tenant.plan === 'premium' ? '⭐ Premium' : 'Freemium'}
+          </div>
+
+          <div>
+            <strong>Pedidos ({info.pedidos.length})</strong>
+            {info.pedidos.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>Ninguno.</p>
+            ) : (
+              <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.2rem' }}>
+                {info.pedidos.map(p => (
+                  <li key={p.id} style={{ color: 'var(--text-muted)' }}>
+                    {p.cancion_base} — {formatFecha(p.fecha)} · {p.estado}{p.tieneLink ? ' · con link compartido' : ''}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <strong>Recargas ({info.recargas.length})</strong>
+            {info.recargas.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>Ninguna.</p>
+            ) : (
+              <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.2rem' }}>
+                {info.recargas.map(r => (
+                  <li key={r.id} style={{ color: r.estado === 'pendiente' ? 'var(--warning, #d99a2b)' : 'var(--text-muted)' }}>
+                    L {r.monto} → L {r.credito} · {r.estado} · {formatFecha(r.fecha)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <strong>Verificaciones:</strong> {info.verificacionesCount}
+          </div>
+
+          {(info.pedidos.length > 0 || info.recargas.some(r => r.estado === 'pendiente') || info.tenant.saldo > 0) && (
+            <p style={{ color: 'var(--warning, #d99a2b)', fontSize: '0.82rem', margin: 0 }}>
+              ⚠️ Esta cuenta no está vacía — revisá arriba antes de confirmar.
+            </p>
+          )}
+
+          {error && <p style={{ color: 'var(--error)', margin: 0 }}>⚠️ {error}</p>}
+
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button className="btn-danger" disabled={borrando} onClick={confirmar}>
+              {borrando ? 'Borrando...' : '🗑️ Sí, borrar todo'}
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export default function AdminTenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -123,6 +244,7 @@ export default function AdminTenantsPage() {
   // nunca usada) — es el orden que sirve para el caso real: ubicar rápido
   // a quién hay que reactivar.
   const [ordenActividad, setOrdenActividad] = useState<'asc' | 'desc' | null>(null);
+  const [tenantABorrar, setTenantABorrar] = useState<string | null>(null);
 
   const cargarTenants = useCallback(() => {
     return fetch('/api/admin/tenants')
@@ -271,6 +393,7 @@ export default function AdminTenantsPage() {
                     </th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Código de acceso</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -325,6 +448,15 @@ export default function AdminTenantsPage() {
                           💬 Mensaje
                         </a>
                       </td>
+                      <td style={{ padding: '0.6rem 0.75rem' }}>
+                        <button
+                          className="btn-icon-xs danger"
+                          title="Borrar tenant"
+                          onClick={() => setTenantABorrar(t.telefono)}
+                        >
+                          🗑️
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -333,6 +465,14 @@ export default function AdminTenantsPage() {
           )}
         </section>
       </main>
+
+      {tenantABorrar && (
+        <ModalConfirmarBorrado
+          telefono={tenantABorrar}
+          onClose={() => setTenantABorrar(null)}
+          onBorrado={cargarTenants}
+        />
+      )}
     </div>
   );
 }
