@@ -152,14 +152,14 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
 
       {hayLetra ? (
         <p style={{
-          margin: 0, maxWidth: '92vw', fontSize: '1.05rem', lineHeight: 1.5,
+          margin: 0, padding: '0.9rem 0', maxWidth: '92vw', fontSize: '1.05rem', lineHeight: 1.5,
           color: '#e0b98f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {ventana!.antes ? ventana!.antes + ' ' : ''}
           <strong
             key={ventana!.indice}
             className="palabra-actual"
-            style={{ color: '#ffd35c', fontSize: '1.45rem', display: 'inline-block' }}
+            style={{ color: '#ffd35c', fontSize: '1.85rem', display: 'inline-block' }}
           >
             {ventana!.actual}
           </strong>
@@ -207,8 +207,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
       <style>{`
         @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
         @keyframes pulsoPalabra {
-          0% { transform: scale(0.65); opacity: 0.6; }
-          50% { transform: scale(1.4); }
+          0% { transform: scale(0.55); opacity: 0.6; }
+          50% { transform: scale(1.6); }
           100% { transform: scale(1); opacity: 1; }
         }
         .palabra-actual { animation: pulsoPalabra 0.32s cubic-bezier(.34,1.56,.64,1); }
