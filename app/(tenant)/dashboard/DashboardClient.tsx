@@ -183,41 +183,25 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   }, []);
 
   // "Continuar" en el modal de advertencia solo pasa a mostrar los datos
-  // de depósito — todavía no crea nada ni avisa al admin. El pedido de
-  // recarga recién se crea cuando el tenant le da a "Avisar por WhatsApp
-  // que ya transferí" (ver alAvisarWhatsApp), que es la señal real de que
-  // ya hizo el depósito, no solo de que miró el monto.
+  // de depósito.
   function confirmarRecarga() {
     if (!montoAConfirmar) return;
     setRecargaPendiente(montoAConfirmar);
     setMontoAConfirmar(null);
   }
 
-  // Abre WhatsApp en el mismo click (antes de cualquier await, para que el
-  // navegador no lo bloquee como popup) y recién ahí crea la recarga —
-  // esta es la señal real de que el tenant ya transfirió, no cuando apenas
-  // vio el monto o los datos de depósito. Ya no se avisa por correo acá:
-  // el "voy a depositar" no es un depósito confirmado (hubo casos de
-  // gente que avisa sin haber pagado) — el admin solo acredita saldo a
-  // mano desde /admin/tenants una vez que confirma el comprobante por
-  // WhatsApp.
-  async function alAvisarWhatsApp() {
+  // Solo abre WhatsApp — no queda nada guardado en el sistema. El
+  // comprobante que llega por ese chat es la única confirmación real; el
+  // admin acredita el saldo a mano desde /admin/tenants recién después de
+  // verlo (antes esto creaba una "recarga pendiente" en Firestore, pero
+  // hubo casos de gente que avisaba sin haber pagado, dejando la cola
+  // llena de solicitudes falsas que nadie iba a resolver).
+  function alAvisarWhatsApp() {
     if (!recargaPendiente) return;
     const monto = recargaPendiente;
     window.open(urlWhatsApp(monto, tenant.telefono), '_blank', 'noopener,noreferrer');
     setRecargaPendiente(null);
-
-    try {
-      const res = await fetch('/api/recargas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monto }),
-      });
-      if (!res.ok) return;
-      trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
-    } catch {
-      // Silencioso — ya se abrió WhatsApp, no hay nada más que mostrarle acá.
-    }
+    trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
   }
 
   return (
