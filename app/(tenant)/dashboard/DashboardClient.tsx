@@ -215,7 +215,19 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
               <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
               <div className={styles.heroTitle} style={{ fontSize: '2rem', margin: 0 }}>L {tenant.saldo ?? 0}</div>
             </div>
-            <a href="/crear-parodia" className={styles.btnPrimary}>🎤 Pedir nueva canción</a>
+            <div style={{ position: 'relative' }}>
+              {usaGratis && (
+                <span style={{
+                  position: 'absolute', top: -12, right: -10, zIndex: 1,
+                  background: 'var(--cr-green)', color: '#fdf3e0', fontFamily: 'inherit',
+                  fontSize: '0.68rem', fontWeight: 800, padding: '0.2rem 0.55rem', borderRadius: 999,
+                  boxShadow: '0 2px 0 rgba(0,0,0,0.3)', whiteSpace: 'nowrap', transform: 'rotate(-6deg)',
+                }}>
+                  🔥 1ra gratis
+                </span>
+              )}
+              <a href="/crear-parodia" className={styles.btnPrimary}>🎤 Pedir nueva canción</a>
+            </div>
           </div>
           <div className={styles.textMuted} style={{ fontSize: '0.82rem' }}>
             {usaGratis
