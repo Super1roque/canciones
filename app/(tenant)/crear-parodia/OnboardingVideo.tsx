@@ -3,6 +3,11 @@ import { useState, useRef } from 'react';
 import styles from '../tenant.module.css';
 
 const VIDEO_URL = 'https://storage.googleapis.com/canciones-56dab.firebasestorage.app/onboarding/corridos-instructivo.mp4';
+// Los primeros segundos son el dashboard (saldo, "Comprar créditos") —
+// para alguien que todavía no probó la app, eso distrae del objetivo del
+// video (mostrarle cómo pedir su canción). Arranca en el segundo exacto
+// donde empieza "1. Elegí una pista para tu canción".
+const INICIO_SEG = 7.5;
 
 // Se muestra una sola vez, la primera vez que un tenant recién aprobado
 // entra a /crear-parodia — se marca como visto en Firestore (no
@@ -20,6 +25,10 @@ export default function OnboardingVideo() {
 
   function reproducir() {
     videoRef.current?.play();
+  }
+
+  function alCargarMetadata() {
+    if (videoRef.current) videoRef.current.currentTime = INICIO_SEG;
   }
 
   if (!visible) return null;
@@ -50,6 +59,7 @@ export default function OnboardingVideo() {
             src={VIDEO_URL}
             controls
             playsInline
+            onLoadedMetadata={alCargarMetadata}
             onPlay={() => setReproduciendo(true)}
             onPause={() => setReproduciendo(false)}
             onEnded={cerrar}
