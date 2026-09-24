@@ -9,7 +9,7 @@ function fmtSize(bytes: number) {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-type Modo = 'voz' | 'tono' | 'tonototal';
+type Modo = 'voz' | 'tono' | 'tonototal' | 'guia';
 
 export default function CambiaLetraPage() {
   const [file,           setFile]           = useState<File | null>(null);
@@ -70,7 +70,7 @@ export default function CambiaLetraPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.3rem' }}>📝 Cambia Letra</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1rem' }}>
-          Subí un audio y elegí qué hacer: reemplazar la letra por una nueva (voz sintetizada), tararear el tono de las palabras reconocidas, o tararear también lo que no se reconoció como palabra (vocalizaciones, coros)
+          Subí un audio y elegí qué hacer: reemplazar la letra por una nueva (voz sintetizada), tararear el tono de las palabras reconocidas, tararear también lo que no se reconoció como palabra (vocalizaciones, coros), o mezclar ese tarareo por encima de la canción real como guía de karaoke
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
@@ -78,6 +78,7 @@ export default function CambiaLetraPage() {
             { id: 'voz' as const, label: '🗣️ Letra nueva' },
             { id: 'tono' as const, label: '🎵 Tarareo de voz' },
             { id: 'tonototal' as const, label: '🎶 Tarareo completo' },
+            { id: 'guia' as const, label: '🎤 Guía sobre canción' },
           ]).map(m => (
             <button key={m.id} onClick={() => setModo(m.id)} disabled={busy}
               style={{
@@ -169,13 +170,14 @@ export default function CambiaLetraPage() {
             ? '⏳ Generando...'
             : modo === 'voz' ? '📝 Generar con letra nueva'
             : modo === 'tono' ? '🎵 Generar tarareo'
-            : '🎶 Generar tarareo completo'}
+            : modo === 'tonototal' ? '🎶 Generar tarareo completo'
+            : '🎤 Generar guía sobre la canción'}
         </button>
 
         {resultUrl && (
           <div style={{ marginBottom: '0.75rem' }}>
             <audio controls src={resultUrl} style={{ width: '100%', marginBottom: '0.5rem' }} />
-            <a href={resultUrl} download={`${file?.name.replace(/\.[^.]+$/, '') ?? 'audio'}_${modo === 'tonototal' ? 'tono_completo' : modo === 'tono' ? 'tono' : 'cambialetra'}.mp3`}
+            <a href={resultUrl} download={`${file?.name.replace(/\.[^.]+$/, '') ?? 'audio'}_${modo === 'tonototal' ? 'tono_completo' : modo === 'tono' ? 'tono' : modo === 'guia' ? 'guia' : 'cambialetra'}.mp3`}
               className="kk-btn primary"
               style={{ display: 'block', textAlign: 'center', width: '100%', padding: '0.7rem', fontSize: '0.9rem',
                 background: 'rgba(249,115,22,0.12)', border: '1px solid #f97316', color: '#f97316', borderRadius: 10,

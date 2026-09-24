@@ -151,6 +151,33 @@ async function pistaAMp3(pista: Buffer, sr: number, tmpDir: string) {
   return readFile(outputPath);
 }
 
+// Modo "guía": mezcla el tarareo (palabras/huecos) POR ENCIMA del audio
+// ORIGINAL de verdad (bajado de volumen), en vez de entregar solo el tono
+// sintético solo — así se escucha la canción real con una guía de
+// entonación resaltada por arriba, como una pista de karaoke. El original
+// manda la duración total (duration=first) — si el tarareo termina antes
+// (ej. la canción sigue con un outro instrumental sin palabras), el resto
+// sigue sonando con el original solo.
+async function mezclarConOriginal(pista: Buffer, sr: number, audioOriginalPath: string, tmpDir: string) {
+  const pistaPath = join(tmpDir, 'guia_tono.raw');
+  await writeFile(pistaPath, pista);
+  const outputPath = join(tmpDir, 'final_guia.mp3');
+  const filterComplex =
+    `[0:a]volume=0.35,aformat=sample_rates=${sr}:channel_layouts=mono[bg];` +
+    `[1:a]volume=1.4,aformat=sample_rates=${sr}:channel_layouts=mono[fg];` +
+    `[bg][fg]amix=inputs=2:duration=first:dropout_transition=0[mixed];` +
+    `[mixed]alimiter=limit=0.95[out]`;
+  await runFfmpeg([
+    '-i', audioOriginalPath,
+    '-f', 's16le', '-ar', String(sr), '-ac', '1', '-i', pistaPath,
+    '-filter_complex', filterComplex,
+    '-map', '[out]',
+    '-c:a', 'libmp3lame', '-b:a', '192k',
+    '-y', outputPath,
+  ]);
+  return readFile(outputPath);
+}
+
 // Mismo hop que usa pitchContorno (lib/pitchTracker.ts) — hardcodeado ahí,
 // se repite acá para no exportar un detalle interno solo por esto.
 const HOP_CONTORNO = 0.02;
@@ -284,8 +311,11 @@ export async function POST(request: Request) {
     const file = form.get('file') as File | null;
     const textoLibre = form.get('texto') as string | null;
     const modoRaw = form.get('modo');
-    const modo: 'voz' | 'tono' | 'tonototal' =
-      modoRaw === 'tono' ? 'tono' : modoRaw === 'tonototal' ? 'tonototal' : 'voz';
+    const modo: 'voz' | 'tono' | 'tonototal' | 'guia' =
+      modoRaw === 'tono' ? 'tono'
+      : modoRaw === 'tonototal' ? 'tonototal'
+      : modoRaw === 'guia' ? 'guia'
+      : 'voz';
     const silencioInicial = Math.max(0, Number(form.get('silencioInicial')) || 0);
 
     if (!file) return Response.json({ error: 'Falta el archivo de audio' }, { status: 400 });
@@ -337,14 +367,17 @@ export async function POST(request: Request) {
     await runFfmpeg(['-y', '-i', rutaParaDecodificar, '-f', 's16le', '-ar', String(SR), '-ac', '1', origRawPath]);
     const contorno = pitchContorno(int16BufferToFloat32(await readFile(origRawPath)), SR);
 
-    // Modos "tono" y "tonototal": sin TTS ni rubberband — por cada palabra
-    // del ORIGINAL se genera directamente un tono que sigue la curva de
-    // entonación real en ese tramo (partido en sub-notas si el tono se
-    // mueve dentro de la palabra, ver tararearTramo). No hay palabras
-    // nuevas, es un tarareo del original. "tonototal" además tararea los
-    // huecos ENTRE palabras que Deepgram no transcribió como palabra pero
-    // que sí tienen voz cantada (vocalizaciones, "aahh" sostenidos, coros).
-    if (modo === 'tono' || modo === 'tonototal') {
+    // Modos "tono", "tonototal" y "guia": sin TTS ni rubberband — por cada
+    // palabra del ORIGINAL se genera directamente un tono que sigue la
+    // curva de entonación real en ese tramo (partido en sub-notas si el
+    // tono se mueve dentro de la palabra, ver tararearTramo). No hay
+    // palabras nuevas, es un tarareo del original. "tonototal" y "guia"
+    // además tararean los huecos ENTRE palabras que Deepgram no
+    // transcribió como palabra pero que sí tienen voz cantada
+    // (vocalizaciones, "aahh" sostenidos, coros). "guia" además mezcla
+    // ese tarareo con el audio original real (ver mezclarConOriginal) en
+    // vez de entregar solo el tono sintético.
+    if (modo === 'tono' || modo === 'tonototal' || modo === 'guia') {
       // Las palabras/huecos vienen pegados (el final de uno = el inicio del
       // siguiente), así que el tono saltaba de golpe de una frecuencia a
       // otra en ese punto. Recortando un poco el final de cada tono/nota
@@ -367,7 +400,7 @@ export async function POST(request: Request) {
         tararearTramo(contorno, cue.start, cue.end, SR, GAP, pista, silencioInicial, AMPLITUD_PALABRA);
       }
 
-      if (modo === 'tonototal') {
+      if (modo === 'tonototal' || modo === 'guia') {
         for (const hueco of calcularHuecos(cues, finContorno)) {
           // Huecos muy cortos (menos que un par de gaps) no alcanzan a
           // tararear nada audible — se saltan directamente.
@@ -376,8 +409,10 @@ export async function POST(request: Request) {
         }
       }
 
-      const finalBuffer = await pistaAMp3(pista, SR, tmpDir);
-      const sufijo = modo === 'tonototal' ? '_tono_completo.mp3' : '_tono.mp3';
+      const finalBuffer = modo === 'guia'
+        ? await mezclarConOriginal(pista, SR, inPath, tmpDir)
+        : await pistaAMp3(pista, SR, tmpDir);
+      const sufijo = modo === 'guia' ? '_guia.mp3' : modo === 'tonototal' ? '_tono_completo.mp3' : '_tono.mp3';
       const name = file.name.replace(/\.[^.]+$/, '') + sufijo;
 
       return new Response(finalBuffer, {
