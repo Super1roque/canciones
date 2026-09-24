@@ -237,7 +237,12 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
         </div>
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>Comprar créditos</h2>
+          <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>
+            Comprar créditos{' '}
+            <span className={styles.textMuted} style={{ fontSize: '0.78rem', fontWeight: 400 }}>
+              (No se aceptan depósitos menores a 300 Lempiras)
+            </span>
+          </h2>
           {recargaPendiente ? (
             <div className={styles.formGroup}>
               <p style={{ margin: 0 }}>Transferí a esta cuenta:</p>
