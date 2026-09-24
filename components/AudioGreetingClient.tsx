@@ -13,8 +13,13 @@ const SEGUNDOS_GRATIS = 10;
 // `restringida` la calcula el server (ver app/cancion/[id]/page.tsx) en
 // base a la edad de la canción y si el tenant dueño del pedido es
 // premium — acá solo se aplica el corte a los 10s y se arma la pantalla
-// de recarga, sin decidir de nuevo la regla de negocio.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida, descargable }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean; descargable: boolean }) {
+// de recarga, sin decidir de nuevo la regla de negocio. El corte en sí es
+// igual para cualquiera (no depende de si el dueño está logueado en ese
+// navegador — si dependiera de eso, alcanzaría con cerrar sesión para
+// evadirlo); `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la
+// invitación a recargar, cualquier otra persona (a quien le reenviaron el
+// link) ve un aviso genérico que no expone que el dueño es freemium.
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida, descargable, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean; descargable: boolean; esDueño: boolean }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string; indice: number } | null>(null);
@@ -125,17 +130,19 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     await irASesionOLanding();
   }
 
-  // Al bloquearse, si ya es tenant logueado lo manda directo a su
+  // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su
   // dashboard para que recargue — no tiene sentido dejarlo en esta
   // pantalla si ya puede resolverlo ahí mismo. Un pequeño respiro para que
-  // alcance a leer el mensaje antes de que lo redirija solo.
+  // alcance a leer el mensaje antes de que lo redirija solo. Para
+  // cualquier otra persona no aplica — no tiene nada que resolver en su
+  // propio dashboard sobre la canción de otro tenant.
   useEffect(() => {
-    if (!bloqueado) return;
+    if (!bloqueado || !esDueño) return;
     const id = setTimeout(() => {
       fetch('/api/tenants/me').then(res => { if (res.ok) router.push('/dashboard'); }).catch(() => {});
     }, 4000);
     return () => clearTimeout(id);
-  }, [bloqueado, router]);
+  }, [bloqueado, esDueño, router]);
 
   function descargar() {
     const a = document.createElement('a');
@@ -146,6 +153,39 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
 
   const reproduciendo = estado === 'reproduciendo';
   const hayLetra = reproduciendo && !!cues?.length && !!ventana;
+
+  if (bloqueado && !esDueño) {
+    return (
+      <main style={{
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        background:
+          'radial-gradient(ellipse 55% 45% at 12% 0%, rgba(255,138,61,0.28), transparent 60%),' +
+          'radial-gradient(ellipse 60% 50% at 100% 15%, rgba(217,70,239,0.28), transparent 62%),' +
+          'linear-gradient(165deg, #2a1152 0%, #1a0b3d 55%, #10082b 100%)',
+        color: '#f3ecff', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem 1.5rem', gap: '1.1rem',
+      }}>
+        <div style={{ fontSize: '2.2rem' }}>🎵</div>
+        <h1 style={{ fontSize: '1.25rem', margin: 0, maxWidth: '26rem', lineHeight: 1.4 }}>
+          Esta canción ya no está disponible por ahora.
+        </h1>
+        <p style={{ maxWidth: '26rem', fontSize: '0.92rem', lineHeight: 1.6, color: '#d9cdf5', margin: 0 }}>
+          Pedile a quien te la compartió que te la vuelva a enviar — tiene que activar algo de su lado para que siga sonando.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          style={{
+            marginTop: '0.75rem', padding: '0.9rem 1.6rem', border: 'none', borderRadius: 999,
+            background: 'linear-gradient(135deg, #ff5f6d, #ff8a3d)', color: '#fff',
+            fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 6px 0 #b8391f, 0 16px 32px rgba(255,95,109,0.35)',
+          }}
+        >
+          🎤 Creá tu propia canción
+        </button>
+      </main>
+    );
+  }
 
   if (bloqueado) {
     return (

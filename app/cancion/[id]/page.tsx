@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { getDb } from '@/lib/firebaseService';
 import type { Cue } from '@/lib/deepgramService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
@@ -27,19 +28,30 @@ const HORAS_GRATIS = 72;
 // importar la edad de la canción — antes ambas dependían de la misma
 // bandera y una canción recién subida de un tenant freemium terminaba
 // mostrando igual el botón de descargar.
-async function obtenerAccesoCancion(id: string, fechaCancion: string): Promise<{ restringida: boolean; descargable: boolean }> {
+// `esDueño` decide QUÉ mensaje ve quien se topa con el corte — el dueño ve
+// la invitación a recargar; cualquier otra persona (a quien le reenviaron
+// el link) ve un mensaje genérico que no expone que el dueño es freemium
+// ni lo invita a él a pagar. El corte en sí (restringida) aplica igual
+// para todos — si dependiera de que el dueño esté logueado en ESE
+// navegador para activarse, alcanzaría con no iniciar sesión ahí para
+// evadirlo.
+async function obtenerAccesoCancion(id: string, fechaCancion: string): Promise<{ restringida: boolean; descargable: boolean; esDueño: boolean }> {
   const db = getDb();
   const pedidosSnap = await db.collection('pedidos').where('cancionCompartidaId', '==', id).limit(1).get();
-  if (pedidosSnap.empty) return { restringida: false, descargable: true };
+  if (pedidosSnap.empty) return { restringida: false, descargable: true, esDueño: false };
 
   const telefono = pedidosSnap.docs[0].data().telefono as string;
   const tenantDoc = await db.collection('tenants').doc(telefono).get();
   const premium = tenantDoc.exists && tenantDoc.data()?.plan === 'premium';
 
+  const cookieStore = await cookies();
+  const esDueño = cookieStore.get('tenant_phone')?.value === telefono;
+
   const edadHoras = (Date.now() - new Date(fechaCancion).getTime()) / (1000 * 60 * 60);
   return {
     restringida: !premium && edadHoras > HORAS_GRATIS,
     descargable: premium,
+    esDueño,
   };
 }
 
@@ -85,7 +97,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const { restringida, descargable } = await obtenerAccesoCancion(id, cancion.fecha);
+  const { restringida, descargable, esDueño } = await obtenerAccesoCancion(id, cancion.fecha);
 
   return (
     <AudioGreetingClient
@@ -95,6 +107,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       cues={cancion.cues}
       restringida={restringida}
       descargable={descargable}
+      esDueño={esDueño}
     />
   );
 }
