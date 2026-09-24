@@ -4,7 +4,7 @@ import { mkdir, readFile, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { transcribirPalabras, sintetizarVoz } from '@/lib/deepgramService';
-import { pitchPromedio, pitchContorno, frecuenciaCercana, type FramePitch } from '@/lib/pitchTracker';
+import { pitchPromedio, pitchContorno, frecuenciaCercana, freqToSemitones, type FramePitch } from '@/lib/pitchTracker';
 import { int16BufferToFloat32 } from '@/lib/audioPcm';
 import { contentDisposition } from '@/lib/contentDisposition';
 
@@ -107,9 +107,18 @@ function concatenarConCrossfade(buffers: Buffer[], sampleRate: number, crossfade
 // muestra a muestra (acumulando fase, sin saltos), en vez de sintetizar voz
 // y tener que estirarla/afinarla con rubberband — así no hay ningún mínimo
 // de duración ni artefactos: cualquier duración/frecuencia sale limpia.
-function sintetizarTono(contorno: FramePitch[], start: number, end: number, sr: number, freqPorDefecto = 180): Buffer {
+function sintetizarTono(contorno: FramePitch[], start: number, end: number, sr: number, freqPorDefecto = 180, amplitud = 0.55): Buffer {
   const totalSamples = Math.max(1, Math.round((end - start) * sr));
   const out = Buffer.alloc(totalSamples * 2);
+
+  // Si en todo este tramo no se detectó ningún tono real en el original
+  // (silencio, respiración, o una "palabra" alucinada por la transcripción
+  // en una zona sin voz — común en los primeros segundos), no generar
+  // sonido: antes se rellenaba con la frecuencia por defecto y sonaba como
+  // un zumbido inventado en lo que debería ser silencio.
+  const hayTonoReal = contorno.some(p => p.freq !== null && p.time >= start && p.time < end);
+  if (!hayTonoReal) return out;
+
   const fadeSamples = Math.min(Math.floor(totalSamples / 2), Math.round(sr * 0.015));
 
   let fase = 0;
@@ -120,13 +129,125 @@ function sintetizarTono(contorno: FramePitch[], start: number, end: number, sr: 
     ultimaFreq = f;
     fase += (2 * Math.PI * f) / sr;
 
-    let amp = 0.55;
+    let amp = amplitud;
     if (n < fadeSamples) amp *= n / fadeSamples;
     if (n > totalSamples - fadeSamples) amp *= (totalSamples - n) / fadeSamples;
 
     out.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(Math.sin(fase) * amp * 32767))), n * 2);
   }
   return out;
+}
+
+// Vuelca una pista PCM s16le mono a MP3 — usado por el modo "tono"
+// (tararea la voz).
+async function pistaAMp3(pista: Buffer, sr: number, tmpDir: string) {
+  const pistaPath = join(tmpDir, 'tono.raw');
+  await writeFile(pistaPath, pista);
+  const outputPath = join(tmpDir, 'final.mp3');
+  await runFfmpeg([
+    '-f', 's16le', '-ar', String(sr), '-ac', '1', '-i', pistaPath,
+    '-c:a', 'libmp3lame', '-b:a', '192k', '-y', outputPath,
+  ]);
+  return readFile(outputPath);
+}
+
+// Mismo hop que usa pitchContorno (lib/pitchTracker.ts) — hardcodeado ahí,
+// se repite acá para no exportar un detalle interno solo por esto.
+const HOP_CONTORNO = 0.02;
+// Diferencia de tono, en semitonos, a partir de la cual se considera que
+// dentro de la palabra empezó una entonación distinta (y no que la misma
+// nota tiene vibrato/ligero desafine). 0.7 semitonos es bastante menos que
+// un semitono completo, para no perder movimientos de tono reales pero sin
+// cortar de más por vibrato.
+const UMBRAL_SEMITONOS_NOTA = 0.7;
+
+interface NotaDetectada { start: number; end: number; }
+
+// Divide el tramo [start,end) de UNA palabra en sub-notas según los saltos
+// de tono reales dentro de ella — cantar "tengo" (tono estable) se tararea
+// como una sola nota, pero "teeeeeennngo" (que sube/baja mientras se
+// sostiene) se parte en varias, cada una en su propia frecuencia, en vez de
+// un solo glissando continuo que difumina el movimiento real de la voz.
+function segmentarNotasEnPalabra(contorno: FramePitch[], start: number, end: number): NotaDetectada[] {
+  const notas: NotaDetectada[] = [];
+  let inicio: number | null = null;
+  let freqRef: number | null = null;
+  let ultimoConTono: number | null = null;
+
+  for (const p of contorno) {
+    if (p.time < start) continue;
+    if (p.time >= end) break;
+
+    if (p.freq === null) {
+      // Un hueco breve (glitch de detección, típico en autocorrelación) se
+      // ignora; uno más largo que un par de frames cierra la nota actual.
+      if (inicio !== null && ultimoConTono !== null && p.time - ultimoConTono > HOP_CONTORNO * 2) {
+        notas.push({ start: inicio, end: ultimoConTono + HOP_CONTORNO });
+        inicio = null;
+        freqRef = null;
+      }
+      continue;
+    }
+    if (inicio === null) {
+      inicio = p.time;
+      freqRef = p.freq;
+    } else if (freqRef !== null && Math.abs(freqToSemitones(p.freq, freqRef)) > UMBRAL_SEMITONOS_NOTA) {
+      notas.push({ start: inicio, end: p.time });
+      inicio = p.time;
+      freqRef = p.freq;
+    }
+    ultimoConTono = p.time;
+  }
+  if (inicio !== null && ultimoConTono !== null) {
+    notas.push({ start: inicio, end: Math.min(end, ultimoConTono + HOP_CONTORNO) });
+  }
+
+  // Si no se detectó ningún tono en todo el tramo (silencio/respiración), se
+  // devuelve el tramo completo tal cual — sintetizarTono ya sabe generar
+  // silencio real en ese caso (ver hayTonoReal), no hace falta duplicar esa
+  // lógica acá.
+  return notas.length > 0 ? notas : [{ start, end }];
+}
+
+// Tararea un tramo [start,end) cualquiera —una palabra reconocida por
+// Deepgram, o un hueco entre palabras que Deepgram no transcribió pero que
+// sí tiene voz cantada (ad-libs, "oohh", vocalizaciones sin letra)— y
+// escribe el resultado directo en `pista`. Común a los modos "tono" y
+// "tonototal": recorta GAP segundos al final para separarlo del siguiente
+// sonido, lo parte en sub-notas según el movimiento de tono real dentro del
+// tramo (segmentarNotasEnPalabra), y por cada sub-nota sintetiza su propio
+// tono y lo coloca en su posición sobre la línea de tiempo del audio
+// ORIGINAL (sumando silencioInicial, que se había recortado antes de
+// analizar).
+function tararearTramo(
+  contorno: FramePitch[], start: number, end: number, sr: number,
+  gap: number, pista: Buffer, silencioInicial: number, amplitud = 0.55,
+): void {
+  const finEfectivo = Math.max(start + 0.02, end - gap);
+  const subNotas = segmentarNotasEnPalabra(contorno, start, finEfectivo);
+
+  for (const nota of subNotas) {
+    const finNota = Math.max(nota.start + 0.01, nota.end - gap);
+    const tono = sintetizarTono(contorno, nota.start, finNota, sr, 180, amplitud);
+    const offsetBytes = Math.max(0, Math.round((nota.start + silencioInicial) * sr)) * 2;
+    const bytesACopiar = Math.min(tono.length, pista.length - offsetBytes);
+    if (bytesACopiar > 0) tono.copy(pista, offsetBytes, 0, bytesACopiar);
+  }
+}
+
+// Calcula los huecos de tiempo que quedan ENTRE las palabras reconocidas
+// (y antes de la primera / después de la última) hasta `finContorno` — ahí
+// es donde puede haber voz cantada que Deepgram no transcribió como
+// palabra (vocalizaciones, "aahh" sostenidos, coros de fondo).
+function calcularHuecos(cues: PalabraOriginal[], finContorno: number): { start: number; end: number }[] {
+  const huecos: { start: number; end: number }[] = [];
+  let cursor = 0;
+  for (const cue of cues) {
+    if (cue.start > cursor) huecos.push({ start: cursor, end: cue.start });
+    cursor = Math.max(cursor, cue.end);
+  }
+  if (finContorno > cursor) huecos.push({ start: cursor, end: finContorno });
+  return huecos;
 }
 
 interface PalabraOriginal { start: number; end: number; }
@@ -162,7 +283,10 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get('file') as File | null;
     const textoLibre = form.get('texto') as string | null;
-    const modo = form.get('modo') === 'tono' ? 'tono' : 'voz';
+    const modoRaw = form.get('modo');
+    const modo: 'voz' | 'tono' | 'tonototal' =
+      modoRaw === 'tono' ? 'tono' : modoRaw === 'tonototal' ? 'tonototal' : 'voz';
+    const silencioInicial = Math.max(0, Number(form.get('silencioInicial')) || 0);
 
     if (!file) return Response.json({ error: 'Falta el archivo de audio' }, { status: 400 });
     if (modo === 'voz' && !textoLibre?.trim()) {
@@ -172,7 +296,31 @@ export async function POST(request: Request) {
     const audioBuffer = await file.arrayBuffer();
     const contentType = file.type || 'audio/mpeg';
 
-    const transcripcion = await transcribirPalabras(audioBuffer, contentType);
+    tmpDir = join(tmpdir(), `cambialetra_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+    await mkdir(tmpDir, { recursive: true });
+
+    const extension = (file.name.match(/\.[^.]+$/)?.[0] || '.mp3').toLowerCase();
+    const inPath = join(tmpDir, `in${extension}`);
+    await writeFile(inPath, Buffer.from(audioBuffer));
+
+    // Si el usuario indica cuántos segundos de silencio hay al inicio, se
+    // recorta ANTES de transcribir y de analizar el tono — así no se le paga
+    // ni se le espera a Deepgram por una parte que ya sabemos que no tiene
+    // nada, y el análisis de tono tampoco pierde tiempo en ella.
+    let audioParaAnalizar: ArrayBuffer = audioBuffer;
+    let rutaParaDecodificar = inPath;
+    if (silencioInicial > 0) {
+      const recortadoPath = join(tmpDir, `recortado${extension}`);
+      await runFfmpeg(['-y', '-ss', String(silencioInicial), '-i', inPath, '-c', 'copy', recortadoPath]);
+      const recortadoBuffer = await readFile(recortadoPath);
+      audioParaAnalizar = recortadoBuffer.buffer.slice(
+        recortadoBuffer.byteOffset,
+        recortadoBuffer.byteOffset + recortadoBuffer.byteLength
+      ) as ArrayBuffer;
+      rutaParaDecodificar = recortadoPath;
+    }
+
+    const transcripcion = await transcribirPalabras(audioParaAnalizar, contentType);
     if ('error' in transcripcion) return Response.json({ error: transcripcion.error }, { status: 422 });
     const { cues } = transcripcion;
 
@@ -184,44 +332,53 @@ export async function POST(request: Request) {
       return Response.json({ error: `El texto tiene demasiadas palabras (máximo ${MAX_PALABRAS})` }, { status: 400 });
     }
 
-    tmpDir = join(tmpdir(), `cambialetra_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-    await mkdir(tmpDir, { recursive: true });
-
-    // Decodificar el audio original completo para extraer su curva de tono
-    const extension = (file.name.match(/\.[^.]+$/)?.[0] || '.mp3').toLowerCase();
-    const inPath = join(tmpDir, `in${extension}`);
-    await writeFile(inPath, Buffer.from(audioBuffer));
-
+    // Decodificar el audio (ya recortado, si aplicaba) para extraer su curva de tono
     const origRawPath = join(tmpDir, 'orig.raw');
-    await runFfmpeg(['-y', '-i', inPath, '-f', 's16le', '-ar', String(SR), '-ac', '1', origRawPath]);
+    await runFfmpeg(['-y', '-i', rutaParaDecodificar, '-f', 's16le', '-ar', String(SR), '-ac', '1', origRawPath]);
     const contorno = pitchContorno(int16BufferToFloat32(await readFile(origRawPath)), SR);
 
-    // Modo "tono": sin TTS ni rubberband — por cada palabra del ORIGINAL se
-    // genera directamente un tono que sigue la curva de entonación real en
-    // ese tramo. No hay palabras nuevas, es un tarareo del tono original.
-    if (modo === 'tono') {
-      const duracionTotal = Math.max(...cues.map(c => c.end)) + 1;
+    // Modos "tono" y "tonototal": sin TTS ni rubberband — por cada palabra
+    // del ORIGINAL se genera directamente un tono que sigue la curva de
+    // entonación real en ese tramo (partido en sub-notas si el tono se
+    // mueve dentro de la palabra, ver tararearTramo). No hay palabras
+    // nuevas, es un tarareo del original. "tonototal" además tararea los
+    // huecos ENTRE palabras que Deepgram no transcribió como palabra pero
+    // que sí tienen voz cantada (vocalizaciones, "aahh" sostenidos, coros).
+    if (modo === 'tono' || modo === 'tonototal') {
+      // Las palabras/huecos vienen pegados (el final de uno = el inicio del
+      // siguiente), así que el tono saltaba de golpe de una frecuencia a
+      // otra en ese punto. Recortando un poco el final de cada tono/nota
+      // queda un silencio breve antes del próximo sonido, separándolos en
+      // vez de un glissando continuo. Mismo valor para el borde entre
+      // tramos y entre sub-notas dentro de un mismo tramo.
+      const GAP = 0.02;
+      // Las palabras reconocidas suenan más fuerte que los huecos (coros,
+      // ad-libs, vocalizaciones sin letra) — así se distingue de oído cuál
+      // es la letra principal y cuál es "acompañamiento", en vez de que
+      // todo el tarareo completo suene parejo.
+      const AMPLITUD_PALABRA = 0.75;
+      const AMPLITUD_HUECO = 0.35;
+      const finContorno = contorno.length > 0 ? contorno[contorno.length - 1].time + HOP_CONTORNO : 0;
+      const duracionTotal = Math.max(Math.max(...cues.map(c => c.end)) + 1, finContorno) + silencioInicial;
       const totalSamples = Math.round(duracionTotal * SR);
       const pista = Buffer.alloc(totalSamples * 2);
 
       for (const cue of cues) {
-        const tono = sintetizarTono(contorno, cue.start, cue.end, SR);
-        const offsetBytes = Math.max(0, Math.round(cue.start * SR)) * 2;
-        const bytesACopiar = Math.min(tono.length, pista.length - offsetBytes);
-        if (bytesACopiar > 0) tono.copy(pista, offsetBytes, 0, bytesACopiar);
+        tararearTramo(contorno, cue.start, cue.end, SR, GAP, pista, silencioInicial, AMPLITUD_PALABRA);
       }
 
-      const pistaPath = join(tmpDir, 'tono.raw');
-      await writeFile(pistaPath, pista);
+      if (modo === 'tonototal') {
+        for (const hueco of calcularHuecos(cues, finContorno)) {
+          // Huecos muy cortos (menos que un par de gaps) no alcanzan a
+          // tararear nada audible — se saltan directamente.
+          if (hueco.end - hueco.start < GAP * 2) continue;
+          tararearTramo(contorno, hueco.start, hueco.end, SR, GAP, pista, silencioInicial, AMPLITUD_HUECO);
+        }
+      }
 
-      const outputPath = join(tmpDir, 'final.mp3');
-      await runFfmpeg([
-        '-f', 's16le', '-ar', String(SR), '-ac', '1', '-i', pistaPath,
-        '-c:a', 'libmp3lame', '-b:a', '192k', '-y', outputPath,
-      ]);
-
-      const finalBuffer = await readFile(outputPath);
-      const name = file.name.replace(/\.[^.]+$/, '') + '_tono.mp3';
+      const finalBuffer = await pistaAMp3(pista, SR, tmpDir);
+      const sufijo = modo === 'tonototal' ? '_tono_completo.mp3' : '_tono.mp3';
+      const name = file.name.replace(/\.[^.]+$/, '') + sufijo;
 
       return new Response(finalBuffer, {
         headers: {
@@ -305,7 +462,7 @@ export async function POST(request: Request) {
       const wordRawPath = join(tmpDir!, `w${i}_final.raw`);
       await writeFile(wordRawPath, wordFinal);
 
-      return { path: wordRawPath, startMs: Math.max(0, Math.round(p.start * 1000)) };
+      return { path: wordRawPath, startMs: Math.max(0, Math.round((p.start + silencioInicial) * 1000)) };
     }
 
     const resultados = await conConcurrencia(palabras, CONCURRENCIA, procesarPalabra);
@@ -315,8 +472,9 @@ export async function POST(request: Request) {
       return Response.json({ error: 'No se pudo sintetizar ninguna palabra' }, { status: 500 });
     }
 
-    // Mezclar todos los clips en la línea de tiempo original
-    const duracionTotal = Math.max(...cues.map(c => c.end)) + 1;
+    // Mezclar todos los clips en la línea de tiempo del audio ORIGINAL
+    // (sin recortar), sumando de vuelta el silencio inicial que se saltó.
+    const duracionTotal = Math.max(...cues.map(c => c.end)) + 1 + silencioInicial;
 
     const inputArgs: string[] = [];
     clips.forEach(c => inputArgs.push('-f', 's16le', '-ar', String(SR), '-ac', '1', '-i', c.path));
