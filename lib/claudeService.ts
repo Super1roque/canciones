@@ -44,6 +44,13 @@ function esModoPrueba(historia: string): boolean {
   return historia.trim().toLowerCase().startsWith('esta es una prueba');
 }
 
+// El usuario a veces solo escribe un nombre en vez de una historia — en ese
+// caso la parodia debe girar en torno a esa persona en vez de fallar por
+// falta de temática.
+function esSoloNombre(historia: string): boolean {
+  return historia.trim().split(/\s+/).filter(Boolean).length <= 4;
+}
+
 // Extrae las palabras únicas del texto (sin puntuación, en minúsculas)
 function extraerPalabras(texto: string): string[] {
   const palabras = texto
@@ -144,6 +151,12 @@ Cada palabra que escribas en la parodia DEBE aparecer exactamente en la lista de
 Genera ${soloCoro ? 'solo el coro de la parodia (no la canción completa)' : 'la parodia completa'} usando EXCLUSIVAMENTE las palabras de la lista y respetando la estructura de la canción original.${instruccionAlcance}`;
 
   } else {
+    const soloNombre = esSoloNombre(historia);
+
+    const bloqueHistoria = soloNombre
+      ? `NOMBRE DE LA PERSONA HOMENAJEADA:\n${historia}\n\nEl usuario no dio una historia, solo el nombre de esta persona. Genera la parodia teniendo a "${historia.trim()}" como protagonista y tema central: la letra debe girar en torno a esa persona (un homenaje, celebración o relato creativo sobre ella), coherente con el estilo de la canción.`
+      : `HISTORIA/TEMÁTICA PARA LA PARODIA:\n${historia}`;
+
     userPrompt = `Genera una parodia de la siguiente canción:
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -155,8 +168,7 @@ LETRA ORIGINAL:
 ${cancion.letra}
 
 ━━━━━━━━━━━━━━━━━━━━━━
-HISTORIA/TEMÁTICA PARA LA PARODIA:
-${historia}
+${bloqueHistoria}
 ━━━━━━━━━━━━━━━━━━━━━━
 
 Antes de generar la parodia, corrige internamente cualquier error gramatical u ortográfico de la historia/temática. Usa la versión corregida como base, pero no menciones ni muestres las correcciones.
