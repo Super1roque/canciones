@@ -14,7 +14,10 @@ async function obtenerCancion(id: string) {
   return doc.data() as { titulo: string; cues?: Cue[]; fecha: string };
 }
 
-const HORAS_GRATIS = 72;
+// El mensaje sigue hablando de "3 días" a propósito — es más fácil de
+// entender para el tenant que un número de horas raro, aunque el corte
+// real sea antes.
+const HORAS_GRATIS = 60;
 
 // El gratis-por-3-días es para el dueño de la canción (quien la pidió),
 // no para cualquiera que reciba el link — por eso se resuelve vía el
@@ -23,7 +26,7 @@ const HORAS_GRATIS = 72;
 // dueño y quedan sin restricción ni límite de descarga.
 //
 // `restringida` y `descargable` son cosas distintas a propósito: la
-// escucha es gratis durante las primeras 72h aunque el dueño no sea
+// escucha es gratis durante las primeras horas (HORAS_GRATIS) aunque el dueño no sea
 // premium, pero la descarga es un privilegio exclusivo de premium sin
 // importar la edad de la canción — antes ambas dependían de la misma
 // bandera y una canción recién subida de un tenant freemium terminaba

@@ -52,7 +52,9 @@ function formatFecha(iso: string) {
 // app/cancion/[id]/page.tsx) — esta barra es solo para que el admin vea
 // de un vistazo a quién le falta poco o ya se le venció, no decide nada
 // por su cuenta.
-const HORAS_LIMITE_GRATIS = 72;
+// Mismo valor que HORAS_GRATIS en app/cancion/[id]/page.tsx — el paywall
+// real corta a las 60h aunque el mensaje que ve el tenant hable de "3 días".
+const HORAS_LIMITE_GRATIS = 60;
 
 function horasDesde(iso: string): number {
   return (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60);

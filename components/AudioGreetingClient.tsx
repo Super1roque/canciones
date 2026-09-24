@@ -53,7 +53,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   }
 
   // Corta la reproducción a los 10s si la canción está restringida (más de
-  // 72h y el dueño no es premium) — antes de eso, se comporta igual que
+  // HORAS_GRATIS y el dueño no es premium) — antes de eso, se comporta igual que
   // siempre.
   function alAvanzarTiempo() {
     const t = audioRef.current?.currentTime ?? 0;
