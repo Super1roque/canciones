@@ -28,8 +28,12 @@ Entrás, contás tu historia y nuestra aplicación hace el resto.
 👉 La primera canción completa es GRATIS.
 Probala sin compromiso y escuchá el resultado. ¡Te puede sorprender! 🔥🎵`;
 
+// Siempre al final del mensaje (no editable desde la plantilla de arriba)
+// — para que nunca se pierda sin querer al ajustar el texto principal.
+const NOTA_OPT_OUT = 'Si preferís que no te vuelva a escribir sobre esto, avisame y te saco de la lista sin problema.';
+
 function urlInvitar(telefono: string, codigo: string, plantilla: string): string {
-  const mensaje = `${plantilla}\n\nEntrá en https://corridos.online — con tu número y este código de acceso vas directo: ${codigo}`;
+  const mensaje = `${plantilla}\n\nEntrá en https://corridos.online — con tu número y este código de acceso vas directo: ${codigo}\n\n${NOTA_OPT_OUT}`;
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
