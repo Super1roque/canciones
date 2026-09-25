@@ -34,8 +34,19 @@ function urlEnviarMensaje(telefono: string): string {
   return `https://wa.me/${telefono}`;
 }
 
+// Mismo patrón que formatTelefono en DashboardClient.tsx — para que el
+// tenant vea su número tal como lo reconoce (con guion), no solo dígitos
+// pegados.
+function formatTelefonoVisible(digits: string): string {
+  if (digits.startsWith('504') && digits.length === 11) {
+    const local = digits.slice(3);
+    return `+504 ${local.slice(0, 4)}-${local.slice(4)}`;
+  }
+  return `+${digits}`;
+}
+
 function urlAltaRapida(telefono: string, codigo: string): string {
-  const mensaje = `Con gusto te presentamos la aplicación https://corridos.online — Para ingresar vas a necesitar tu número de teléfono y tu código de acceso: ${codigo}`;
+  const mensaje = `Con gusto te presentamos la aplicación https://corridos.online — Para ingresar vas a necesitar tu número de teléfono (${formatTelefonoVisible(telefono)}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
