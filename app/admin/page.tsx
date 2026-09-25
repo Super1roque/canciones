@@ -868,6 +868,7 @@ export default function Home() {
             <a href="/admin/instrumento" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎹 Voz→Inst</a>
             <a href="/admin/galimatias" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🗣️ Galimatías</a>
             <a href="/admin/cambialetra" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">📝 Cambia Letra</a>
+            <a href="/admin/leer-relato" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">📖 Leer Relato</a>
             <a href="/admin/intervalos" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">⏸️ Intervalos</a>
             <a href="/admin/prompt-suno" className="nav-btn">🎛️ Prompts Suno</a>
             <a href="/admin/corrido" className="nav-btn">🎸 Corridos</a>
