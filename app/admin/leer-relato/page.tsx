@@ -21,6 +21,7 @@ function base64ToBlob(b64: string, contentType: string): Blob {
 export default function LeerRelatoPage() {
   const [texto, setTexto] = useState('');
   const [voz, setVoz] = useState('javier');
+  const [titulo, setTitulo] = useState('');
   const [fase, setFase] = useState<Fase>('idle');
   const [error, setError] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
@@ -57,6 +58,7 @@ export default function LeerRelatoPage() {
     setAudioBlob(null);
     setEnlace('');
     setCopiado(false);
+    setTitulo('');
 
     try {
       const res = await fetch('/api/leer-relato', {
@@ -80,7 +82,7 @@ export default function LeerRelatoPage() {
   }
 
   async function generarEnlace() {
-    if (!audioBlob || generandoEnlace) return;
+    if (!audioBlob || !titulo.trim() || generandoEnlace) return;
     setGenerandoEnlace(true);
     setCopiado(false);
     try {
@@ -88,6 +90,7 @@ export default function LeerRelatoPage() {
       formData.append('file', audioBlob, 'relato.mp3');
       formData.append('cues', JSON.stringify(cues));
       formData.append('voz', voz);
+      formData.append('titulo', titulo.trim());
 
       const res = await fetch('/api/relatos-compartidos', { method: 'POST', body: formData });
       const data = await res.json();
@@ -193,14 +196,24 @@ export default function LeerRelatoPage() {
             </a>
 
             {!enlace ? (
-              <button
-                className="kk-btn"
-                onClick={generarEnlace}
-                disabled={generandoEnlace}
-                style={{ padding: '0.7rem', fontSize: '0.9rem', borderRadius: 10, opacity: generandoEnlace ? 0.6 : 1 }}
-              >
-                {generandoEnlace ? '⏳ Generando enlace...' : '🔗 Generar enlace para escuchar después'}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <input
+                  value={titulo}
+                  onChange={e => setTitulo(e.target.value)}
+                  placeholder="Título del relato (aparece en el enlace)"
+                  disabled={generandoEnlace}
+                  className="input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+                <button
+                  className="kk-btn"
+                  onClick={generarEnlace}
+                  disabled={!titulo.trim() || generandoEnlace}
+                  style={{ padding: '0.7rem', fontSize: '0.9rem', borderRadius: 10, opacity: (!titulo.trim() || generandoEnlace) ? 0.5 : 1 }}
+                >
+                  {generandoEnlace ? '⏳ Generando enlace...' : '🔗 Generar enlace para escuchar después'}
+                </button>
+              </div>
             ) : (
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
                 <input

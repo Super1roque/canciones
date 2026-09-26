@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 
 type Cue = { start: number; end: number; text: string };
 
-export default function RelatoPublicoClient({ audioApiUrl, cues }: { audioApiUrl: string; cues: Cue[] }) {
+export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { audioApiUrl: string; titulo: string; cues: Cue[] }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
   const palabraRef = useRef<HTMLSpanElement>(null);
@@ -23,10 +23,14 @@ export default function RelatoPublicoClient({ audioApiUrl, cues }: { audioApiUrl
   return (
     <div style={{ minHeight: '100vh', background: '#141210', color: '#f2ede6', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', opacity: 0.7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', opacity: 0.7 }}>
           <span style={{ fontSize: '1.3rem' }}>📖</span>
           <span style={{ fontSize: '0.85rem', letterSpacing: '0.02em' }}>corridos.online</span>
         </div>
+
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '1.25rem', textWrap: 'balance' }}>
+          {titulo}
+        </h1>
 
         <audio
           ref={audioRef}

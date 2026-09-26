@@ -13,9 +13,11 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File | null;
     const cuesRaw = (formData.get('cues') as string | null) ?? '';
     const voz = (formData.get('voz') as string | null)?.trim();
+    const titulo = (formData.get('titulo') as string | null)?.trim();
 
     if (!file) return NextResponse.json({ error: 'No se recibió ningún archivo' }, { status: 400 });
     if (!voz) return NextResponse.json({ error: 'Falta la voz' }, { status: 400 });
+    if (!titulo) return NextResponse.json({ error: 'Falta el título del relato' }, { status: 400 });
 
     let cues: unknown;
     try {
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
 
     const db = getDb();
     await db.collection('relatos_compartidos').doc(id).set({
+      titulo,
       voz,
       storagePath,
       contentType: file.type || 'audio/mpeg',

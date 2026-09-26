@@ -11,11 +11,32 @@ async function obtenerRelato(id: string) {
   const db = getDb();
   const doc = await db.collection('relatos_compartidos').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { cues: Cue[] };
+  return doc.data() as { titulo: string; cues: Cue[] };
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  return { title: '📖 Relato — corridos.online', description: '' };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const relato = await obtenerRelato(id);
+  const titulo = relato?.titulo || 'Relato';
+
+  return {
+    title: `📖 ${titulo}`,
+    description: titulo,
+    openGraph: {
+      title: `📖 ${titulo}`,
+      description: titulo,
+      images: [{ url: '/leer-relato/og-image-vertical.jpg', width: 720, height: 1280, type: 'image/jpeg' }],
+      url: `https://corridos.online/relato/${id}`,
+      siteName: 'Canciones',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `📖 ${titulo}`,
+      description: titulo,
+      images: ['/leer-relato/og-image-vertical.jpg'],
+    },
+  };
 }
 
 export default async function RelatoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,5 +57,5 @@ export default async function RelatoPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  return <RelatoPublicoClient audioApiUrl={`/api/relatos-compartidos/${id}`} cues={relato.cues} />;
+  return <RelatoPublicoClient audioApiUrl={`/api/relatos-compartidos/${id}`} titulo={relato.titulo} cues={relato.cues} />;
 }
