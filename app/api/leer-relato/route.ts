@@ -13,9 +13,11 @@ const FFMPEG = ffmpegInstaller.path;
 const SR = 24000;
 const MAX_TEXTO = 20000; // relato completo — más que esto, mejor partirlo en varias lecturas
 // Aura TTS no acepta un texto arbitrariamente largo por pedido — se trocea
-// respetando fin de oración, nunca a mitad de palabra.
-const MAX_CHARS_POR_TRAMO = 1600;
-const SILENCIO_ENTRE_TRAMOS_MS = 150;
+// respetando fin de oración, nunca a mitad de palabra. Cada oración se
+// sintetiza en su propia llamada para poder insertar el silencio real entre
+// ellas después — Aura-2 no pausa de forma confiable solo con el punto.
+const MAX_CHARS_POR_ORACION = 1600;
+const SILENCIO_ENTRE_ORACIONES_MS = 350;
 
 function runFfmpeg(args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -26,29 +28,36 @@ function runFfmpeg(args: string[]): Promise<void> {
   });
 }
 
-// Parte el texto en oraciones (por punto/signo de cierre + espacio) y las
-// va empacando en tramos que no superen el límite de caracteres — así
-// nunca corta una oración a la mitad, solo agrupa varias completas por
-// tramo hasta llenar el cupo.
+// Parte el texto en oraciones individuales (por punto/signo de cierre).
+// Si una oración sin puntuación intermedia supera el límite de la API, se
+// subdivide por palabras — nunca a mitad de una — como único caso de
+// respaldo (pasa solo con texto sin puntuación).
 function trocearEnOraciones(texto: string, maxChars: number): string[] {
-  const oraciones = texto
+  const oracionesCrudas = texto
     .replace(/\s+/g, ' ')
     .trim()
     .match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) ?? [texto];
 
-  const tramos: string[] = [];
-  let actual = '';
-  for (const oracion of oraciones) {
-    if (actual && (actual.length + oracion.length) > maxChars) {
-      tramos.push(actual.trim());
-      actual = '';
+  const oraciones: string[] = [];
+  for (const oracionCruda of oracionesCrudas) {
+    const oracion = oracionCruda.trim();
+    if (!oracion) continue;
+    if (oracion.length <= maxChars) {
+      oraciones.push(oracion);
+      continue;
     }
-    // Una sola oración más larga que el máximo — se manda sola, no hay
-    // forma de partirla sin cortar a mitad de palabra de forma más fina.
-    actual += oracion;
+    const palabras = oracion.split(' ');
+    let actual = '';
+    for (const palabra of palabras) {
+      if (actual && (actual.length + palabra.length + 1) > maxChars) {
+        oraciones.push(actual);
+        actual = '';
+      }
+      actual += (actual ? ' ' : '') + palabra;
+    }
+    if (actual) oraciones.push(actual);
   }
-  if (actual.trim()) tramos.push(actual.trim());
-  return tramos;
+  return oraciones;
 }
 
 function silencioPcm(ms: number, sr: number): Buffer {
@@ -67,17 +76,22 @@ export async function POST(request: Request) {
       return Response.json({ error: `El texto es muy largo (máximo ${MAX_TEXTO} caracteres) — partilo en varias lecturas` }, { status: 400 });
     }
 
-    const tramos = trocearEnOraciones(texto, MAX_CHARS_POR_TRAMO);
-    if (tramos.length === 0) {
+    const oraciones = trocearEnOraciones(texto, MAX_CHARS_POR_ORACION);
+    if (oraciones.length === 0) {
       return Response.json({ error: 'No se pudo procesar el texto' }, { status: 400 });
     }
 
+    // Una llamada a TTS por oración, en paralelo — el silencio entre ellas
+    // lo controlamos nosotros al concatenar, no Aura.
+    const audiosOraciones = await Promise.all(
+      oraciones.map(oracion => sintetizarVoz(oracion, { voz, sampleRate: SR }))
+    );
+
     const buffers: Buffer[] = [];
-    for (let i = 0; i < tramos.length; i++) {
-      const ttsBuffer = await sintetizarVoz(tramos[i], { voz, sampleRate: SR });
-      buffers.push(Buffer.from(ttsBuffer));
-      if (i < tramos.length - 1) buffers.push(silencioPcm(SILENCIO_ENTRE_TRAMOS_MS, SR));
-    }
+    audiosOraciones.forEach((audio, i) => {
+      buffers.push(Buffer.from(audio));
+      if (i < audiosOraciones.length - 1) buffers.push(silencioPcm(SILENCIO_ENTRE_ORACIONES_MS, SR));
+    });
     const pcmCompleto = Buffer.concat(buffers);
 
     tmpDir = join(tmpdir(), `leer_${Date.now()}_${Math.random().toString(36).slice(2)}`);
