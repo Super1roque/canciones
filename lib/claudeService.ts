@@ -16,6 +16,7 @@ Tu misión es generar parodias que respeten ESTRICTAMENTE las siguientes reglas:
    - Analiza el número exacto de sílabas de cada verso original
    - Cada verso de la parodia debe tener EXACTAMENTE el mismo número de sílabas
    - Aplica correctamente las reglas de sinalefa, hiato y elisión
+   - No alcanza con que el TOTAL de sílabas coincida: la distribución por palabra debe ser parecida a la del original. Si el verso original usa varias palabras cortas, no las reemplaces por una sola palabra larga (ni al revés) — eso rompe la forma del verso aunque el total cuadre
 
 2. ESQUEMA DE RIMA
    - Identifica el patrón de rima del original (ABAB, AABB, ABBA, etc.)

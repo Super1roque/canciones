@@ -10,19 +10,29 @@ function fmt(sec: number): string {
   return `${m}:${s}`;
 }
 
+// Los primeros segundos de captura son casi siempre un gap en silencio
+// (el tiempo que tarda el navegador en empezar a entregar audio real tras
+// el selector de "qué compartir") — se recorta del MP3 final, no del
+// WEBM (ese queda como el original crudo, sin tocar).
+const RECORTE_INICIO_SEG = 4;
+
 // ─── MP3 encoder via lamejs — mismo patrón que /recortar, pero sobre el
 // buffer completo (sin zonas/recortes) ────────────────────────────────────────
-async function encodeMp3(buf: AudioBuffer, onProgress?: (p: number) => void): Promise<Blob> {
+async function encodeMp3(buf: AudioBuffer, onProgress?: (p: number) => void, offsetSeconds = 0): Promise<Blob> {
   const sr = buf.sampleRate;
   const ch = Math.min(buf.numberOfChannels, 2);
+  // Si la grabación es más corta que el recorte, no se recorta nada — mejor
+  // entregar el audio completo que un mp3 vacío.
+  const offsetSamples = buf.length > sr * offsetSeconds ? Math.round(offsetSeconds * sr) : 0;
 
-  // Normalización de volumen: busca el pico más alto de la grabación y
-  // calcula cuánto hay que multiplicar la señal para que ese pico llegue
-  // casi al máximo, sin pasarse (evita distorsión). Tope de 8x para no
-  // convertir en ruido audible una grabación que quedó casi en silencio.
+  // Normalización de volumen: busca el pico más alto de la grabación (ya
+  // recortada) y calcula cuánto hay que multiplicar la señal para que ese
+  // pico llegue casi al máximo, sin pasarse (evita distorsión). Tope de 8x
+  // para no convertir en ruido audible una grabación que quedó casi en
+  // silencio.
   let peak = 0;
   for (let c = 0; c < ch; c++) {
-    const data = buf.getChannelData(c);
+    const data = buf.getChannelData(c).subarray(offsetSamples);
     for (let i = 0; i < data.length; i++) {
       const abs = Math.abs(data[i]);
       if (abs > peak) peak = abs;
@@ -37,8 +47,8 @@ async function encodeMp3(buf: AudioBuffer, onProgress?: (p: number) => void): Pr
     for (let i = 0; i < f.length; i++) out[i] = Math.round(Math.max(-1, Math.min(1, f[i] * gain)) * 32767);
     return out;
   };
-  const left = toI16(buf.getChannelData(0));
-  const right = ch > 1 ? toI16(buf.getChannelData(1)) : null;
+  const left = toI16(buf.getChannelData(0).subarray(offsetSamples));
+  const right = ch > 1 ? toI16(buf.getChannelData(1).subarray(offsetSamples)) : null;
   const enc = new Mp3Encoder(ch, sr, 256);
   const block = 1152;
   const raw: (Int8Array | Uint8Array)[] = [];
@@ -106,7 +116,7 @@ export default function GrabarPage() {
       const ctx = new AudioContext();
       const audioBuf = await ctx.decodeAudioData(arrayBuf);
       setProgress(0);
-      const mp3Blob = await encodeMp3(audioBuf, setProgress);
+      const mp3Blob = await encodeMp3(audioBuf, setProgress, RECORTE_INICIO_SEG);
       setMp3Url(URL.createObjectURL(mp3Blob));
       ctx.close();
     } catch {
