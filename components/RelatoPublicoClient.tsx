@@ -28,15 +28,18 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
     <div
       style={{
         minHeight: '100vh',
-        background: `
-          radial-gradient(ellipse 900px 600px at 50% -5%, rgba(242,183,5,0.22) 0%, rgba(242,183,5,0) 60%),
-          linear-gradient(160deg, #3a1810 0%, #241009 45%, #150b08 100%)
-        `,
-        color: '#f2ede6',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'linear-gradient(160deg, #052019 0%, #0a2b22 45%, #051512 100%)',
+        color: '#eafff5',
         fontFamily: literata.style.fontFamily,
       }}
     >
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
+      <div className="blob blob-a" />
+      <div className="blob blob-b" />
+      <div className="blob blob-c" />
+
+      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
         <div
           className={baloo.className}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.75rem', opacity: 0.65 }}
@@ -49,20 +52,15 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
           className={baloo.className}
           style={{
             fontSize: 'clamp(1.5rem, 5vw, 2.1rem)', fontWeight: 800, lineHeight: 1.25,
-            marginBottom: '1.75rem', textWrap: 'balance', color: '#fbead0',
+            marginBottom: '1.75rem', textWrap: 'balance', color: '#eafff5',
+            textShadow: '0 2px 20px rgba(0,0,0,0.3)',
           }}
         >
           {titulo}
         </h1>
 
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(242,183,5,0.25)', borderRadius: 18,
-            padding: '1.1rem 1.1rem 1.3rem', marginBottom: '1.75rem',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
-          }}
-        >
-          <div className={baloo.className} style={{ fontSize: '0.78rem', color: '#f2b705', letterSpacing: '0.04em', marginBottom: '0.6rem', textTransform: 'uppercase' }}>
+        <div className="glass" style={{ padding: '1.1rem 1.1rem 1.3rem', marginBottom: '1.75rem' }}>
+          <div className={baloo.className} style={{ fontSize: '0.78rem', color: '#6ee7b7', letterSpacing: '0.04em', marginBottom: '0.6rem', textTransform: 'uppercase' }}>
             🎧 Escuchá la lectura
           </div>
           <audio
@@ -75,15 +73,7 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
           />
         </div>
 
-        <div
-          style={{
-            background: 'linear-gradient(180deg, rgba(255,250,240,0.05), rgba(255,250,240,0.02))',
-            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18,
-            padding: '1.75rem', maxHeight: '62vh', overflowY: 'auto',
-            fontSize: '1.15rem', lineHeight: 2.1,
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}
-        >
+        <div className="glass" style={{ padding: '1.75rem', maxHeight: '62vh', overflowY: 'auto', fontSize: '1.15rem', lineHeight: 2.1 }}>
           {cues.map((c, i) => (
             <span
               key={i}
@@ -92,7 +82,7 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
               style={{
                 display: 'inline-block',
                 marginRight: '0.35em',
-                color: i === indiceActual ? '#f7cf4a' : i < indiceActual ? 'rgba(242,237,230,0.4)' : '#f2ede6',
+                color: i === indiceActual ? '#f7cf4a' : i < indiceActual ? 'rgba(234,255,245,0.4)' : '#eafff5',
                 fontWeight: i === indiceActual ? 700 : 400,
               }}
             >
@@ -102,12 +92,12 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
         </div>
 
         <div style={{ textAlign: 'center', margin: '3rem 0 0.5rem' }}>
-          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(242,183,5,0.35), transparent)', marginBottom: '2rem' }} />
-          <p className={baloo.className} style={{ fontSize: '1.05rem', color: '#f2b705', marginBottom: '0.35rem' }}>
+          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(110,231,183,0.35), transparent)', marginBottom: '2rem' }} />
+          <p className={baloo.className} style={{ fontSize: '1.05rem', color: '#6ee7b7', marginBottom: '0.35rem' }}>
             🎉 ¿Te gustó esta lectura?
           </p>
-          <p style={{ fontSize: '0.95rem', color: 'rgba(242,237,230,0.75)', marginBottom: '1.75rem' }}>
-            Creá tu propia canción parodia <strong style={{ color: '#fbead0' }}>GRATIS</strong> — probá nuestro sistema.
+          <p style={{ fontSize: '0.95rem', color: 'rgba(234,255,245,0.75)', marginBottom: '1.75rem' }}>
+            Creá tu propia canción parodia <strong style={{ color: '#eafff5' }}>GRATIS</strong> — probá nuestro sistema.
           </p>
           <a href="https://corridos.online" className={`${baloo.className} cta-boton`}>
             🎤 Crear mi canción gratis
@@ -116,6 +106,27 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
       </div>
 
       <style>{`
+        .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(70px);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .blob-a { width: 480px; height: 480px; top: -180px; left: -120px; background: rgba(16,185,129,0.35); }
+        .blob-b { width: 420px; height: 420px; top: 15%; right: -160px; background: rgba(45,212,191,0.28); }
+        .blob-c { width: 520px; height: 520px; bottom: -220px; left: 10%; background: rgba(4,120,87,0.4); }
+
+        .glass {
+          position: relative;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.18);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+          backdrop-filter: blur(18px) saturate(150%);
+          -webkit-backdrop-filter: blur(18px) saturate(150%);
+        }
+
         @keyframes pulsoLectura {
           0% { transform: scale(0.7); opacity: 0.6; }
           50% { transform: scale(1.25); }
