@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       contentType: file.type || 'audio/mpeg',
       cues,
       fecha: new Date().toISOString(),
+      reproducciones: 0,
     });
 
     return NextResponse.json({ id });

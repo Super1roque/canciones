@@ -7,7 +7,7 @@ const literata = Literata({ weight: ['400', '600'], subsets: ['latin'] });
 
 type Cue = { start: number; end: number; text: string };
 
-export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { audioApiUrl: string; titulo: string; cues: Cue[] }) {
+export default function RelatoPublicoClient({ audioApiUrl, titulo, cues, reproducciones }: { audioApiUrl: string; titulo: string; cues: Cue[]; reproducciones: number }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
   const palabraRef = useRef<HTMLSpanElement>(null);
@@ -102,6 +102,10 @@ export default function RelatoPublicoClient({ audioApiUrl, titulo, cues }: { aud
           <a href="https://corridos.online" className={`${baloo.className} cta-boton`}>
             🎤 Crear mi canción gratis
           </a>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '2.5rem', fontSize: '0.7rem', opacity: 0.18 }}>
+          {reproducciones}
         </div>
       </div>
 

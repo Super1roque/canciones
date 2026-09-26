@@ -1,3 +1,4 @@
+import admin from 'firebase-admin';
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
 
 export const runtime = 'nodejs';
@@ -9,6 +10,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const doc = await db.collection('relatos_compartidos').doc(id).get();
 
     if (!doc.exists) return new Response('Link no válido', { status: 404 });
+
+    // Fire-and-forget, igual que canciones-compartidas — no debe demorar
+    // la reproducción esperando a que esto termine.
+    void doc.ref.update({ reproducciones: admin.firestore.FieldValue.increment(1) }).catch(() => {});
 
     const data = doc.data()!;
     const bucket = getStorageBucket();

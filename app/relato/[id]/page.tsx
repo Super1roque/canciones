@@ -11,7 +11,8 @@ async function obtenerRelato(id: string) {
   const db = getDb();
   const doc = await db.collection('relatos_compartidos').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; cues: Cue[] };
+  const data = doc.data() as { titulo: string; cues: Cue[]; reproducciones?: number };
+  return { ...data, reproducciones: data.reproducciones ?? 0 };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -57,5 +58,12 @@ export default async function RelatoPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  return <RelatoPublicoClient audioApiUrl={`/api/relatos-compartidos/${id}`} titulo={relato.titulo} cues={relato.cues} />;
+  return (
+    <RelatoPublicoClient
+      audioApiUrl={`/api/relatos-compartidos/${id}`}
+      titulo={relato.titulo}
+      cues={relato.cues}
+      reproducciones={relato.reproducciones}
+    />
+  );
 }
