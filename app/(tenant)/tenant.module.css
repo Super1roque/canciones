@@ -74,29 +74,34 @@
   padding: 1rem;
 }
 
-/* Solo la pantalla inicial (LandingClient) usa esto — video de fondo tipo
-   "hero" con el mariachi cantando, detrás de la tarjeta del formulario.
-   Van como hijos absolutos de un <main> con position:relative propio (ver
-   LandingClient) — así el fondo opaco de .shell no los tapa, sin tener
-   que tocarle el fondo a .shell para las demás pantallas. */
-.heroVideo {
+/* Solo la pantalla inicial (LandingClient) usa esto — banner de video del
+   mariachi cantando, arriba del formulario (nunca tapado por la tarjeta,
+   ni en desktop ni en móvil, porque va en el flujo normal, no de fondo). */
+.heroBanner {
+  position: relative;
+  width: 100%;
+  height: 34vh;
+  min-height: 220px;
+  max-height: 420px;
+  overflow: hidden;
+}
+
+.heroBanner::after {
+  content: '';
   position: absolute;
   inset: 0;
+  background: linear-gradient(180deg, rgba(28, 8, 13, 0) 55%, var(--cr-bg-3, #2c0a10) 100%);
+}
+
+.heroVideo {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -2;
-}
-
-.heroOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(160deg, rgba(90, 15, 24, 0.25) 0%, rgba(44, 10, 16, 0.35) 55%, rgba(28, 8, 13, 0.55) 100%);
-  z-index: -1;
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroVideo { display: none; }
+  .heroBanner { display: none; }
 }
 
 @media (min-width: 640px) {
