@@ -17,7 +17,7 @@ const MAX_TEXTO = 20000; // relato completo — más que esto, mejor partirlo en
 // sintetiza en su propia llamada para poder insertar el silencio real entre
 // ellas después — Aura-2 no pausa de forma confiable solo con el punto.
 const MAX_CHARS_POR_ORACION = 1600;
-const SILENCIO_ENTRE_ORACIONES_MS = 350;
+const SILENCIO_ENTRE_ORACIONES_MS = 200;
 // Un relato largo puede partirse en decenas de oraciones — pedirlas todas
 // en paralelo dispara un 429 (rate limit) de Deepgram. Con esto como
 // mucho hay CONCURRENCIA_TTS llamadas de TTS en vuelo a la vez.
