@@ -23,17 +23,30 @@ const IGNORE = new Set([
 ]);
 
 // Reintenta ante fallos de red transitorios (frecuentes cuando hay muchas
-// llamadas en paralelo, como en cambialetra) antes de rendirse.
-async function fetchConReintentos(url: string, init: RequestInit, intentos = 3): Promise<Response> {
+// llamadas en paralelo, como en cambialetra o leer-relato) y ante 429 (rate
+// limit) con espera creciente — respeta el header Retry-After si Deepgram
+// lo manda. Si se agotan los reintentos y lo último fue un 429, se
+// devuelve esa respuesta tal cual (para que el caller reporte el 429 real)
+// en vez de un error genérico de conexión.
+async function fetchConReintentos(url: string, init: RequestInit, intentos = 4): Promise<Response> {
   let ultimoError: unknown;
+  let ultimaRespuesta429: Response | null = null;
   for (let i = 0; i < intentos; i++) {
     try {
-      return await fetch(url, init);
+      const res = await fetch(url, init);
+      if (res.status !== 429) return res;
+      ultimaRespuesta429 = res;
+      if (i < intentos - 1) {
+        const retryAfter = Number(res.headers.get('retry-after'));
+        const espera = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 700 * 2 ** i;
+        await new Promise(r => setTimeout(r, espera));
+      }
     } catch (err) {
       ultimoError = err;
       if (i < intentos - 1) await new Promise(r => setTimeout(r, 300 * (i + 1)));
     }
   }
+  if (ultimaRespuesta429) return ultimaRespuesta429;
   const causa = ultimoError instanceof Error && ultimoError.cause ? ` (${String(ultimoError.cause)})` : '';
   throw new Error(`No se pudo conectar a Deepgram tras ${intentos} intentos${causa}`);
 }

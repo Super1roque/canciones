@@ -18,6 +18,10 @@ const MAX_TEXTO = 20000; // relato completo — más que esto, mejor partirlo en
 // ellas después — Aura-2 no pausa de forma confiable solo con el punto.
 const MAX_CHARS_POR_ORACION = 1600;
 const SILENCIO_ENTRE_ORACIONES_MS = 350;
+// Un relato largo puede partirse en decenas de oraciones — pedirlas todas
+// en paralelo dispara un 429 (rate limit) de Deepgram. Con esto como
+// mucho hay CONCURRENCIA_TTS llamadas de TTS en vuelo a la vez.
+const CONCURRENCIA_TTS = 4;
 
 function runFfmpeg(args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -64,6 +68,21 @@ function silencioPcm(ms: number, sr: number): Buffer {
   return Buffer.alloc(Math.round((ms / 1000) * sr) * 2);
 }
 
+// Como Promise.all pero con un tope de tareas en vuelo a la vez, y
+// preservando el orden de los resultados.
+async function mapConcurrencia<T, R>(items: T[], limite: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const resultados: R[] = new Array(items.length);
+  let siguiente = 0;
+  async function trabajador() {
+    while (siguiente < items.length) {
+      const i = siguiente++;
+      resultados[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limite, items.length) }, trabajador));
+  return resultados;
+}
+
 export async function POST(request: Request) {
   let tmpDir: string | null = null;
   try {
@@ -81,10 +100,10 @@ export async function POST(request: Request) {
       return Response.json({ error: 'No se pudo procesar el texto' }, { status: 400 });
     }
 
-    // Una llamada a TTS por oración, en paralelo — el silencio entre ellas
-    // lo controlamos nosotros al concatenar, no Aura.
-    const audiosOraciones = await Promise.all(
-      oraciones.map(oracion => sintetizarVoz(oracion, { voz, sampleRate: SR }))
+    // Una llamada a TTS por oración, con concurrencia limitada — el
+    // silencio entre ellas lo controlamos nosotros al concatenar, no Aura.
+    const audiosOraciones = await mapConcurrencia(
+      oraciones, CONCURRENCIA_TTS, oracion => sintetizarVoz(oracion, { voz, sampleRate: SR })
     );
 
     const buffers: Buffer[] = [];
