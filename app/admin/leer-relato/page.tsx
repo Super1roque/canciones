@@ -24,9 +24,13 @@ export default function LeerRelatoPage() {
   const [fase, setFase] = useState<Fase>('idle');
   const [error, setError] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [nombreDescarga, setNombreDescarga] = useState('lectura.mp3');
   const [cues, setCues] = useState<Cue[]>([]);
   const [indiceActual, setIndiceActual] = useState(-1);
+  const [enlace, setEnlace] = useState('');
+  const [generandoEnlace, setGenerandoEnlace] = useState(false);
+  const [copiado, setCopiado] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const palabraRef = useRef<HTMLSpanElement>(null);
@@ -50,6 +54,9 @@ export default function LeerRelatoPage() {
     cueIndexRef.current = 0;
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl('');
+    setAudioBlob(null);
+    setEnlace('');
+    setCopiado(false);
 
     try {
       const res = await fetch('/api/leer-relato', {
@@ -62,6 +69,7 @@ export default function LeerRelatoPage() {
 
       const blob = base64ToBlob(data.audio, data.contentType || 'audio/mpeg');
       setAudioUrl(URL.createObjectURL(blob));
+      setAudioBlob(blob);
       setNombreDescarga(`lectura-${voz}.mp3`);
       setCues(data.cues || []);
       setFase('listo');
@@ -69,6 +77,33 @@ export default function LeerRelatoPage() {
       setError('Error de conexión con el servidor');
       setFase('error');
     }
+  }
+
+  async function generarEnlace() {
+    if (!audioBlob || generandoEnlace) return;
+    setGenerandoEnlace(true);
+    setCopiado(false);
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'relato.mp3');
+      formData.append('cues', JSON.stringify(cues));
+      formData.append('voz', voz);
+
+      const res = await fetch('/api/relatos-compartidos', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'No se pudo generar el enlace'); return; }
+
+      setEnlace(`${window.location.origin}/relato/${data.id}`);
+    } catch {
+      setError('Error de conexión con el servidor');
+    } finally {
+      setGenerandoEnlace(false);
+    }
+  }
+
+  async function copiarEnlace() {
+    await navigator.clipboard.writeText(enlace);
+    setCopiado(true);
   }
 
   function alAvanzarTiempo() {
@@ -156,6 +191,30 @@ export default function LeerRelatoPage() {
             >
               ⬇ Descargar MP3
             </a>
+
+            {!enlace ? (
+              <button
+                className="kk-btn"
+                onClick={generarEnlace}
+                disabled={generandoEnlace}
+                style={{ padding: '0.7rem', fontSize: '0.9rem', borderRadius: 10, opacity: generandoEnlace ? 0.6 : 1 }}
+              >
+                {generandoEnlace ? '⏳ Generando enlace...' : '🔗 Generar enlace para escuchar después'}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+                <input
+                  readOnly
+                  value={enlace}
+                  onFocus={e => e.target.select()}
+                  className="input"
+                  style={{ flex: 1, fontSize: '0.85rem' }}
+                />
+                <button className="kk-btn" onClick={copiarEnlace} style={{ padding: '0 1rem', fontSize: '0.85rem', borderRadius: 10, whiteSpace: 'nowrap' }}>
+                  {copiado ? '✅ Copiado' : '📋 Copiar'}
+                </button>
+              </div>
+            )}
 
             <div
               style={{
