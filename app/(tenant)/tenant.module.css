@@ -74,34 +74,32 @@
   padding: 1rem;
 }
 
-/* Solo la pantalla inicial (LandingClient) usa esto — banner de video del
-   mariachi cantando, arriba del formulario (nunca tapado por la tarjeta,
-   ni en desktop ni en móvil, porque va en el flujo normal, no de fondo). */
-.heroBanner {
-  position: relative;
-  width: 100%;
-  height: 34vh;
-  min-height: 220px;
-  max-height: 420px;
-  overflow: hidden;
-}
-
-.heroBanner::after {
-  content: '';
+/* Solo la pantalla inicial (LandingClient) usa esto — video del mariachi
+   de fondo detrás de todo el formulario, como en sync.so. Van dentro de
+   un <main> con position:relative + z-index:0 propios (ver LandingClient)
+   — el z-index NO puede quedar en "auto" o el contexto de apilamiento no
+   se forma y estos z-index negativos terminan escapando detrás del fondo
+   opaco de .shell (ya nos pasó una vez). */
+.heroVideo {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(28, 8, 13, 0) 55%, var(--cr-bg-3, #2c0a10) 100%);
-}
-
-.heroVideo {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
+  z-index: -2;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(28, 8, 13, 0) 0%, rgba(28, 8, 13, 0.35) 100%),
+    linear-gradient(180deg, rgba(28, 8, 13, 0.55) 0%, rgba(28, 8, 13, 0.15) 22%, rgba(28, 8, 13, 0.15) 70%, rgba(28, 8, 13, 0.65) 100%);
+  z-index: -1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroBanner { display: none; }
+  .heroVideo { display: none; }
 }
 
 @media (min-width: 640px) {
@@ -118,6 +116,29 @@
 }
 
 .panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--cr-gold), var(--cr-green-soft), var(--cr-gold));
+}
+
+/* Versión "vidrio esmerilado" de .panel — solo para LandingClient, que
+   tiene el video de fondo detrás. Traslúcida a propósito, para que el
+   mariachi se siga viendo (borroso) donde se sienta la tarjeta, en vez de
+   taparlo del todo como con el fondo opaco de .panel. */
+.panelGlass {
+  position: relative;
+  background: rgba(58, 18, 22, 0.55);
+  border: 2px solid rgba(242, 183, 5, 0.3);
+  border-radius: var(--cr-radius);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25), 0 24px 48px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  overflow: hidden;
+}
+
+.panelGlass::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;

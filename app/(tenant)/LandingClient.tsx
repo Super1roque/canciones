@@ -154,15 +154,13 @@ export default function LandingClient() {
   }
 
   return (
-    <>
-      <div className={styles.heroBanner}>
-        <video className={styles.heroVideo} autoPlay muted loop playsInline poster="/hero/mariachi-poster.jpg">
-          <source src="/hero/mariachi.mp4" type="video/mp4" />
-        </video>
-      </div>
+    <main className={styles.main} style={{ position: 'relative', zIndex: 0, overflow: 'hidden' }}>
+      <video className={styles.heroVideo} autoPlay muted loop playsInline poster="/hero/mariachi-poster.jpg">
+        <source src="/hero/mariachi.mp4" type="video/mp4" />
+      </video>
+      <div className={styles.heroOverlay} />
 
-      <main className={styles.main}>
-      <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 440, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className={styles.panelGlass} style={{ position: 'relative', padding: '2.5rem 2rem', maxWidth: 400, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div>
           <div style={{ fontSize: '2.75rem', marginBottom: '0.5rem' }}>🤠🎶</div>
           <h1 className={styles.heroTitle} style={{ fontSize: '1.8rem', margin: '0 0 0.6rem' }}>
@@ -326,7 +324,6 @@ export default function LandingClient() {
         )}
       </div>
       <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
-      </main>
-    </>
+    </main>
   );
 }
