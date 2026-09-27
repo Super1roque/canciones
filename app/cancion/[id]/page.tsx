@@ -105,7 +105,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
   return (
     <AudioGreetingClient
       audioApiUrl={`/api/canciones-compartidas/${id}`}
-      posterSrc="/cancion-compartida/poster.png"
+      posterSrc="/cancion-compartida/poster-transparente.png"
       titulo={cancion.titulo}
       cues={cancion.cues}
       restringida={restringida}
