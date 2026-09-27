@@ -305,12 +305,14 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         disabled={estado === 'cargando'}
         aria-label={reproduciendo ? 'Pausar' : 'Reproducir canción'}
         style={{
+          // Sin backdrop-filter a propósito — sobre un <video> de fondo,
+          // Safari/iOS tiene un bug donde el blur se escapa y difumina TODO
+          // el video en vez de solo este círculo (en Chrome se ve bien).
+          // Se compensa con más opacidad sólida en vez de blur.
           width: 'min(32vw, 130px)', aspectRatio: '1 / 1', borderRadius: '50%',
           border: '1px solid rgba(255,255,255,0.45)', padding: 0,
           cursor: estado === 'cargando' ? 'wait' : 'pointer',
-          background: 'rgba(255,255,255,0.22)',
-          backdropFilter: 'blur(10px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+          background: 'rgba(255,255,255,0.4)',
           boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
