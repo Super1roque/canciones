@@ -3,8 +3,6 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Cue } from '@/lib/deepgramService';
 
-const SEGUNDOS_GRATIS = 10;
-
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
 // position:relative + z-index:0 EXPLÍCITO (no alcanza con position solo)
@@ -26,26 +24,31 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 
 // Hermano de VideoGreetingClient.tsx, pero para audio — mismo círculo con
 // botón de play sobre el tema mariachi/corrido, pensado para viralizar
-// canciones generadas: se puede escuchar (no descargar) y al terminar
-// manda a corridos.online para que quien la recibió pueda registrarse.
+// canciones generadas: se puede escuchar (no descargar) y, si se agotan
+// las reproducciones gratis, se arma la pantalla de recarga.
 //
-// `restringida` la calcula el server (ver app/cancion/[id]/page.tsx) en
-// base a la edad de la canción y si el tenant dueño del pedido es
-// premium — acá solo se aplica el corte a los 10s y se arma la pantalla
-// de recarga, sin decidir de nuevo la regla de negocio. El corte en sí es
-// igual para cualquiera (no depende de si el dueño está logueado en ese
-// navegador — si dependiera de eso, alcanzaría con cerrar sesión para
-// evadirlo); `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la
-// invitación a recargar, cualquier otra persona (a quien le reenviaron el
-// link) ve un aviso genérico que no expone que el dueño es freemium.
+// El límite es por CANTIDAD DE REPRODUCCIONES del link (no por tiempo) —
+// `restringida` refleja el estado al cargar la página (calculado en el
+// server, ver app/cancion/[id]/page.tsx y lib/cancionCompartidaService.ts),
+// pero el corte real pasa en el servidor: /api/canciones-compartidas/[id]
+// devuelve 403 a partir de la reproducción límite+1, así que igual se
+// bloquea si alguien intenta escuchar de nuevo sin recargar la página.
+// `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
+// a recargar, cualquier otra persona (a quien le reenviaron el link) ve
+// un aviso genérico que no expone que el dueño es freemium.
 export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida, descargable, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean; descargable: boolean; esDueño: boolean }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string; indice: number } | null>(null);
-  const [bloqueado, setBloqueado] = useState(false);
+  const [bloqueado, setBloqueado] = useState(restringida);
   const [audioListo, setAudioListo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
+  // Cada escucha (la primera Y cada replay después de que termina) debe
+  // volver a pedirle autorización al server — así el contador de
+  // reproducciones (y el límite de 2) se respeta de verdad. Solo se salta
+  // el fetch para un simple pausa/resume DENTRO de la misma escucha.
+  const necesitaFetchRef = useRef(true);
   const cueIndexRef = useRef(0);
 
   // Ventana deslizante de palabras (unas antes, la actual, unas después) en
@@ -71,28 +74,25 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     });
   }
 
-  // Corta la reproducción a los 10s si la canción está restringida (más de
-  // HORAS_GRATIS y el dueño no es premium) — antes de eso, se comporta igual que
-  // siempre.
   function alAvanzarTiempo() {
-    const t = audioRef.current?.currentTime ?? 0;
-    if (restringida && t >= SEGUNDOS_GRATIS) {
-      audioRef.current?.pause();
-      setBloqueado(true);
-      return;
-    }
     actualizarVentana();
   }
 
   // El audio no se sirve como un link directo descargable — se trae como
   // blob a través de la API (mismo patrón que AudioPlayer.tsx de
   // /escuchar), así nunca queda expuesta una URL de archivo real. La
-  // descarga (cuando `descargable` es true) reusa este mismo blob.
+  // descarga (cuando `descargable` es true) reusa el último blob traído.
+  //
+  // Si `necesitaFetchRef` es false, es un simple pausa/resume dentro de la
+  // MISMA escucha (no cuenta de nuevo). Si es true (primera vez, o un
+  // replay después de que la canción terminó), se vuelve a pedir el audio
+  // — el servidor cuenta esa reproducción y puede rechazarla con 403 si ya
+  // se agotaron las gratis.
   async function alTocar() {
     const a = audioRef.current;
     if (!a) return;
 
-    if (blobUrlRef.current) {
+    if (!necesitaFetchRef.current) {
       if (a.paused) { a.play(); setEstado('reproduciendo'); }
       else { a.pause(); setEstado('pausado'); }
       return;
@@ -101,12 +101,15 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     setEstado('cargando');
     try {
       const res = await fetch(audioApiUrl);
+      if (res.status === 403) { setBloqueado(true); setEstado('inicial'); return; }
       if (!res.ok) { setEstado('inicial'); return; }
       const blob = await res.blob();
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
       const url = URL.createObjectURL(blob);
       blobUrlRef.current = url;
       a.src = url;
       await a.play();
+      necesitaFetchRef.current = false;
       setEstado('reproduciendo');
       setAudioListo(true);
     } catch {
@@ -144,9 +147,15 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
     }
   }
 
-  async function alTerminar() {
+  // Ya no redirige automáticamente al terminar — se deja volver a tocar
+  // play (eso es lo que permite llegar a un 3er intento y ahí mostrar la
+  // invitación a premium, en vez de sacar a la persona apenas termina de
+  // escuchar la primera vez).
+  function alTerminar() {
     setEstado('inicial');
-    await irASesionOLanding();
+    necesitaFetchRef.current = true;
+    cueIndexRef.current = 0;
+    setVentana(null);
   }
 
   // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su

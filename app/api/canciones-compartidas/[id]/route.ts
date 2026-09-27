@@ -1,14 +1,12 @@
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
-import { incrementarReproduccion } from '@/lib/cancionCompartidaService';
+import { calcularAcceso, incrementarReproduccion } from '@/lib/cancionCompartidaService';
 
 export const runtime = 'nodejs';
 
-// A diferencia de /api/audio/[id] (el teaser de pago), acá no hay
-// transacción de conteo para bloquear reproducciones, ni recorte con
-// ffmpeg, ni borrado del archivo — se puede escuchar cuantas veces haga
-// falta, a propósito, porque el objetivo es que el link circule. El
-// contador de `incrementarReproduccion` es solo para medir viralización,
-// no para limitar nada.
+// El límite de reproducciones gratis se aplica ACÁ (no solo en la UI) —
+// a partir de la reproducción MAX_ESCUCHAS_GRATIS+1, este endpoint se
+// niega a servir el audio (403) si el dueño no es premium. Así el corte
+// es real y no algo que se pueda evadir mirando el network tab.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -16,9 +14,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const doc = await db.collection('canciones_compartidas').doc(id).get();
 
     if (!doc.exists) return new Response('Link no válido', { status: 404 });
-    incrementarReproduccion(id);
 
     const data = doc.data()!;
+    const reproducciones = data.reproducciones ?? 0;
+    const { restringida } = await calcularAcceso(id, reproducciones);
+    if (restringida) return new Response('Alcanzaste el límite de reproducciones gratis', { status: 403 });
+
+    incrementarReproduccion(id);
+
     const bucket = getStorageBucket();
     const [buffer] = await bucket.file(data.storagePath).download();
 
