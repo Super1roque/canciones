@@ -303,18 +303,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         position: 'relative', width: 'min(90vw, 280px)', aspectRatio: '1 / 1',
         borderRadius: '50%', overflow: 'hidden',
         border: '6px solid #f2b705', boxShadow: '0 10px 0 rgba(0,0,0,0.35), 0 24px 48px rgba(0,0,0,0.4)',
+        background: `url('${posterSrc}') center/cover`,
       }}>
-        {/* Capa aparte del borde a propósito — el blend mode afecta TODO
-            lo que pinta el elemento (border incluido), y el borde dorado
-            debe quedar sólido. El poster tiene fondo blanco: "multiply" lo
-            vuelve transparente contra el video de fondo (blanco × lo que
-            sea = lo que sea) y de paso el avatar mismo queda semi
-            transparente, en vez de tapar el video del todo. */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: `url('${posterSrc}') center/cover`,
-          mixBlendMode: 'multiply',
-        }} />
         <button
           type="button"
           onClick={alTocar}
