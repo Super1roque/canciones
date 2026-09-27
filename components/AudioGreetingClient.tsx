@@ -5,6 +5,25 @@ import type { Cue } from '@/lib/deepgramService';
 
 const SEGUNDOS_GRATIS = 10;
 
+// Video del mariachi (mismo asset que la landing) de fondo en las 3
+// pantallas de esta página. El <main> que lo contiene necesita
+// position:relative + z-index:0 EXPLÍCITO (no alcanza con position solo)
+// para que el z-index negativo quede contenido ahí y no se escape detrás
+// del fondo de un ancestro — ya nos pasó una vez en la landing.
+function HeroVideoFondo({ overlay }: { overlay: string }) {
+  return (
+    <>
+      <video
+        autoPlay muted loop playsInline poster="/hero/mariachi-poster.jpg"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: -2 }}
+      >
+        <source src="/hero/mariachi.mp4" type="video/mp4" />
+      </video>
+      <div style={{ position: 'absolute', inset: 0, background: overlay, zIndex: -1 }} />
+    </>
+  );
+}
+
 // Hermano de VideoGreetingClient.tsx, pero para audio — mismo círculo con
 // botón de play sobre el tema mariachi/corrido, pensado para viralizar
 // canciones generadas: se puede escuchar (no descargar) y al terminar
@@ -157,6 +176,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   if (bloqueado && !esDueño) {
     return (
       <main style={{
+        position: 'relative', zIndex: 0, overflow: 'hidden',
         minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         background:
           'radial-gradient(ellipse 55% 45% at 12% 0%, rgba(255,138,61,0.28), transparent 60%),' +
@@ -164,6 +184,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           'linear-gradient(165deg, #2a1152 0%, #1a0b3d 55%, #10082b 100%)',
         color: '#f3ecff', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem 1.5rem', gap: '1.1rem',
       }}>
+        <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 30%, rgba(16,8,43,0.55) 0%, rgba(16,8,43,0.82) 100%)" />
         <div style={{ fontSize: '2.2rem' }}>🎵</div>
         <h1 style={{ fontSize: '1.25rem', margin: 0, maxWidth: '26rem', lineHeight: 1.4 }}>
           Esta canción ya no está disponible por ahora.
@@ -190,6 +211,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   if (bloqueado) {
     return (
       <main style={{
+        position: 'relative', zIndex: 0, overflow: 'hidden',
         minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         background:
           'radial-gradient(ellipse 55% 45% at 12% 0%, rgba(255,138,61,0.28), transparent 60%),' +
@@ -197,6 +219,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           'linear-gradient(165deg, #2a1152 0%, #1a0b3d 55%, #10082b 100%)',
         color: '#f3ecff', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem 1.5rem', gap: '1.1rem',
       }}>
+        <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 25%, rgba(16,8,43,0.6) 0%, rgba(16,8,43,0.88) 100%)" />
         <div style={{ fontSize: '2.2rem' }}>❤️</div>
         <h1 style={{ fontSize: '1.3rem', margin: 0, maxWidth: '30rem', lineHeight: 1.35 }}>
           Tu canción ya es tuya.<br />Ahora queremos ayudarte a conservarla.
@@ -267,6 +290,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
 
   return (
     <main style={{
+      position: 'relative', zIndex: 0, overflow: 'hidden',
       minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       background:
         'radial-gradient(ellipse 60% 55% at 14% 0%, rgba(242, 183, 5, 0.30), transparent 62%),' +
@@ -274,6 +298,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         'linear-gradient(160deg, #9a1f2b 0%, #5c0f18 55%, #2c0a10 100%)',
       color: '#fdf3e0', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '1.5rem', gap: '1.25rem',
     }}>
+      <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 30%, rgba(44,10,16,0.35) 0%, rgba(44,10,16,0.75) 100%)" />
       <div style={{
         position: 'relative', width: 'min(90vw, 280px)', aspectRatio: '1 / 1',
         borderRadius: '50%', overflow: 'hidden',
