@@ -255,10 +255,10 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
           </p>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {[
-              ['🎵', 'Descargá tu canción en tu teléfono y conservála para siempre.'],
-              ['🔒', 'Acceso permanente a tu canción, sin volver a bloquearse.'],
-              ['🎶', 'Creá 3 canciones más con nuestra aplicación.'],
-              ['📱', 'Descargá tus nuevas canciones y compartilas con quien quieras.'],
+              ['🌟', 'Quedás como usuario PREMIUM para siempre — no es solo esta canción.'],
+              ['🎵', 'Descargá esta canción ahora mismo y conservála en tu teléfono.'],
+              ['🎶', 'El saldo también te alcanza para crear 3 canciones más con nuestra aplicación.'],
+              ['📱', 'Y esas también las vas a poder descargar y compartir con quien quieras, sin volver a bloquearse.'],
             ].map(([icono, texto]) => (
               <li key={texto} style={{ display: 'flex', gap: '0.6rem', fontSize: '0.9rem', lineHeight: 1.4 }}>
                 <span>{icono}</span><span>{texto}</span>
