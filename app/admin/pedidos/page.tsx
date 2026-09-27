@@ -1,6 +1,13 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
+// No se importa de lib/cancionCompartidaService.ts a propósito — ese
+// archivo usa next/headers (solo válido en Server Components) y esto es
+// un Client Component; importarlo rompe todo el bundle del navegador.
+// Mismo valor que MAX_ESCUCHAS_GRATIS ahí — si cambia el límite real del
+// paywall, hay que actualizarlo acá también.
+const MAX_ESCUCHAS_GRATIS = 2;
+
 type Pedido = {
   id: string;
   cancion_base: string;
@@ -48,37 +55,26 @@ function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-// Mismo tope que el paywall real de /cancion/[id] (ver
-// app/cancion/[id]/page.tsx) — esta barra es solo para que el admin vea
-// de un vistazo a quién le falta poco o ya se le venció, no decide nada
-// por su cuenta.
-// Mismo valor que HORAS_GRATIS en app/cancion/[id]/page.tsx — el paywall
-// real corta a las 60h aunque el mensaje que ve el tenant hable de "3 días".
-const HORAS_LIMITE_GRATIS = 60;
-
-function horasDesde(iso: string): number {
-  return (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60);
-}
-
-function BarraLimiteGratis({ fechaCancion, premium }: { fechaCancion: string; premium: boolean }) {
+// Mismo límite que el paywall real de /cancion/[id] (MAX_ESCUCHAS_GRATIS,
+// importado de lib/cancionCompartidaService.ts) — esta barra es solo para
+// que el admin vea de un vistazo a quién le queda una escucha o ya se le
+// bloqueó, no decide nada por su cuenta.
+function EstadoEscuchas({ reproducciones, premium }: { reproducciones: number; premium: boolean }) {
   if (premium) {
     return <span style={{ fontSize: '0.72rem', color: '#f2b705', whiteSpace: 'nowrap' }}>⭐ Premium — sin límite</span>;
   }
 
-  const horas = horasDesde(fechaCancion);
-  const vencida = horas >= HORAS_LIMITE_GRATIS;
-  const pct = Math.min(100, (horas / HORAS_LIMITE_GRATIS) * 100);
-  const color = vencida ? 'var(--error)' : horas >= HORAS_LIMITE_GRATIS * 0.85 ? '#d99a2b' : 'var(--success)';
+  const bloqueada = reproducciones >= MAX_ESCUCHAS_GRATIS;
+  const pct = Math.min(100, (reproducciones / MAX_ESCUCHAS_GRATIS) * 100);
+  const color = bloqueada ? 'var(--error)' : reproducciones >= MAX_ESCUCHAS_GRATIS - 1 ? '#d99a2b' : 'var(--success)';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 130 }} title={`Se sube el ${HORAS_LIMITE_GRATIS}h del límite gratis`}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 130 }} title={`Se bloquea al llegar a ${MAX_ESCUCHAS_GRATIS} reproducciones`}>
       <div style={{ width: '100%', height: 6, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999 }} />
       </div>
-      <span style={{ fontSize: '0.7rem', color: vencida ? 'var(--error)' : 'var(--text-muted)' }}>
-        {vencida
-          ? `🔒 Bloqueada hace ${Math.floor(horas - HORAS_LIMITE_GRATIS)}h`
-          : `${Math.floor(horas)}h / ${HORAS_LIMITE_GRATIS}h`}
+      <span style={{ fontSize: '0.7rem', color: bloqueada ? 'var(--error)' : 'var(--text-muted)' }}>
+        {bloqueada ? `🔒 Bloqueada (${reproducciones}/${MAX_ESCUCHAS_GRATIS})` : `▶️ ${reproducciones}/${MAX_ESCUCHAS_GRATIS} escuchas`}
       </span>
     </div>
   );
@@ -123,7 +119,7 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; premium: boolean; onClose: () => void; onVinculado: () => void }) {
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
   const [archivo, setArchivo] = useState<File | null>(null);
   // Precargado con el nombre de la canción base, pero editable — a veces
@@ -222,8 +218,12 @@ function ModalPedido({ pedido: p, reproducciones, onClose, onVinculado }: { pedi
           <>
             <CampoCopiable label="🎧 Link para escuchar" valor={`https://corridos.online/cancion/${cancionCompartidaId}`} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-0.5rem 0 0' }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                ▶️ Reproducida {reproducciones ?? 0} {reproducciones === 1 ? 'vez' : 'veces'}
+              <p style={{ fontSize: '0.8rem', color: (reproducciones ?? 0) >= MAX_ESCUCHAS_GRATIS && !premium ? 'var(--error)' : 'var(--text-muted)', margin: 0 }}>
+                {premium
+                  ? `⭐ Reproducida ${reproducciones ?? 0} ${reproducciones === 1 ? 'vez' : 'veces'} — premium, sin límite`
+                  : (reproducciones ?? 0) >= MAX_ESCUCHAS_GRATIS
+                    ? `🔒 Bloqueada — ya usó sus ${MAX_ESCUCHAS_GRATIS} escuchas gratis`
+                    : `▶️ Reproducida ${reproducciones ?? 0}/${MAX_ESCUCHAS_GRATIS} escuchas gratis`}
               </p>
               <button
                 className="btn-secondary"
@@ -361,7 +361,6 @@ export default function AdminPedidosPage() {
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
   const verificacionesPendientes = verificaciones.filter(v => v.estado === 'pendiente');
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
-  const fechaCancionPorId = new Map(cancionesCompartidas.map(c => [c.id, c.fecha]));
   const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
   return (
@@ -463,7 +462,7 @@ export default function AdminPedidosPage() {
                 <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(160px, 1fr) 130px 55px 90px 115px',
+                    gridTemplateColumns: 'minmax(160px, 1fr) 130px 90px 115px',
                     alignItems: 'center', gap: '0.75rem',
                   }}>
                     <div>
@@ -471,18 +470,11 @@ export default function AdminPedidosPage() {
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                     </div>
                     <div>
-                      {p.cancionCompartidaId && fechaCancionPorId.has(p.cancionCompartidaId) && (
-                        <BarraLimiteGratis
-                          fechaCancion={fechaCancionPorId.get(p.cancionCompartidaId)!}
+                      {p.cancionCompartidaId && (
+                        <EstadoEscuchas
+                          reproducciones={reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
                           premium={planPorTelefono.get(p.telefono) === 'premium'}
                         />
-                      )}
-                    </div>
-                    <div>
-                      {p.cancionCompartidaId && (
-                        <span className="badge" title="Veces que se reprodujo el link compartido" style={{ whiteSpace: 'nowrap' }}>
-                          ▶️ {reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
-                        </span>
                       )}
                     </div>
                     <div>
@@ -512,6 +504,7 @@ export default function AdminPedidosPage() {
         <ModalPedido
           pedido={pedidoAbierto}
           reproducciones={pedidoAbierto.cancionCompartidaId ? reproduccionesPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
+          premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
         />
