@@ -196,10 +196,10 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 30%, rgba(16,8,43,0.55) 0%, rgba(16,8,43,0.82) 100%)" />
         <div style={{ fontSize: '2.2rem' }}>🎵</div>
         <h1 style={{ fontSize: '1.25rem', margin: 0, maxWidth: '26rem', lineHeight: 1.4 }}>
-          Esta canción ya no está disponible por ahora.
+          Esta canción ya alcanzó su límite de reproducciones gratis.
         </h1>
         <p style={{ maxWidth: '26rem', fontSize: '0.92rem', lineHeight: 1.6, color: '#d9cdf5', margin: 0 }}>
-          Pedile a quien te la compartió que te la vuelva a enviar — tiene que activar algo de su lado para que siga sonando.
+          Pedile a quien te la compartió que recargue para que vuelva a estar disponible.
         </p>
         <button
           type="button"
@@ -235,15 +235,14 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         </h1>
 
         <p style={{ maxWidth: '30rem', fontSize: '0.9rem', lineHeight: 1.55, color: '#d9cdf5', margin: 0 }}>
-          🎁 Tu primera canción fue nuestro regalo para que pudieras conocer la calidad de nuestro trabajo y experimentar lo que se siente convertir tu propia historia en una canción.
-          Durante 3 días la mantuvimos disponible completamente gratis.
+          🎉 ¡Ya la escuchaste 2 veces! Se nota que te gustó — por eso te dejamos escucharla gratis esas 2 primeras veces, para que sintieras cómo tu historia se convirtió en canción.
         </p>
         <p style={{ maxWidth: '30rem', fontSize: '0.9rem', lineHeight: 1.55, color: '#d9cdf5', margin: 0 }}>
           Pero mantener cada canción almacenada y disponible para reproducirse en nuestra nube genera costos de almacenamiento, servidores y servicio.
           Y queremos poder seguir creando y ofreciendo muchas más canciones como la tuya.
         </p>
         <p style={{ maxWidth: '30rem', fontSize: '0.92rem', fontWeight: 700, color: '#fff', margin: 0 }}>
-          ❤️ Por eso, después de esos 3 días, el acceso gratuito termina.
+          ❤️ Por eso, después de esas 2 escuchas gratis, el acceso completo requiere una recarga.
         </p>
 
         <div style={{
