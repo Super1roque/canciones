@@ -299,47 +299,34 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
       color: '#fdf3e0', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '1.5rem', gap: '1.25rem',
     }}>
       <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 30%, rgba(44,10,16,0.35) 0%, rgba(44,10,16,0.75) 100%)" />
-      <div style={{
-        position: 'relative', width: 'min(90vw, 280px)', aspectRatio: '1 / 1',
-        borderRadius: '50%', overflow: 'hidden',
-        border: '6px solid #f2b705', boxShadow: '0 10px 0 rgba(0,0,0,0.35), 0 24px 48px rgba(0,0,0,0.4)',
-        background: `url('${posterSrc}') center/cover`,
-      }}>
-        <button
-          type="button"
-          onClick={alTocar}
-          disabled={estado === 'cargando'}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', padding: 0,
-            cursor: estado === 'cargando' ? 'wait' : 'pointer',
-            background: 'rgba(20,6,8,0.18)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-          aria-label={reproduciendo ? 'Pausar' : 'Reproducir canción'}
-        >
+      <button
+        type="button"
+        onClick={alTocar}
+        disabled={estado === 'cargando'}
+        aria-label={reproduciendo ? 'Pausar' : 'Reproducir canción'}
+        style={{
+          width: 'min(32vw, 130px)', aspectRatio: '1 / 1', borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.45)', padding: 0,
+          cursor: estado === 'cargando' ? 'wait' : 'pointer',
+          background: 'rgba(255,255,255,0.22)',
+          backdropFilter: 'blur(10px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+          boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        {estado === 'cargando' ? (
+          <span style={{ fontSize: '1.6rem' }}>⏳</span>
+        ) : reproduciendo ? (
+          <span style={{ fontSize: '1.8rem', color: '#c0161f' }}>⏸</span>
+        ) : (
           <span style={{
-            width: '32%', aspectRatio: '1 / 1', borderRadius: '50%',
-            background: 'rgba(255,255,255,0.22)',
-            border: '1px solid rgba(255,255,255,0.45)',
-            backdropFilter: 'blur(10px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-            boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {estado === 'cargando' ? (
-              <span style={{ fontSize: '1.6rem' }}>⏳</span>
-            ) : reproduciendo ? (
-              <span style={{ fontSize: '1.8rem', color: '#c0161f' }}>⏸</span>
-            ) : (
-              <span style={{
-                width: 0, height: 0, marginLeft: '12%',
-                borderTop: '18px solid transparent', borderBottom: '18px solid transparent',
-                borderLeft: '28px solid #c0161f',
-              }} />
-            )}
-          </span>
-        </button>
-      </div>
+            width: 0, height: 0, marginLeft: '12%',
+            borderTop: '18px solid transparent', borderBottom: '18px solid transparent',
+            borderLeft: '28px solid #c0161f',
+          }} />
+        )}
+      </button>
 
       <h1 style={{ fontSize: '1.15rem', margin: 0, maxWidth: '90vw' }}>{titulo}</h1>
 
