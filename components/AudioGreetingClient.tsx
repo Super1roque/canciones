@@ -319,8 +319,11 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         >
           <span style={{
             width: '32%', aspectRatio: '1 / 1', borderRadius: '50%',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.88))',
-            boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4)',
+            background: 'rgba(255,255,255,0.22)',
+            border: '1px solid rgba(255,255,255,0.45)',
+            backdropFilter: 'blur(10px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+            boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {estado === 'cargando' ? (
