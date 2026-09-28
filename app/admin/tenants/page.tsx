@@ -42,7 +42,10 @@ function soloNumeroLocal(digits: string): string {
 }
 
 function urlAltaRapida(telefono: string, codigo: string): string {
-  const mensaje = `Con gusto te presentamos la aplicación https://corridos.online — Para ingresar vas a necesitar tu número de teléfono (${soloNumeroLocal(telefono)}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
+  // ?paso=codigo — lleva directo al formulario de teléfono+código en vez
+  // de la landing normal, para no mandarlo de nuevo a verificar por
+  // WhatsApp cuando ya le dimos el código acá mismo.
+  const mensaje = `Con gusto te presentamos la aplicación https://corridos.online/?paso=codigo — Para ingresar vas a necesitar tu número de teléfono (${soloNumeroLocal(telefono)}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 

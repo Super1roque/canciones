@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './tenant.module.css';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import { MENSAJE_VERIFICACION } from '@/lib/config';
@@ -12,7 +12,15 @@ function formatearVisible(raw: string): string {
 
 export default function LandingClient() {
   const router = useRouter();
-  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo' | 'confirmarWhatsapp'>('telefono');
+  // El link de "alta rápida" (ver urlAltaRapida en app/admin/tenants) manda
+  // ?paso=codigo — a ese lead ya le dimos el código por WhatsApp, así que
+  // arranca directo en el formulario de teléfono+código en vez de pasar
+  // primero por el de "pedir acceso" (que terminaba mandándolo de nuevo a
+  // confirmar por WhatsApp, generando confusión).
+  const searchParams = useSearchParams();
+  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo' | 'confirmarWhatsapp'>(
+    () => (searchParams.get('paso') === 'codigo' ? 'codigo' : 'telefono')
+  );
   const [telefono, setTelefono] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [revisando, setRevisando] = useState(false);
