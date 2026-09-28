@@ -28,8 +28,8 @@ export default function LandingClient() {
   const [whatsappUrl, setWhatsappUrl] = useState('');
   const [rechazada, setRechazada] = useState(false);
 
-  const [telefonoCodigo, setTelefonoCodigo] = useState('');
-  const [codigo, setCodigo] = useState('');
+  const [telefonoCodigo, setTelefonoCodigo] = useState(() => searchParams.get('telefono') ?? '');
+  const [codigo, setCodigo] = useState(() => searchParams.get('codigo') ?? '');
   const [enviandoCodigo, setEnviandoCodigo] = useState(false);
   const [errorCodigo, setErrorCodigo] = useState('');
 
