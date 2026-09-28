@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
-import { transcribirPalabras } from '@/lib/deepgramService';
 import { vincularCancionCompartida } from '@/lib/pedidoService';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120; // hasta 2 min — canción completa, igual que /api/transcribe
+export const maxDuration = 60;
 
 // Colección separada de `audio_shares` (esa es el teaser de pago de
 // /escuchar — 2 reproducciones y se borra). Acá el objetivo es viralizar,
@@ -30,21 +29,9 @@ export async function POST(request: Request) {
       metadata: { contentType: file.type || 'audio/mpeg' },
     });
 
-    // Letra sincronizada — se espera acá mismo, antes de responder. Se
-    // probó primero sin esperar (fire-and-forget, como el aviso de Telegram
-    // de /api/audio/[id]), pero en producción Render corta esa tarea de
-    // fondo apenas se manda la respuesta — nunca llegaba a guardar las
-    // cues. Igual que /api/transcribe, que sí funciona de forma síncrona.
-    // Si falla, el doc se guarda igual pero sin `cues` — el reproductor ya
-    // sabe mostrar el ecualizador en ese caso.
-    const transcripcion = await transcribirPalabras(
-      buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
-      file.type || 'audio/mpeg'
-    );
-    if (!('cues' in transcripcion)) {
-      console.error('canciones-compartidas transcripción:', transcripcion.error);
-    }
-
+    // Ya no se transcribe con Deepgram acá — se estaba tardando demasiado
+    // (hasta 1-2 min por canción) y el reproductor tampoco usa la letra
+    // sincronizada; solo muestra el ecualizador.
     const db = getDb();
     await db.collection('canciones_compartidas').doc(id).set({
       titulo,
@@ -52,7 +39,6 @@ export async function POST(request: Request) {
       contentType: file.type || 'audio/mpeg',
       size: buffer.length,
       fecha: new Date().toISOString(),
-      ...('cues' in transcripcion ? { cues: transcripcion.cues } : {}),
     });
 
     // Opcional — cuando se sube desde el modal de un pedido puntual en

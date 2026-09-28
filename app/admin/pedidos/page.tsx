@@ -257,7 +257,7 @@ function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado 
                 onChange={e => setArchivo(e.target.files?.[0] ?? null)}
               />
               <button className="btn-primary" disabled={!archivo || subiendo} onClick={subirCancion}>
-                {subiendo ? '⏳ Subiendo y preparando la letra...' : '🔗 Generar link'}
+                {subiendo ? '⏳ Subiendo...' : '🔗 Generar link'}
               </button>
             </div>
           </div>

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
-import type { Cue } from '@/lib/deepgramService';
 import { calcularAcceso } from '@/lib/cancionCompartidaService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
 
@@ -11,7 +10,7 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; cues?: Cue[]; fecha: string; reproducciones?: number };
+  return doc.data() as { titulo: string; fecha: string; reproducciones?: number };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -63,7 +62,6 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       audioApiUrl={`/api/canciones-compartidas/${id}`}
       posterSrc="/cancion-compartida/poster-transparente.png"
       titulo={cancion.titulo}
-      cues={cancion.cues}
       restringida={restringida}
       descargable={descargable}
       esDueño={esDueño}

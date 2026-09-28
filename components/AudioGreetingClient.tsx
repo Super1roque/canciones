@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Cue } from '@/lib/deepgramService';
 
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
@@ -36,10 +35,9 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cues, restringida, descargable, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; cues?: Cue[]; restringida: boolean; descargable: boolean; esDueño: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean }) {
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
-  const [ventana, setVentana] = useState<{ antes: string; actual: string; despues: string; indice: number } | null>(null);
   const [bloqueado, setBloqueado] = useState(restringida);
   const [audioListo, setAudioListo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -49,34 +47,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   // reproducciones (y el límite de 2) se respeta de verdad. Solo se salta
   // el fetch para un simple pausa/resume DENTRO de la misma escucha.
   const necesitaFetchRef = useRef(true);
-  const cueIndexRef = useRef(0);
-
-  // Ventana deslizante de palabras (unas antes, la actual, unas después) en
-  // vez de auto-scroll con scrollIntoView — más simple y confiable en los
-  // navegadores/WebViews de celular (WhatsApp in-app, Android WebView) donde
-  // se va a abrir esto, que es justo donde el auto-scroll centrado suele
-  // fallar. El puntero solo avanza hacia adelante porque este reproductor
-  // no tiene barra de búsqueda nativa — el tiempo del audio nunca retrocede.
-  function actualizarVentana() {
-    if (!cues || cues.length === 0) return;
-    const t = audioRef.current?.currentTime ?? 0;
-    let i = cueIndexRef.current;
-    while (i < cues.length - 1 && cues[i].end < t) i++;
-    cueIndexRef.current = i;
-
-    const desde = Math.max(0, i - 4);
-    const hasta = Math.min(cues.length, i + 5);
-    setVentana({
-      antes: cues.slice(desde, i).map(c => c.text).join(' '),
-      actual: cues[i]?.text ?? '',
-      despues: cues.slice(i + 1, hasta).map(c => c.text).join(' '),
-      indice: i,
-    });
-  }
-
-  function alAvanzarTiempo() {
-    actualizarVentana();
-  }
 
   // El audio no se sirve como un link directo descargable — se trae como
   // blob a través de la API (mismo patrón que AudioPlayer.tsx de
@@ -154,8 +124,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   function alTerminar() {
     setEstado('inicial');
     necesitaFetchRef.current = true;
-    cueIndexRef.current = 0;
-    setVentana(null);
   }
 
   // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su
@@ -180,7 +148,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
   }
 
   const reproduciendo = estado === 'reproduciendo';
-  const hayLetra = reproduciendo && !!cues?.length && !!ventana;
 
   if (bloqueado && !esDueño) {
     return (
@@ -340,22 +307,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
 
       <h1 style={{ fontSize: '1.15rem', margin: 0, maxWidth: '90vw' }}>{titulo}</h1>
 
-      {hayLetra ? (
-        <p style={{
-          margin: 0, padding: '0.9rem 0', maxWidth: '92vw', fontSize: '1.05rem', lineHeight: 1.5,
-          color: '#e0b98f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {ventana!.antes ? ventana!.antes + ' ' : ''}
-          <strong
-            key={ventana!.indice}
-            className="palabra-actual"
-            style={{ color: '#ffd35c', fontSize: '1.85rem', display: 'inline-block' }}
-          >
-            {ventana!.actual}
-          </strong>
-          {ventana!.despues ? ' ' + ventana!.despues : ''}
-        </p>
-      ) : reproduciendo ? (
+      {reproduciendo ? (
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '28px' }}>
           {[0, 1, 2, 3, 4].map(i => (
             <span
@@ -409,19 +361,9 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, cu
         ref={audioRef}
         onEnded={alTerminar}
         onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))}
-        onTimeUpdate={alAvanzarTiempo}
       />
       <style>{`
         @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
-        @keyframes pulsoPalabra {
-          0% { transform: scale(0.55); opacity: 0.6; }
-          50% { transform: scale(1.6); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .palabra-actual { animation: pulsoPalabra 0.32s cubic-bezier(.34,1.56,.64,1); }
-        @media (prefers-reduced-motion: reduce) {
-          .palabra-actual { animation: none; }
-        }
       `}</style>
     </main>
   );
