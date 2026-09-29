@@ -22,11 +22,6 @@ function diasDesde(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
 }
 
-function urlEnviarCodigo(telefono: string, codigo: string): string {
-  const mensaje = `Tu código de acceso a corridos.online es: ${codigo}\nUsalo en "¿Ya tenés un código de acceso?" si alguna vez perdés la sesión.`;
-  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-}
-
 // Sin texto prellenado a propósito — este es para cualquier otro tipo de
 // mensaje (avisos, soporte, promos), no el código de acceso, así que se
 // abre la conversación en blanco y el admin escribe lo que corresponda.
@@ -438,7 +433,7 @@ export default function AdminTenantsPage() {
                       <td style={{ padding: '0.6rem 0.75rem' }}>
                         {t.codigoAcceso ? (
                           <a
-                            href={urlEnviarCodigo(t.telefono, t.codigoAcceso)}
+                            href={urlAltaRapida(t.telefono, t.codigoAcceso)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-secondary"

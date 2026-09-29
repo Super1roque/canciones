@@ -80,8 +80,20 @@ function EstadoEscuchas({ reproducciones, premium }: { reproducciones: number; p
   );
 }
 
+// Sin +504 ni guion — así el número queda igual de fácil de reconocer para
+// la persona en el mensaje, mismo criterio que en app/admin/tenants.
+function soloNumeroLocal(digits: string): string {
+  return digits.startsWith('504') && digits.length === 11 ? digits.slice(3) : digits;
+}
+
 function urlEnviarCodigo(telefono: string, codigo: string): string {
-  const mensaje = `Tu código de acceso a corridos.online es: ${codigo}\nUsalo en "¿Ya tenés un código de acceso?" si alguna vez perdés la sesión.`;
+  // ?paso=codigo + teléfono/código pre-llenados — mismo patrón que
+  // urlAltaRapida en app/admin/tenants — así no lo manda de nuevo a pedir
+  // el teléfono ni a verificar por WhatsApp, va directo al formulario ya
+  // completo.
+  const numeroLocal = soloNumeroLocal(telefono);
+  const link = `https://corridos.online/?paso=codigo&telefono=${encodeURIComponent(numeroLocal)}&codigo=${encodeURIComponent(codigo)}`;
+  const mensaje = `Con gusto te presentamos la aplicación ${link} — Para ingresar vas a necesitar tu número de teléfono (${numeroLocal}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
