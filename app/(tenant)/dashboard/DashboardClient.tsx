@@ -209,7 +209,10 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: 640 }}>
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
+            {tenant.plan === 'premium' && <span className={styles.premiumBadge}>⭐ PREMIUM</span>}
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
               <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
