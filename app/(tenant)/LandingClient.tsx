@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import styles from './tenant.module.css';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import { MENSAJE_VERIFICACION } from '@/lib/config';
@@ -11,7 +11,6 @@ function formatearVisible(raw: string): string {
 }
 
 export default function LandingClient() {
-  const router = useRouter();
   // El link de "alta rápida" (ver urlAltaRapida en app/admin/tenants) manda
   // ?paso=codigo — a ese lead ya le dimos el código por WhatsApp, así que
   // arranca directo en el formulario de teléfono+código en vez de pasar
@@ -74,7 +73,7 @@ export default function LandingClient() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
-      if (data.yaLogueado) { router.push('/crear-parodia'); return; }
+      if (data.yaLogueado) { window.location.href = '/crear-parodia'; return; }
       verificacionIdRef.current = data.id;
       setWhatsappUrl(data.whatsappUrl);
       setPaso('esperando');
@@ -106,7 +105,11 @@ export default function LandingClient() {
       const data = await res.json();
       if (data.estado === 'aprobada') {
         trackMetaPixel('CompleteRegistration');
-        router.push('/crear-parodia');
+        // Recarga real de página (no router.push) — justo acá el server
+        // recién guardó la cookie de sesión, y en el navegador integrado de
+        // WhatsApp una navegación client-side puede dispararse antes de que
+        // la cookie quede asentada, mandando al tenant de vuelta al login.
+        window.location.href = '/crear-parodia';
         return;
       }
       if (data.estado === 'rechazada') {
@@ -153,7 +156,11 @@ export default function LandingClient() {
       });
       const data = await res.json();
       if (!res.ok) { setErrorCodigo(data.error || 'No se pudo verificar el código'); return; }
-      router.push('/crear-parodia');
+      // Recarga real de página (no router.push) — mismo motivo que en
+      // revisarEstado: la cookie recién se guardó y una navegación
+      // client-side puede ganarle a que quede asentada en el navegador
+      // integrado de WhatsApp.
+      window.location.href = '/crear-parodia';
     } catch {
       setErrorCodigo('Error de conexión con el servidor');
     } finally {
