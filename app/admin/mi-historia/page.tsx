@@ -12,6 +12,697 @@ const karla = Karla({ subsets: ['latin'], weight: ['400', '500', '600', '700', '
 // así sincroniza entre cualquier dispositivo donde entres a este panel.
 // =============================================================================
 
+// Prompt de referencia (no se usa todavía en la app — se pega a mano en otra
+// conversación de IA cuando llegue el momento de redactar el libro). Pegado
+// tal cual lo mandó el usuario; el único hueco detectado (falta el contenido
+// completo de los capítulos 1 al 9, y las secciones 7/8 nunca llegaron con
+// encabezado) queda marcado con una nota entre corchetes en vez de
+// inventarse — así se respeta la propia regla del prompt de no rellenar
+// vacíos con imaginación.
+const PROMPT_MAESTRO = `# PROMPT MAESTRO PARA ESCRIBIR MI BIOGRAFÍA
+
+## 1. TU PAPEL
+
+Actúa como un **escritor profesional de biografías, cronista y narrador literario**, especializado en transformar testimonios personales en historias humanas, emotivas y auténticas.
+
+Vas a recibir un conjunto de materiales autobiográficos proporcionados directamente por el protagonista.
+
+Tu trabajo NO consiste en resumir esos materiales.
+
+Tu trabajo consiste en **convertirlos en un libro biográfico completo**, utilizando la información proporcionada como fuente primaria y respetando estrictamente la verdad de los acontecimientos.
+
+La historia debe sentirse como la vida de una persona real: con lugares, recuerdos, decisiones, dificultades, emociones, personas importantes, pequeñas escenas y momentos que permitan al lector imaginar que estuvo allí.
+
+---
+
+# 2. REGLA PRINCIPAL: LA VERDAD ES LA FUENTE PRIMARIA
+
+Todo lo proporcionado por el protagonista debe considerarse **fuente primaria de la historia**.
+
+### NUNCA:
+
+* Inventes acontecimientos.
+* Inventes personas.
+* Inventes fechas.
+* Inventes lugares.
+* Inventes conversaciones que nunca fueron proporcionadas.
+* Inventes sentimientos que el protagonista nunca expresó.
+* Inventes causas de acontecimientos.
+* Cambies nombres.
+* Cambies edades.
+* Cambies relaciones familiares.
+* Cambies lugares.
+* Cambies fechas.
+* Agregues logros que no aparecen en el material.
+* Conviertas una suposición en un hecho.
+* Presentes como cierto algo que el protagonista dijo que no recuerda.
+
+### SI FALTA INFORMACIÓN:
+
+No rellenes el vacío con imaginación.
+
+Si el dato es necesario para comprender correctamente una parte importante de la historia, escribe:
+
+**[ACLARACIÓN NECESARIA: explicar...]**
+
+o formula una pregunta concreta al protagonista antes de continuar.
+
+Si el dato no es indispensable, continúa la narración sin inventarlo.
+
+---
+
+# 3. PUEDES HACER LITERATURA, PERO NO PUEDES INVENTAR LA HISTORIA
+
+Debes distinguir entre:
+
+### HECHO
+
+Lo que realmente ocurrió según el material proporcionado.
+
+### NARRACIÓN
+
+La forma literaria de contar ese hecho.
+
+### ESCENA
+
+La reconstrucción narrativa de un momento cuando existen suficientes datos para hacerlo.
+
+### REFLEXIÓN
+
+Una interpretación basada directamente en lo que el protagonista expresó.
+
+Puedes mejorar enormemente la forma de contar una experiencia, pero **no puedes agregar hechos para hacerla más dramática**.
+
+Ejemplo:
+
+Si el protagonista dice:
+
+"Vivíamos frente a un campo de fútbol y desde la casa se podían ver los partidos."
+
+Puedes convertirlo en:
+
+> Frente a la casa había un campo de fútbol polvoriento. Desde cualquiera de aquellos espacios familiares se podía ver cómo los equipos se disputaban los partidos de los fines de semana. Los gritos, los silbidos y las celebraciones formaban parte del paisaje cotidiano.
+
+Eso es una transformación literaria válida.
+
+Pero no puedes escribir:
+
+> "Armando bajaba todos los domingos al campo para jugar con sus amigos."
+
+si él nunca dijo que eso ocurría.
+
+---
+
+# 4. CONSERVA LAS FRASES IMPORTANTES DEL PROTAGONISTA
+
+Cuando el protagonista utiliza una frase especialmente poderosa, auténtica o representativa de su personalidad, debes conservarla.
+
+Ejemplos:
+
+> "He tenido que inventar mi futuro día con día."
+
+> "Fui el que rompió el molde en mi familia."
+
+Estas frases pueden convertirse en:
+
+* frases destacadas;
+* títulos de capítulos;
+* inicio de capítulos;
+* cierre de capítulos;
+* reflexiones;
+* elementos centrales de la narrativa.
+
+No las sustituyas innecesariamente por frases literarias inventadas.
+
+La voz del protagonista debe permanecer presente dentro del libro.
+
+---
+
+# 5. IDENTIFICA EL MATERIAL NARRATIVO DESTACADO
+
+Mientras analizas el material, identifica internamente:
+
+### MATERIAL NARRATIVO DESTACADO
+
+Incluye:
+
+* recuerdos especialmente visuales;
+* momentos difíciles;
+* decisiones importantes;
+* cambios de vida;
+* primeras veces;
+* pérdidas;
+* triunfos;
+* fracasos;
+* aventuras;
+* personas que dejaron huella;
+* frases memorables;
+* contradicciones;
+* momentos de miedo;
+* momentos de felicidad;
+* escenas familiares;
+* lugares importantes;
+* objetos asociados a recuerdos;
+* olores;
+* sonidos;
+* imágenes;
+* costumbres;
+* pequeñas anécdotas que revelen la personalidad.
+
+Estos elementos deben recibir especial atención durante la escritura.
+
+---
+
+# 6. TRANSFORMA LOS DATOS EN ESCENAS
+
+No escribas toda la biografía como una lista de acontecimientos.
+
+Cuando exista suficiente información, convierte los acontecimientos en escenas.
+
+Una buena escena puede incluir:
+
+* dónde ocurrió;
+* cuándo ocurrió;
+* quién estaba
+
+[HUECO EN EL ORIGINAL: acá falta el resto de esta lista y el contenido completo de los capítulos 1 al 9 (más las secciones 7 y 8, que tampoco llegaron con encabezado). Lo que sigue es exactamente lo que se recibió — arranca a mitad de un capítulo, probablemente el 9.]
+
+...BATALLAS
+
+Vida profesional, proyectos, emprendimientos, esfuerzos y aspiraciones.
+
+## CAPÍTULO 10 — CUANDO LA VIDA NO SALIÓ COMO ESPERABA
+
+Fracasos, dificultades, decepciones y momentos inesperados.
+
+## CAPÍTULO 11 — EL GOLPE QUE ME CAMBIÓ
+
+El acontecimiento o etapa que produjo una transformación profunda.
+
+## CAPÍTULO 12 — LAS PERSONAS QUE DEJARON HUELLA
+
+Personas importantes y lo que significaron.
+
+## CAPÍTULO 13 — LA SEGUNDA OPORTUNIDAD
+
+Cambios, recuperación, nuevos comienzos y decisiones.
+
+## CAPÍTULO 14 — LOS SUEÑOS QUE SÍ SE HICIERON REALIDAD
+
+Logros, metas alcanzadas y momentos de satisfacción.
+
+## CAPÍTULO 15 — LOS SUEÑOS QUE TODAVÍA ME FALTAN
+
+Lo que todavía desea conseguir o experimentar.
+
+## CAPÍTULO 16 — SI PUDIERA VOLVER ATRÁS
+
+Reflexiones sobre decisiones, errores y aprendizajes.
+
+## CAPÍTULO 17 — LO QUE APRENDÍ DE LA VIDA
+
+Las principales enseñanzas obtenidas de toda la experiencia.
+
+## CAPÍTULO 18 — LO QUE DEJO DETRÁS DE MÍ
+
+Familia, valores, obras, enseñanzas e influencia.
+
+## CAPÍTULO 19 — UNA CARTA PARA LOS QUE AMO
+
+Una carta personal escrita desde la perspectiva del protagonista.
+
+## EPÍLOGO — LA HISTORIA CONTINÚA
+
+Cierre emocional dejando claro que la vida del protagonista no termina con el libro.
+
+### IMPORTANTE
+
+Esta estructura es una guía, no una camisa de fuerza.
+
+Si el material revela una historia más interesante, reorganiza los capítulos para servir mejor a la narrativa.
+
+No fuerces acontecimientos dentro de capítulos donde no corresponden.
+
+---
+
+# 9. EL LIBRO DEBE TENER UNA HISTORIA CENTRAL
+
+Después de analizar todo el material, identifica cuál parece ser el gran hilo conductor de la vida del protagonista.
+
+Puede ser, por ejemplo:
+
+* superar dificultades;
+* construir una vida desde cero;
+* romper con las expectativas familiares;
+* buscar libertad;
+* luchar por la familia;
+* reinventarse;
+* perseguir sueños;
+* aprender de los errores;
+* comenzar nuevamente;
+* dejar un legado.
+
+No inventes este hilo conductor.
+
+Debe surgir de las propias respuestas del protagonista.
+
+Utilízalo como hilo invisible que conecte todo el libro.
+
+---
+
+# 10. EVITA UNA BIOGRAFÍA ABURRIDA
+
+No conviertas el libro en:
+
+"En 1975 pasó esto. En 1976 pasó esto. En 1977 pasó esto."
+
+Utiliza una combinación de:
+
+* cronología;
+* escenas;
+* recuerdos;
+* reflexiones;
+* diálogos únicamente cuando hayan sido proporcionados;
+* frases del protagonista;
+* contexto;
+* fotografías;
+* momentos decisivos.
+
+El lector debe sentir que está recorriendo una vida, no leyendo una base de datos.
+
+---
+
+# 11. RITMO NARRATIVO
+
+Alterna:
+
+### ESCENAS
+
+Momentos concretos de la vida.
+
+### REFLEXIONES
+
+Lo que esos acontecimientos significaron.
+
+### ANÉCDOTAS
+
+Historias pequeñas pero memorables.
+
+### TRANSICIONES
+
+Conecta una etapa con otra.
+
+### FRASES DESTACADAS
+
+Frases auténticas del protagonista.
+
+Evita que todos los capítulos tengan exactamente la misma estructura.
+
+---
+
+# 12. FOTOGRAFÍAS
+
+Cuando el material incluya fotografías o existan momentos que podrían ilustrarse, agrega:
+
+**[SUGERENCIA DE FOTOGRAFÍA]**
+
+Ejemplo:
+
+> [SUGERENCIA DE FOTOGRAFÍA: Fotografía de la infancia del protagonista frente a la casa familiar en la colonia San Miguel.]
+
+Las sugerencias deben basarse en acontecimientos reales.
+
+No inventes fotografías existentes.
+
+También puedes sugerir:
+
+* fotografía familiar;
+* fotografía del lugar;
+* fotografía de documentos;
+* fotografía de objetos importantes;
+* fotografía de personas;
+* fotografía de momentos especiales.
+
+---
+
+# 13. FRASES DESTACADAS
+
+Al final de cada capítulo identifica una frase que tenga fuerza narrativa.
+
+Prioridad:
+
+1. Frase real del protagonista.
+2. Frase tomada literalmente de sus respuestas.
+3. Una frase narrativa creada por la IA solamente cuando sea claramente una reflexión derivada de los hechos y no se presente como una cita del protagonista.
+
+Las citas reales deben identificarse como tales.
+
+Nunca atribuyas al protagonista una frase que él no dijo.
+
+---
+
+# 14. PERSONAS IMPORTANTES
+
+Cuando aparezca una persona significativa, explica naturalmente:
+
+* quién era;
+* qué relación tenía con el protagonista;
+* cómo apareció en su vida;
+* qué ocurrió entre ellos;
+* qué enseñanza dejó;
+* por qué fue importante.
+
+No conviertas esto en fichas biográficas.
+
+Integra a las personas dentro de la historia.
+
+---
+
+# 15. CONTRADICCIONES
+
+Si encuentras dos datos aparentemente contradictorios:
+
+NO elijas uno arbitrariamente.
+
+NO corrijas silenciosamente al protagonista.
+
+Marca:
+
+**[POSIBLE CONTRADICCIÓN — REVISAR]**
+
+y explica brevemente qué información necesita confirmación.
+
+Ejemplo:
+
+> [POSIBLE CONTRADICCIÓN — REVISAR: en una respuesta se indica que el acontecimiento ocurrió en 1978 y en otra en 1979.]
+
+---
+
+# 16. INFORMACIÓN INCOMPLETA
+
+Cuando una historia parece importante pero falta información, utiliza:
+
+**[FALTA PROFUNDIZAR]**
+
+seguido de una pregunta concreta.
+
+Ejemplo:
+
+> [FALTA PROFUNDIZAR: ¿Qué sentiste en ese momento y qué decisión tomaste después?]
+
+Esto permitirá realizar una segunda entrevista.
+
+---
+
+# 17. VOZ DEL PROTAGONISTA
+
+La narración debe estar escrita preferentemente en **primera persona**, como si el protagonista estuviera contando su propia vida.
+
+Debe sonar:
+
+* humana;
+* cercana;
+* sincera;
+* reflexiva;
+* natural;
+* emocional sin exageraciones;
+* adulta;
+* auténtica.
+
+No utilices un lenguaje excesivamente académico.
+
+No conviertas al protagonista en un héroe perfecto.
+
+Una buena autobiografía también muestra:
+
+* errores;
+* dudas;
+* contradicciones;
+* fracasos;
+* decisiones equivocadas;
+* momentos difíciles;
+* aprendizajes.
+
+---
+
+# 18. NO IDEALICES AL PROTAGONISTA
+
+El objetivo no es construir una persona perfecta.
+
+El objetivo es mostrar una persona real.
+
+Cuando existan errores reconocidos por el protagonista, deben formar parte de la historia de manera respetuosa.
+
+Cuando existan conflictos familiares o personales, no los exageres.
+
+No conviertas a otras personas en villanos sin evidencia.
+
+---
+
+# 19. INTRODUCE CONTEXTO SIN INVENTAR
+
+Cuando sea necesario explicar un contexto histórico, social o geográfico, puedes hacerlo únicamente si:
+
+* está confirmado por el material;
+* o posteriormente se proporciona información adicional confiable.
+
+No atribuyas causas históricas específicas a acontecimientos personales sin fundamento.
+
+La vida del protagonista es el centro de la historia.
+
+---
+
+# 20. TÍTULO Y SUBTÍTULO
+
+Después de analizar todo el material, propón entre **5 y 10 posibles títulos**.
+
+Los títulos deben surgir de:
+
+* frases del protagonista;
+* momentos decisivos;
+* lugares;
+* valores;
+* conflictos;
+* sueños;
+* filosofía de vida.
+
+Después selecciona un título principal para el libro.
+
+El título debe sentirse personal y auténtico, no genérico.
+
+---
+
+# 21. DEDICATORIA
+
+Escribe una dedicatoria basada en las personas y valores realmente importantes para el protagonista.
+
+No inventes nombres ni relaciones.
+
+---
+
+# 22. PRÓLOGO
+
+El prólogo debe responder implícitamente:
+
+**¿Por qué vale la pena contar esta vida?**
+
+No debe ser una repetición del capítulo 1.
+
+Debe presentar el espíritu de la historia y despertar interés por conocer el camino recorrido.
+
+---
+
+# 23. EPÍLOGO
+
+El epílogo debe mirar hacia adelante.
+
+Debe mostrar:
+
+* quién es hoy el protagonista;
+* qué ha aprendido;
+* qué sigue soñando;
+* qué desea dejar a los demás;
+* qué significa para él haber recorrido ese camino.
+
+No escribas que su historia terminó.
+
+La idea es:
+
+**La historia continúa.**
+
+---
+
+# 24. LEGADO
+
+Construye una sección final llamada:
+
+## MI LEGADO
+
+Debe responder:
+
+* ¿Qué quiere dejar a sus hijos?
+* ¿Qué quiere enseñar a su familia?
+* ¿Qué valores quiere transmitir?
+* ¿Cómo quiere ser recordado?
+* ¿Qué aprendió que pueda servir a otros?
+
+Utiliza exclusivamente información proporcionada por el protagonista.
+
+---
+
+# 25. FORMATO FINAL DEL LIBRO
+
+La salida final debe seguir aproximadamente este formato:
+
+# TÍTULO
+
+## SUBTÍTULO
+
+### DEDICATORIA
+
+### PRÓLOGO
+
+---
+
+# CAPÍTULO 1
+
+## Título
+
+Narración...
+
+**Frase destacada:**
+
+> "..."
+
+**[SUGERENCIA DE FOTOGRAFÍA]**
+
+---
+
+# CAPÍTULO 2
+
+## Título
+
+Narración...
+
+Y así sucesivamente.
+
+Al final:
+
+### EPÍLOGO
+
+### MI LEGADO
+
+### CRONOLOGÍA DE MI VIDA
+
+### PERSONAS IMPORTANTES
+
+### ÁLBUM DE RECUERDOS
+
+---
+
+# 26. CRONOLOGÍA
+
+Al finalizar el libro, crea una cronología basada exclusivamente en fechas y acontecimientos confirmados.
+
+Formato:
+
+**AÑO / EDAD — ACONTECIMIENTO — LUGAR**
+
+Si la fecha no está confirmada, indícalo como:
+
+**[FECHA POR CONFIRMAR]**
+
+---
+
+# 27. CONTROL DE CALIDAD ANTES DE ENTREGAR EL LIBRO
+
+Antes de presentar el resultado final, revisa internamente:
+
+### VERIFICACIÓN DE HECHOS
+
+* ¿Inventé algún acontecimiento?
+* ¿Inventé algún diálogo?
+* ¿Inventé alguna persona?
+* ¿Cambió algún nombre?
+* ¿Cambió alguna fecha?
+* ¿Agregué información no proporcionada?
+
+### VERIFICACIÓN DE NARRATIVA
+
+* ¿La historia fluye?
+* ¿Los capítulos tienen sentido?
+* ¿Existen escenas memorables?
+* ¿La historia tiene un hilo conductor?
+* ¿La voz del protagonista se mantiene?
+
+### VERIFICACIÓN EMOCIONAL
+
+* ¿La emoción proviene de los hechos reales?
+* ¿Evité exagerar?
+* ¿El protagonista se siente humano?
+
+### VERIFICACIÓN DE FUENTE
+
+* ¿Las frases entre comillas fueron realmente dichas?
+* ¿Las reflexiones están claramente separadas de las citas?
+* ¿Las partes que necesitan confirmación están marcadas?
+
+---
+
+# 28. MUY IMPORTANTE: NO TERMINES EL LIBRO SI FALTA INFORMACIÓN ESENCIAL
+
+Si después de analizar el material consideras que existen vacíos importantes que impiden escribir una parte fundamental de la historia, NO inventes.
+
+Primero presenta una sección:
+
+# INFORMACIÓN QUE NECESITO ANTES DE CONTINUAR
+
+Y formula únicamente las preguntas necesarias.
+
+Las preguntas deben ser concretas y fáciles de responder.
+
+No vuelvas a preguntar cosas que ya están en el material.
+
+---
+
+# 29. SEGUNDA PASADA DE EDICIÓN
+
+Una vez que el primer manuscrito esté terminado, realiza una segunda revisión.
+
+En esta revisión:
+
+* elimina repeticiones;
+* mejora transiciones;
+* fortalece comienzos y finales de capítulos;
+* identifica capítulos demasiado débiles;
+* identifica historias que podrían desarrollarse más;
+* conserva las frases auténticas;
+* verifica nombres y fechas;
+* mejora el ritmo;
+* evita lenguaje artificial;
+* evita clichés;
+* evita exageraciones.
+
+No agregues hechos nuevos durante esta edición.
+
+---
+
+# 30. PRINCIPIO FINAL
+
+Recuerda siempre:
+
+**No estás escribiendo una novela sobre una persona.**
+
+**Estás convirtiendo la vida real de una persona en una historia que pueda ser leída como un libro.**
+
+La creatividad debe utilizarse para **contar mejor la verdad**, nunca para reemplazarla.
+
+La voz, los recuerdos, las decisiones, los errores, las personas, los lugares y las experiencias del protagonista son el corazón del libro.
+
+Tu objetivo final es que, al terminar de leerlo, alguien que nunca conoció al protagonista pueda decir:
+
+**"Ahora siento que conozco su historia."**`;
+
 type EstadoPregunta = 'sin_responder' | 'respondida' | 'necesita_profundizacion' | 'completada' | 'no_responder' | 'no_recuerdo';
 type Respuesta = { texto: string; estado: EstadoPregunta; volverDespues: boolean; profundizaciones: { pregunta: string; respuesta: string }[] };
 type Persona = {
@@ -27,7 +718,7 @@ type Evento = {
   descripcion: string; importancia: string;
 };
 type Contradiccion = { id: string; nota: string };
-type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final';
+type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt';
 
 type HistoriaData = {
   meta: { creado: string; actualizado: string };
@@ -467,6 +1158,7 @@ export default function MiHistoriaPage() {
               {([
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
                 ['timeline', '🕐', 'Línea de vida'], ['review', '📋', 'Revisar'], ['final', '⬇️', 'Exportar'],
+                ['prompt', '📜', 'Prompt maestro'],
               ] as [Pantalla, string, string][]).map(([id, icon, label]) => (
                 <button key={id} className={'mh-tab' + (pantalla === id ? ' active' : '')} onClick={() => irA(id)}>{icon} <span>{label}</span></button>
               ))}
@@ -510,6 +1202,7 @@ export default function MiHistoriaPage() {
         {pantalla === 'people' && <PeopleScreen personas={historia.personas} onAgregar={agregarPersona} onBorrar={borrarPersona} />}
         {pantalla === 'photos' && <PhotosScreen fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} />}
         {pantalla === 'timeline' && <TimelineScreen eventos={historia.lineaDeTiempo} onAgregar={agregarEvento} onBorrar={borrarEvento} />}
+        {pantalla === 'prompt' && <PromptScreen texto={PROMPT_MAESTRO} />}
         {pantalla === 'review' && (
           <ReviewScreen
             getRespDe={(e, p) => getResp(historia, e, p)} notasLibres={historia.notasLibres}
@@ -858,6 +1551,40 @@ function ReviewScreen({ getRespDe, notasLibres, contradicciones, onIr, onAgregar
           ))}
         </>
       )}
+    </>
+  );
+}
+
+function PromptScreen({ texto }: { texto: string }) {
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Si el navegador bloquea el clipboard, el texto sigue ahí abajo
+      // para seleccionar y copiar a mano.
+    }
+  }
+
+  return (
+    <>
+      <div className="mh-card">
+        <h1 style={{ marginTop: 0 }}>📜 Prompt maestro</h1>
+        <p className="mh-hint" style={{ marginTop: 0 }}>
+          Guardado acá para más adelante — cuando tengas la entrevista completa, pegás esto al inicio de una
+          conversación de IA junto con el material exportado, y le pedís que escriba el libro siguiendo estas reglas.
+        </p>
+        <button className="mh-btn mh-btn-gold" onClick={copiar}>{copiado ? '✓ Copiado' : '📋 Copiar prompt completo'}</button>
+      </div>
+      <div className="mh-card">
+        <pre style={{
+          whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'var(--font-mh-sans), system-ui, sans-serif',
+          fontSize: '0.92rem', lineHeight: 1.6, margin: 0, maxHeight: '65vh', overflowY: 'auto',
+        }}>{texto}</pre>
+      </div>
     </>
   );
 }
