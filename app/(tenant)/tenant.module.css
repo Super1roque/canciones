@@ -304,28 +304,35 @@
   }
 }
 
-/* Insignia de premium en el dashboard — a propósito muy vistosa (brillo
-   pulsante) para que se sienta como un estatus ganado, no un badge más. */
+/* Insignia de premium en el dashboard — franja completa (no un pill chico
+   perdido junto a otro texto) con la copa bien grande y brillo pulsante,
+   para que el estatus se sienta ganado y salte a la vista de una. */
 .premiumBadge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.5rem;
   background: linear-gradient(135deg, var(--cr-gold-soft), var(--cr-gold));
   color: #3a2600;
   font-weight: 800;
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-  padding: 0.32rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 0 10px rgba(242, 183, 5, 0.4);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  padding: 0.6rem 1rem;
+  border-radius: var(--cr-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25), 0 0 14px rgba(242, 183, 5, 0.45);
   white-space: nowrap;
   animation: premiumGlow 2.4s ease-in-out infinite;
 }
 
+.premiumBadgeCopa {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
 @keyframes premiumGlow {
-  0%, 100% { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 0 8px rgba(242, 183, 5, 0.35); }
-  50% { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 0 20px rgba(242, 183, 5, 0.75); }
+  0%, 100% { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25), 0 0 10px rgba(242, 183, 5, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25), 0 0 24px rgba(242, 183, 5, 0.85); transform: scale(1.015); }
 }
 
 @media (prefers-reduced-motion: reduce) {
