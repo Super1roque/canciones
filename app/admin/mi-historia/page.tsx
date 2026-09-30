@@ -14,11 +14,7 @@ const karla = Karla({ subsets: ['latin'], weight: ['400', '500', '600', '700', '
 
 // Prompt de referencia (no se usa todavía en la app — se pega a mano en otra
 // conversación de IA cuando llegue el momento de redactar el libro). Pegado
-// tal cual lo mandó el usuario; el único hueco detectado (falta el contenido
-// completo de los capítulos 1 al 9, y las secciones 7/8 nunca llegaron con
-// encabezado) queda marcado con una nota entre corchetes en vez de
-// inventarse — así se respeta la propia regla del prompt de no rellenar
-// vacíos con imaginación.
+// tal cual lo mandó el usuario.
 const PROMPT_MAESTRO = `# PROMPT MAESTRO PARA ESCRIBIR MI BIOGRAFÍA
 
 ## 1. TU PAPEL
@@ -183,11 +179,87 @@ Una buena escena puede incluir:
 
 * dónde ocurrió;
 * cuándo ocurrió;
-* quién estaba
+* quién estaba presente;
+* qué estaba pasando;
+* qué recuerda el protagonista;
+* qué objetos o lugares aparecen;
+* qué sonidos existían;
+* qué importancia tuvo posteriormente.
 
-[HUECO EN EL ORIGINAL: acá falta el resto de esta lista y el contenido completo de los capítulos 1 al 9 (más las secciones 7 y 8, que tampoco llegaron con encabezado). Lo que sigue es exactamente lo que se recibió — arranca a mitad de un capítulo, probablemente el 9.]
+Utiliza detalles sensoriales únicamente cuando estén respaldados por el material.
 
-...BATALLAS
+Si el protagonista recuerda:
+
+* polvo;
+* buses;
+* gritos;
+* silbidos;
+* una camioneta Willys roja;
+* un campo de fútbol;
+
+utiliza esos elementos para construir la atmósfera.
+
+No agregues elementos sensoriales que nunca fueron mencionados si podrían convertirse en hechos falsos.
+
+---
+
+# 7. NO CONVIERTAS LA BIOGRAFÍA EN UNA ENTREVISTA
+
+El resultado final NO debe parecer:
+
+"Pregunta: ¿Dónde naciste?"
+
+"Respuesta: Nací en Tegucigalpa."
+
+Debe convertirse en una narración continua.
+
+La información de las respuestas debe integrarse naturalmente en la historia.
+
+---
+
+# 8. ESTRUCTURA DEL LIBRO
+
+Construye aproximadamente entre 15 y 20 capítulos, dependiendo de la cantidad y riqueza del material.
+
+La estructura sugerida es:
+
+## PRÓLOGO
+
+Presenta al protagonista y plantea la pregunta central de su vida.
+
+## CAPÍTULO 1 — EL LUGAR DONDE COMENZÓ TODO
+
+Nacimiento, primeros lugares, familia, barrio y primeros recuerdos.
+
+## CAPÍTULO 2 — LA FAMILIA QUE ME FORMÓ
+
+Padres, hermanos, ambiente familiar, valores y enseñanzas.
+
+## CAPÍTULO 3 — JUEGOS, TRAVESURAS Y SUEÑOS
+
+Infancia, juegos, amigos, aventuras y primeras ilusiones.
+
+## CAPÍTULO 4 — EL NIÑO COMIENZA A DESCUBRIR EL MUNDO
+
+Escuela, maestros, amistades, descubrimientos y personalidad.
+
+## CAPÍTULO 5 — CUANDO LLEGÓ LA ADOLESCENCIA
+
+Cambios, inquietudes, amistades, decisiones y primeros desafíos.
+
+## CAPÍTULO 6 — EL MOMENTO DE TOMAR LAS RIENDAS
+
+Primeras decisiones importantes y comienzo de la vida adulta.
+
+## CAPÍTULO 7 — EL AMOR QUE CAMBIÓ MI HISTORIA
+
+Pareja, enamoramiento, matrimonio o relaciones significativas.
+
+## CAPÍTULO 8 — LOS HIJOS Y UNA NUEVA RESPONSABILIDAD
+
+Paternidad/maternidad, crianza y transformación personal.
+
+## CAPÍTULO 9 — EL TRABAJO, LOS SUEÑOS Y LAS BATALLAS
 
 Vida profesional, proyectos, emprendimientos, esfuerzos y aspiraciones.
 
