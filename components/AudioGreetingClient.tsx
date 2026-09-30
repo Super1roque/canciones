@@ -39,11 +39,25 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   const [bloqueado, setBloqueado] = useState(restringida);
-  const [audioListo, setAudioListo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
   const blobRef = useRef<Blob | null>(null);
   const [puedeCompartirArchivo, setPuedeCompartirArchivo] = useState(false);
+
+  // Detecta la capacidad de compartir ARCHIVOS (Web Share API nivel 2) con
+  // un blob de prueba, sin descargar el audio real — así el botón de
+  // WhatsApp puede decidir si mostrarse sin forzar ninguna carga apenas
+  // entra a la página. El audio de verdad se trae recién al tocarlo (ver
+  // enviarPorWhatsapp).
+  useEffect(() => {
+    if (!descargable) return;
+    try {
+      const prueba = new File([new Blob([], { type: 'audio/mpeg' })], 'prueba.mp3', { type: 'audio/mpeg' });
+      setPuedeCompartirArchivo(!!(navigator.canShare && navigator.canShare({ files: [prueba] })));
+    } catch {
+      setPuedeCompartirArchivo(false);
+    }
+  }, [descargable]);
   // Cada escucha (la primera Y cada replay después de que termina) debe
   // volver a pedirle autorización al server — así el contador de
   // reproducciones (y el límite de 2) se respeta de verdad. Solo se salta
@@ -84,16 +98,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       await a.play();
       necesitaFetchRef.current = false;
       setEstado('reproduciendo');
-      setAudioListo(true);
-      // Solo se ofrece el botón de WhatsApp si el navegador realmente puede
-      // compartir el archivo (Web Share API nivel 2) — si no, ni se muestra,
-      // en vez de mostrar un botón que va a fallar al tocarlo.
-      try {
-        const archivo = new File([blob], `${titulo || 'cancion'}.mp3`, { type: blob.type || 'audio/mpeg' });
-        setPuedeCompartirArchivo(!!(navigator.canShare && navigator.canShare({ files: [archivo] })));
-      } catch {
-        setPuedeCompartirArchivo(false);
-      }
     } catch {
       setEstado('inicial');
     }
@@ -152,21 +156,21 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     return () => clearTimeout(id);
   }, [bloqueado, esDueño, router]);
 
-  function descargar() {
-    const a = document.createElement('a');
-    a.href = blobUrlRef.current;
-    a.download = `${titulo || 'cancion'}.mp3`;
-    a.click();
-  }
-
   // Comparte el ARCHIVO de audio (no el link) vía el selector nativo, para
   // que WhatsApp lo reciba como nota de voz/audio real. Distinto de
-  // compartirCancion(), que solo manda la URL. Requiere Web Share API nivel
-  // 2 (navigator.canShare con files) — ya verificado al cargar el audio.
+  // compartirCancion(), que solo manda la URL. El audio se trae recién acá
+  // (lazy) si todavía no se había tocado play — nada se descarga de más
+  // hasta que el usuario realmente pide enviarlo.
   async function enviarPorWhatsapp() {
-    if (!blobRef.current) return;
     try {
-      const archivo = new File([blobRef.current], `${titulo || 'cancion'}.mp3`, { type: blobRef.current.type || 'audio/mpeg' });
+      let blob = blobRef.current;
+      if (!blob) {
+        const res = await fetch(audioApiUrl);
+        if (!res.ok) return;
+        blob = await res.blob();
+        blobRef.current = blob;
+      }
+      const archivo = new File([blob], `${titulo || 'cancion'}.mp3`, { type: blob.type || 'audio/mpeg' });
       await navigator.share({ files: [archivo], title: titulo });
     } catch {
       // El usuario canceló el selector — no hace falta avisar nada.
@@ -367,22 +371,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           📤 Compartir esta canción
         </button>
 
-        {descargable && audioListo && (
-          <button
-            type="button"
-            onClick={descargar}
-            style={{
-              padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999,
-              background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#5c3a00',
-              fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
-              boxShadow: '0 4px 0 #b8830b', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            }}
-          >
-            ⬇️ Descargar canción
-          </button>
-        )}
-
-        {descargable && audioListo && puedeCompartirArchivo && (
+        {descargable && puedeCompartirArchivo && (
           <button
             type="button"
             onClick={enviarPorWhatsapp}
@@ -393,7 +382,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
               boxShadow: '0 4px 0 #0f7a3d', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}
           >
-            💬 Enviar por WhatsApp
+            💬 Enviar a WhatsApp
           </button>
         )}
       </div>
