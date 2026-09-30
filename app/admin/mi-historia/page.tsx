@@ -1145,9 +1145,11 @@ export default function MiHistoriaPage() {
   function construirTexto(paraIA: boolean) {
     let out = '';
     if (paraIA) {
-      out += 'INSTRUCCIONES PARA LA IA QUE ESCRIBIRÁ EL LIBRO\n================================================\n';
-      out += 'Este documento contiene material autobiográfico proporcionado por el protagonista. Las respuestas deben considerarse la fuente primaria. No inventar hechos. Cuando falte información, solicitar aclaración. Mantener nombres, fechas y acontecimientos tal como fueron proporcionados, salvo que el usuario confirme una corrección.\n\n' +
-        'El objetivo final es un eBook biográfico de aproximadamente 15 a 20 capítulos, con: título, subtítulo, dedicatoria, prólogo, capítulos narrativos, escenas y anécdotas, frases destacadas, sugerencias de fotografías, epílogo y legado del protagonista.\n\n';
+      out += PROMPT_MAESTRO + '\n\n';
+      out += '================================================\n';
+      out += 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
+      out += '(fuente primaria — todo lo de arriba son solo las reglas)\n';
+      out += '================================================\n\n';
     }
     out += 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
     out += 'Generado: ' + new Date(historia.meta.creado).toLocaleString('es') + '\nÚltima actualización: ' + new Date(historia.meta.actualizado).toLocaleString('es') + '\n\n';
