@@ -25,6 +25,13 @@ export interface Tenant {
   // Sin este campo (tenants creados antes de que existiera) se trata como
   // 'freemium' — no hace falta migrar datos viejos.
   plan?: 'freemium' | 'premium';
+  // Token de la sesión actualmente activa — mientras esté seteado, un
+  // login nuevo con este mismo teléfono se bloquea en vez de pisarlo (ver
+  // iniciarSesion). Se borra desde /admin/tenants ("Liberar sesión") si
+  // alguien queda trabado afuera (perdió el celular, lo formateó, etc.).
+  // Sin este campo (tenants de antes de este sistema) no se exige nada —
+  // su cookie vieja sigue funcionando igual hasta que venza sola.
+  sesionId?: string;
 }
 
 // Deja solo dígitos — así "9999-8888", "+504 9999 8888" y "99998888" quedan
@@ -91,6 +98,75 @@ export async function obtenerOCrearTenant(telefono: string): Promise<Tenant> {
   };
   await ref.set(nuevo);
   return nuevo;
+}
+
+// Login instantáneo: alcanza con el teléfono, sin código ni aprobación por
+// WhatsApp. Transacción porque dos intentos casi simultáneos con el mismo
+// número (ej. alguien que toca "Entrar" dos veces) no pueden terminar los
+// dos "ok" con sesiones distintas. Si el tenant YA tiene sesionId guardado,
+// se bloquea en vez de pisarlo — así una sesión abierta no se cae sola
+// porque alguien (el mismo dueño en otro aparato, o cualquier otra
+// persona) escribió ese número en otro lado.
+//
+// `sesionActualDelDispositivo` es la cookie de sesión que YA trae el
+// propio navegador que está pidiendo entrar — si coincide con la sesión
+// activa guardada, es la misma persona reconfirmando su propio login (ej.
+// recargó la página), no una segunda sesión: se deja pasar sin generar
+// nada nuevo, en vez de bloquearla contra sí misma.
+export async function iniciarSesion(telefono: string, sesionActualDelDispositivo?: string): Promise<{ ok: true; sesionId: string } | { ok: false }> {
+  const db = getDb();
+  const ref = db.collection(COLLECTION).doc(telefono);
+  return db.runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    const existente = doc.exists ? (doc.data() as Tenant).sesionId : undefined;
+
+    if (existente && existente === sesionActualDelDispositivo) {
+      return { ok: true, sesionId: existente };
+    }
+    if (existente) {
+      return { ok: false };
+    }
+
+    const sesionId = crypto.randomUUID();
+    if (doc.exists) {
+      tx.update(ref, { sesionId });
+    } else {
+      const nuevo: Tenant = {
+        telefono,
+        fechaRegistro: new Date().toISOString(),
+        cancionesGratisUsadas: 0,
+        cancionesGratisLimite: 1,
+        saldo: 0,
+        plan: 'freemium',
+        sesionId,
+      };
+      tx.set(ref, nuevo);
+    }
+    return { ok: true, sesionId };
+  });
+}
+
+// Botón "🔓 Liberar sesión" en /admin/tenants — deja que alguien vuelva a
+// entrar con su número sin esperar a que la cookie vieja venza sola a los
+// 180 días. No hace nada automático: solo se usa cuando el tenant avisa
+// (por soporte o WhatsApp) que quedó trabado afuera.
+export async function liberarSesion(telefono: string): Promise<void> {
+  const db = getDb();
+  await db.collection(COLLECTION).doc(telefono).update({ sesionId: admin.firestore.FieldValue.delete() });
+}
+
+// Gate central para páginas/rutas del tenant — reemplaza el viejo patrón de
+// "leer tenant_phone y listo". Si el tenant nunca tuvo sesionId (cuenta de
+// antes de este sistema, o liberada por el admin y todavía no reclamada),
+// se deja pasar solo con el teléfono. En cuanto el tenant SÍ tiene sesionId
+// guardado, hace falta que la cookie de sesión coincida exacto — si no,
+// se trata como deslogueado (p. ej. porque el admin liberó la sesión y
+// alguien más entró desde otro aparato).
+export async function validarSesion(telefono: string, sesionId: string | undefined): Promise<Tenant | null> {
+  const tenant = await obtenerTenant(telefono);
+  if (!tenant) return null;
+  if (tenant.sesionId && tenant.sesionId !== sesionId) return null;
+  return tenant;
 }
 
 // Incremento atómico — evita una condición de carrera si el mismo tenant

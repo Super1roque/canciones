@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { Rye } from 'next/font/google';
 import styles from './tenant.module.css';
 import SoporteLink from './SoporteLink';
+import CerrarSesionLink from './CerrarSesionLink';
 
 // Fuente festiva tipo cartel para los títulos del tema "corridos" — el
 // resto del texto usa la fuente del sistema (Inter, ya cargada en
@@ -29,6 +30,7 @@ export default async function TenantLayout({ children }: { children: React.React
             >
               💳 Mi cuenta
             </a>
+            <CerrarSesionLink />
           </div>
         )}
       </header>

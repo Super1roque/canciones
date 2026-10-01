@@ -1,18 +1,18 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { obtenerTenant } from '@/lib/tenantService';
+import { validarSesion } from '@/lib/tenantService';
 import { listarPedidosPorTelefono } from '@/lib/pedidoService';
 import DashboardClient from './DashboardClient';
 
 // Server Component — misma resolución de sesión que /crear-parodia: sin
-// cookie o tenant inexistente, vuelve a la landing a registrarse.
+// cookie o sesión inválida, vuelve a la landing a entrar de nuevo.
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const telefono = cookieStore.get('tenant_phone')?.value;
 
   if (!telefono) redirect('/');
 
-  const tenant = await obtenerTenant(telefono);
+  const tenant = await validarSesion(telefono, cookieStore.get('tenant_session')?.value);
   if (!tenant) redirect('/');
 
   // Un tenant que todavía no usó su canción gratis se salta el dashboard

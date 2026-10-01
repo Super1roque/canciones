@@ -31,14 +31,6 @@ type Recarga = {
   fecha: string;
 };
 
-type Verificacion = {
-  id: string;
-  telefono: string;
-  codigo: string;
-  estado: 'pendiente' | 'aprobada' | 'rechazada';
-  fecha: string;
-};
-
 type CancionCompartida = {
   id: string;
   titulo: string;
@@ -78,23 +70,6 @@ function EstadoEscuchas({ reproducciones, premium }: { reproducciones: number; p
       </span>
     </div>
   );
-}
-
-// Sin +504 ni guion — así el número queda igual de fácil de reconocer para
-// la persona en el mensaje, mismo criterio que en app/admin/tenants.
-function soloNumeroLocal(digits: string): string {
-  return digits.startsWith('504') && digits.length === 11 ? digits.slice(3) : digits;
-}
-
-function urlEnviarCodigo(telefono: string, codigo: string): string {
-  // ?paso=codigo + teléfono/código pre-llenados — mismo patrón que
-  // urlAltaRapida en app/admin/tenants — así no lo manda de nuevo a pedir
-  // el teléfono ni a verificar por WhatsApp, va directo al formulario ya
-  // completo.
-  const numeroLocal = soloNumeroLocal(telefono);
-  const link = `https://corridos.online/?paso=codigo&telefono=${encodeURIComponent(numeroLocal)}&codigo=${encodeURIComponent(codigo)}`;
-  const mensaje = `Con gusto te presentamos la aplicación ${link} — Para ingresar vas a necesitar tu número de teléfono (${numeroLocal}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
-  return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
 const MENSAJE_AVISO_PROCESO_DEFAULT = 'Su canción ya está en proceso. Le llegará por este medio — cuando el sistema está muy cargado, suele demorar hasta una hora.';
@@ -283,7 +258,6 @@ function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado 
 export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [recargas, setRecargas] = useState<Recarga[]>([]);
-  const [verificaciones, setVerificaciones] = useState<Verificacion[]>([]);
   const [cancionesCompartidas, setCancionesCompartidas] = useState<CancionCompartida[]>([]);
   const [tenants, setTenants] = useState<TenantPlan[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -294,16 +268,14 @@ export default function AdminPedidosPage() {
   // no debe hacer parpadear la lista con el mensaje de "Cargando…" cada
   // vez que se ejecuta, eso queda solo para la primera carga real.
   const cargarSilencioso = useCallback(async () => {
-    const [pRes, rRes, vRes, ccRes, tRes] = await Promise.all([
+    const [pRes, rRes, ccRes, tRes] = await Promise.all([
       fetch('/api/admin/pedidos'),
       fetch('/api/admin/recargas'),
-      fetch('/api/admin/verificaciones'),
       fetch('/api/admin/canciones-compartidas'),
       fetch('/api/admin/tenants'),
     ]);
     setPedidos(pRes.ok ? await pRes.json() : []);
     setRecargas(rRes.ok ? await rRes.json() : []);
-    setVerificaciones(vRes.ok ? await vRes.json() : []);
     setCancionesCompartidas(ccRes.ok ? await ccRes.json() : []);
     setTenants(tRes.ok ? await tRes.json() : []);
   }, []);
@@ -354,24 +326,7 @@ export default function AdminPedidosPage() {
     setOcupado(null);
   }
 
-  async function resolverVerificacion(v: Verificacion, aprobar: boolean) {
-    // Se abre ANTES del fetch, en el mismo click, para que el navegador no
-    // lo bloquee como popup — y porque la tarjeta (con su botón de
-    // WhatsApp aparte) desaparece de la lista apenas se aprueba, así que
-    // no se puede depender de que el admin haga los dos clicks en orden.
-    if (aprobar) window.open(urlEnviarCodigo(v.telefono, v.codigo), '_blank', 'noopener,noreferrer');
-    setOcupado(v.id);
-    await fetch('/api/admin/verificaciones', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: v.id, aprobar }),
-    });
-    await cargarSilencioso();
-    setOcupado(null);
-  }
-
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
-  const verificacionesPendientes = verificaciones.filter(v => v.estado === 'pendiente');
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
   const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
@@ -385,48 +340,6 @@ export default function AdminPedidosPage() {
       </header>
 
       <main className="main" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900, margin: '0 auto', padding: '1.5rem' }}>
-
-        <section className="panel" style={{ padding: '1.25rem' }}>
-          <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            Verificaciones de teléfono pendientes
-            {verificacionesPendientes.length > 0 && <span className="badge">{verificacionesPendientes.length}</span>}
-          </h2>
-          {cargando ? (
-            <p className="loading-msg">Cargando…</p>
-          ) : verificacionesPendientes.length === 0 ? (
-            <p className="empty-msg">No hay verificaciones pendientes.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {verificacionesPendientes.map(v => (
-                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>
-                      Teléfono declarado: {v.telefono}
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(v.fecha)}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--warning, #d99a2b)', marginTop: '0.2rem' }}>
-                      ⚠️ Aprobá solo si el WhatsApp llegó de este mismo número.
-                    </div>
-                    <div style={{ marginTop: '0.4rem', maxWidth: 220 }}>
-                      <CampoCopiable label="Código de acceso" valor={v.codigo} mono />
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.35rem 0 0' }}>
-                      Al aprobar se abre WhatsApp con el código ya escrito para ese número.
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-primary" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v, true)}>
-                      {ocupado === v.id ? '...' : '✅ Aprobar y enviar código'}
-                    </button>
-                    <button className="btn-danger" disabled={ocupado === v.id} onClick={() => resolverVerificacion(v, false)}>
-                      ✕ Rechazar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
 
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

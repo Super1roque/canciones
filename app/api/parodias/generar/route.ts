@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getDb } from '@/lib/firebaseService';
 import { generarParodia } from '@/lib/claudeService';
-import { obtenerTenant } from '@/lib/tenantService';
+import { validarSesion } from '@/lib/tenantService';
 import { COSTO_CANCION } from '@/lib/pedidoService';
 
 export async function POST(request: Request) {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const telefono = cookieStore.get('tenant_phone')?.value;
     if (telefono) {
-      const tenant = await obtenerTenant(telefono);
+      const tenant = await validarSesion(telefono, cookieStore.get('tenant_session')?.value);
       if (!tenant) {
         return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
       }

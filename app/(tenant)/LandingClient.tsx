@@ -1,170 +1,48 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import styles from './tenant.module.css';
 import { trackMetaPixel } from '@/lib/metaPixel';
-import { MENSAJE_VERIFICACION } from '@/lib/config';
-
-// Producto pensado para Honduras — si no escriben un +código, se asume +504.
-function formatearVisible(raw: string): string {
-  return raw.trim();
-}
 
 export default function LandingClient() {
-  // El link de "alta rápida" (ver urlAltaRapida en app/admin/tenants) manda
-  // ?paso=codigo — a ese lead ya le dimos el código por WhatsApp, así que
-  // arranca directo en el formulario de teléfono+código en vez de pasar
-  // primero por el de "pedir acceso" (que terminaba mandándolo de nuevo a
-  // confirmar por WhatsApp, generando confusión).
+  // El link de "alta rápida"/reactivación (ver admin/tenants y
+  // admin/reactivar) manda ?telefono=X — precarga el campo para que la
+  // persona no tenga que volver a escribir su número, pero igual tiene que
+  // tocar "Entrar" ella misma (nada de auto-submit): si el link se abre
+  // solo como preview dentro de WhatsApp antes de que la persona lo toque,
+  // un auto-submit le "gastaría" el login a ese preview en vez de a ella.
   const searchParams = useSearchParams();
-  const [paso, setPaso] = useState<'telefono' | 'esperando' | 'codigo' | 'sugerirCodigo' | 'confirmarWhatsapp'>(
-    () => (searchParams.get('paso') === 'codigo' ? 'codigo' : 'telefono')
-  );
-  const [telefono, setTelefono] = useState('');
+  const [telefono, setTelefono] = useState(() => searchParams.get('telefono') ?? '');
   const [enviando, setEnviando] = useState(false);
-  const [revisando, setRevisando] = useState(false);
   const [error, setError] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
-  const [rechazada, setRechazada] = useState(false);
 
-  const [telefonoCodigo, setTelefonoCodigo] = useState(() => searchParams.get('telefono') ?? '');
-  const [codigo, setCodigo] = useState(() => searchParams.get('codigo') ?? '');
-  const [enviandoCodigo, setEnviandoCodigo] = useState(false);
-  const [errorCodigo, setErrorCodigo] = useState('');
-
-  const verificacionIdRef = useRef<string | null>(null);
-  const abiertoWhatsappRef = useRef(false);
-
-  async function handleSolicitar(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setRechazada(false);
+    setWhatsappUrl('');
     setEnviando(true);
     try {
-      // Antes de mandarlo a repetir todo el trámite de WhatsApp, se fija si
-      // ese número ya tiene cuenta y un código de acceso vigente — si es
-      // así, se lo sugiere como atajo en vez de crear una solicitud nueva.
-      const chk = await fetch(`/api/tenants/tiene-codigo?telefono=${encodeURIComponent(formatearVisible(telefono))}`);
-      if (chk.ok) {
-        const chkData = await chk.json();
-        if (chkData.tieneCodigo) {
-          setPaso('sugerirCodigo');
-          return;
-        }
-      }
-      // No se manda a WhatsApp automático todavía — primero se le explica
-      // POR QUÉ hace falta ese paso y QUÉ mensaje va a mandar. Sin esto,
-      // algunas personas no entendían que el mensaje de WhatsApp era
-      // obligatorio (no solo un botón más) y nunca llegaban a enviarlo,
-      // dejando la solicitud sin forma de aprobarse.
-      setPaso('confirmarWhatsapp');
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  async function solicitarVerificacion() {
-    setEnviando(true);
-    try {
-      const res = await fetch('/api/tenants/verificar', {
+      const res = await fetch('/api/tenants/entrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: formatearVisible(telefono) }),
+        body: JSON.stringify({ telefono: telefono.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'No se pudo enviar la solicitud'); return; }
-      if (data.yaLogueado) { window.location.href = '/crear-parodia'; return; }
-      verificacionIdRef.current = data.id;
-      setWhatsappUrl(data.whatsappUrl);
-      setPaso('esperando');
-      // Señal de interés genuino (dejó su teléfono) para armar audiencias de
-      // remarketing en Meta — separado del evento de registro real, que
-      // recién se dispara cuando el admin aprueba la verificación.
-      trackMetaPixel('Lead');
-      // Abre WhatsApp en el mismo momento, sin esperar un click aparte —
-      // antes había que tocar "Continuar" y DESPUÉS otro botón para recién
-      // ahí ir a WhatsApp, y ese paso de más era donde se perdían leads que
-      // nunca llegaban a mandar el mensaje. Sigue dentro del mismo gesto
-      // del usuario (el submit del form), así que el navegador no lo
-      // bloquea como popup.
-      window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer');
-      abiertoWhatsappRef.current = true;
+      if (!res.ok) {
+        setError(data.error || 'No se pudo iniciar sesión');
+        if (data.whatsappUrl) setWhatsappUrl(data.whatsappUrl);
+        return;
+      }
+      trackMetaPixel('CompleteRegistration');
+      // Recarga real de página (no router.push) — la cookie recién se
+      // guardó y una navegación client-side puede ganarle a que quede
+      // asentada en el navegador integrado de WhatsApp.
+      window.location.href = '/crear-parodia';
     } catch {
       setError('Error de conexión con el servidor');
     } finally {
       setEnviando(false);
-    }
-  }
-
-  async function revisarEstado() {
-    const id = verificacionIdRef.current;
-    if (!id) return;
-    setRevisando(true);
-    try {
-      const res = await fetch(`/api/tenants/verificar/${id}`);
-      const data = await res.json();
-      if (data.estado === 'aprobada') {
-        trackMetaPixel('CompleteRegistration');
-        // Recarga real de página (no router.push) — justo acá el server
-        // recién guardó la cookie de sesión, y en el navegador integrado de
-        // WhatsApp una navegación client-side puede dispararse antes de que
-        // la cookie quede asentada, mandando al tenant de vuelta al login.
-        window.location.href = '/crear-parodia';
-        return;
-      }
-      if (data.estado === 'rechazada') {
-        setRechazada(true);
-      }
-    } catch {
-      // Silencioso — se reintenta en el próximo ciclo.
-    } finally {
-      setRevisando(false);
-    }
-  }
-
-  // Polling mientras se espera la aprobación — cada 4s, más seguido que el
-  // del dashboard porque acá la persona está mirando la pantalla en vivo
-  // esperando poder arrancar.
-  useEffect(() => {
-    if (paso !== 'esperando') return;
-    const id = setInterval(revisarEstado, 4000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paso]);
-
-  function abrirWhatsapp() {
-    abiertoWhatsappRef.current = true;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-  }
-
-  function cambiarNumero() {
-    setPaso('telefono');
-    setError('');
-    setRechazada(false);
-    verificacionIdRef.current = null;
-  }
-
-  async function handleVerificarCodigo(e: React.FormEvent) {
-    e.preventDefault();
-    setErrorCodigo('');
-    setEnviandoCodigo(true);
-    try {
-      const res = await fetch('/api/tenants/verificar-codigo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: formatearVisible(telefonoCodigo), codigo }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErrorCodigo(data.error || 'No se pudo verificar el código'); return; }
-      // Recarga real de página (no router.push) — mismo motivo que en
-      // revisarEstado: la cookie recién se guardó y una navegación
-      // client-side puede ganarle a que quede asentada en el navegador
-      // integrado de WhatsApp.
-      window.location.href = '/crear-parodia';
-    } catch {
-      setErrorCodigo('Error de conexión con el servidor');
-    } finally {
-      setEnviandoCodigo(false);
     }
   }
 
@@ -188,157 +66,38 @@ export default function LandingClient() {
           </p>
         </div>
 
-        {paso === 'confirmarWhatsapp' ? (
-          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
-            <span style={{ fontSize: '2rem' }}>📲</span>
-            <p style={{ margin: 0 }}>
-              Para darte acceso necesitamos que nos confirmes por WhatsApp que <strong>{telefono}</strong> es tu número y que querés probar el sistema.
-            </p>
-            <p className={styles.textMuted} style={{ fontSize: '0.85rem', margin: 0 }}>
-              Te vamos a abrir WhatsApp con este mensaje ya escrito — es necesario que se lo des a <strong>Enviar</strong>, si no, no vamos a poder aprobarte:
-            </p>
-            <p style={{
-              margin: 0, padding: '0.75rem 1rem', borderRadius: 10, textAlign: 'left',
-              background: 'var(--cr-surface-2)', border: '2px solid var(--cr-border)', fontStyle: 'italic',
-            }}>
-              &ldquo;{MENSAJE_VERIFICACION}&rdquo;
-            </p>
-            <button type="button" className={styles.btnPrimary} disabled={enviando} onClick={solicitarVerificacion}>
-              {enviando ? 'Un momento...' : '💬 Abrir WhatsApp y enviarlo'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaso('telefono')}
-              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer' }}
-            >
-              ← Volver
-            </button>
-          </div>
-        ) : paso === 'sugerirCodigo' ? (
-          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
-            <span style={{ fontSize: '2rem' }}>🔑</span>
-            <p style={{ margin: 0 }}>
-              El número <strong>{telefono}</strong> ya tiene una cuenta. Si guardaste el código que te mandamos por WhatsApp la última vez, podés entrar directo con él.
-            </p>
-            <button
-              type="button"
-              className={styles.btnPrimary}
-              onClick={() => { setTelefonoCodigo(telefono); setPaso('codigo'); }}
-            >
-              🔓 Sí, tengo el código
-            </button>
-            <button type="button" className={styles.btnSecondary} disabled={enviando} onClick={solicitarVerificacion}>
-              {enviando ? 'Un momento...' : '📲 No lo tengo, verificar por WhatsApp'}
-            </button>
-          </div>
-        ) : paso === 'telefono' ? (
-          <form onSubmit={handleSolicitar} className={styles.formGroup}>
-            <label htmlFor="telefono">Tu número de teléfono</label>
-            <input
-              id="telefono"
-              type="tel"
-              className={styles.input}
-              placeholder="Ej: 9999-8888"
-              value={telefono}
-              onChange={e => setTelefono(e.target.value)}
-              required
-            />
-            <p className={styles.textMuted} style={{ fontSize: '0.78rem', margin: 0 }}>
-              Te vamos a pedir que confirmes por WhatsApp que es tuyo. Ahí mismo te entregamos tu parodia terminada.
-            </p>
-            <button type="submit" className={styles.btnPrimary} disabled={enviando} style={{ marginTop: '0.5rem' }}>
-              {enviando ? 'Un momento...' : '📲 Continuar'}
-            </button>
-            {error && <p className={styles.error}>{error}</p>}
-            <button
-              type="button"
-              onClick={() => { setPaso('codigo'); setErrorCodigo(''); }}
-              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer', marginTop: '0.25rem' }}
-            >
-              ¿Ya tenés un código de acceso? Ingresalo acá
-            </button>
-          </form>
-        ) : paso === 'codigo' ? (
-          <form onSubmit={handleVerificarCodigo} className={styles.formGroup}>
-            <label htmlFor="telefonoCodigo">Tu número de teléfono</label>
-            <input
-              id="telefonoCodigo"
-              type="tel"
-              className={styles.input}
-              placeholder="Ej: 9999-8888"
-              value={telefonoCodigo}
-              onChange={e => setTelefonoCodigo(e.target.value)}
-              required
-            />
-            <label htmlFor="codigo">Código de acceso</label>
-            <input
-              id="codigo"
-              type="text"
-              inputMode="numeric"
-              className={styles.input}
-              placeholder="123456"
-              value={codigo}
-              onChange={e => setCodigo(e.target.value)}
-              required
-            />
-            <p className={styles.textMuted} style={{ fontSize: '0.78rem', margin: 0 }}>
-              Es el código que te pasamos por WhatsApp cuando confirmamos tu número.
-            </p>
-            <button type="submit" className={styles.btnPrimary} disabled={enviandoCodigo} style={{ marginTop: '0.5rem' }}>
-              {enviandoCodigo ? 'Verificando...' : '🔓 Entrar'}
-            </button>
-            {errorCodigo && <p className={styles.error}>{errorCodigo}</p>}
-            <button
-              type="button"
-              onClick={() => { setPaso('telefono'); setErrorCodigo(''); }}
-              style={{ background: 'none', border: 'none', color: 'var(--cr-text-muted)', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer' }}
-            >
-              ← Volver
-            </button>
-          </form>
-        ) : (
-          <div className={styles.formGroup} style={{ alignItems: 'center', textAlign: 'center' }}>
-            {rechazada ? (
-              <>
-                <span style={{ fontSize: '2rem' }}>😕</span>
-                <p className={styles.error} style={{ textAlign: 'center' }}>
-                  No pudimos confirmar ese número. Revisá que le hayas escrito desde el WhatsApp de ese mismo teléfono.
-                </p>
-                <button type="button" className={styles.btnSecondary} onClick={cambiarNumero}>
-                  ← Intentar de nuevo
-                </button>
-              </>
-            ) : (
-              <>
-                <p style={{ margin: 0 }}>
-                  Ya te abrimos WhatsApp con un mensaje listo para confirmar que <strong>{telefono}</strong> es tu número — solo tenés que enviarlo.
-                </p>
-                <button type="button" className={styles.btnSecondary} onClick={abrirWhatsapp} style={{ textDecoration: 'none' }}>
-                  💬 ¿No se abrió? Tocá acá
-                </button>
-                <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>
-                  Apenas confirmemos que lo enviaste, esta pantalla arranca sola.
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cr-text-muted)', fontSize: '0.82rem' }}>
-                  <span className="spinner" style={{
-                    width: 14, height: 14, borderRadius: '50%',
-                    border: '2px solid var(--cr-border)', borderTopColor: 'var(--cr-gold)',
-                    display: 'inline-block', animation: 'spin 0.8s linear infinite',
-                  }} />
-                  Esperando confirmación...
-                </div>
-                <button type="button" className={styles.btnSecondary} onClick={revisarEstado} disabled={revisando}>
-                  {revisando ? 'Revisando...' : '🔄 Ya escribí, revisar ahora'}
-                </button>
-                <button type="button" className={styles.btnSecondary} onClick={cambiarNumero}>
-                  ← Cambiar número
-                </button>
-              </>
-            )}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className={styles.formGroup}>
+          <label htmlFor="telefono">Tu número de teléfono</label>
+          <input
+            id="telefono"
+            type="tel"
+            className={styles.input}
+            placeholder="Ej: 9999-8888"
+            value={telefono}
+            onChange={e => setTelefono(e.target.value)}
+            required
+          />
+          <button type="submit" className={styles.btnPrimary} disabled={enviando} style={{ marginTop: '0.5rem' }}>
+            {enviando ? 'Entrando...' : '🎤 Entrar'}
+          </button>
+          {error && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <p className={styles.error} style={{ margin: 0 }}>{error}</p>
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.btnSecondary}
+                  style={{ textDecoration: 'none' }}
+                >
+                  💬 Escribirnos por WhatsApp
+                </a>
+              )}
+            </div>
+          )}
+        </form>
       </div>
-      <style>{'@keyframes spin { to { transform: rotate(360deg) } }'}</style>
     </main>
   );
 }

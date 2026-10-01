@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { listarTodosTenants } from '@/lib/tenantService';
-import { obtenerCodigoVigente } from '@/lib/verificacionService';
 
 export async function GET() {
   const tenants = await listarTodosTenants();
-  const conCodigo = await Promise.all(
-    tenants.map(async t => ({ ...t, codigoAcceso: await obtenerCodigoVigente(t.telefono) }))
-  );
-  return NextResponse.json(conCodigo);
+  // No se manda sesionId tal cual al navegador (es un token interno) — el
+  // admin solo necesita saber si hay una sesión activa o no, para decidir
+  // si mostrar el botón de liberarla.
+  return NextResponse.json(tenants.map(({ sesionId, ...resto }) => ({ ...resto, sesionActiva: !!sesionId })));
 }

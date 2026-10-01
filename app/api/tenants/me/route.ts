@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { obtenerTenant } from '@/lib/tenantService';
+import { validarSesion } from '@/lib/tenantService';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -10,10 +10,11 @@ export async function GET() {
     return NextResponse.json({ error: 'No hay una sesión de tenant activa' }, { status: 401 });
   }
 
-  const tenant = await obtenerTenant(telefono);
+  const tenant = await validarSesion(telefono, cookieStore.get('tenant_session')?.value);
   if (!tenant) {
     return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 });
   }
 
-  return NextResponse.json(tenant);
+  const { sesionId: _sesionId, ...resto } = tenant;
+  return NextResponse.json(resto);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getStorageBucket } from '@/lib/firebaseService';
+import { validarSesion } from '@/lib/tenantService';
 import { listarMensajes, enviarMensaje, marcarLeido } from '@/lib/chatService';
 import { avisarNuevoMensajeAdmin } from '@/lib/pushService';
 
@@ -13,7 +14,7 @@ const MAX_IMAGEN_BYTES = 8 * 1024 * 1024;
 export async function GET() {
   const cookieStore = await cookies();
   const telefono = cookieStore.get('tenant_phone')?.value;
-  if (!telefono) {
+  if (!telefono || !(await validarSesion(telefono, cookieStore.get('tenant_session')?.value))) {
     return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
   }
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
     const telefono = cookieStore.get('tenant_phone')?.value;
-    if (!telefono) {
+    if (!telefono || !(await validarSesion(telefono, cookieStore.get('tenant_session')?.value))) {
       return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
     }
 

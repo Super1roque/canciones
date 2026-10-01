@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { validarSesion } from '@/lib/tenantService';
 import { crearPedido, listarPedidosPorTelefono } from '@/lib/pedidoService';
 import { avisarNuevoPedido } from '@/lib/emailService';
 
@@ -12,7 +13,7 @@ export async function GET() {
   const cookieStore = await cookies();
   const telefono = cookieStore.get('tenant_phone')?.value;
 
-  if (!telefono) {
+  if (!telefono || !(await validarSesion(telefono, cookieStore.get('tenant_session')?.value))) {
     return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
   }
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const telefono = cookieStore.get('tenant_phone')?.value;
 
-    if (!telefono) {
+    if (!telefono || !(await validarSesion(telefono, cookieStore.get('tenant_session')?.value))) {
       return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
     }
 

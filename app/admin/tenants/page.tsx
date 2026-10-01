@@ -8,7 +8,7 @@ type Tenant = {
   cancionesGratisLimite: number;
   saldo: number;
   ultimaParodia?: { cancion_base: string; fecha: string };
-  codigoAcceso: string | null;
+  sesionActiva: boolean;
   plan?: 'freemium' | 'premium';
 };
 
@@ -29,21 +29,30 @@ function urlEnviarMensaje(telefono: string): string {
   return `https://wa.me/${telefono}`;
 }
 
-// Sin +504 ni guion a propósito — el número tal cual lo tipearía la
-// persona en el formulario de "¿Ya tenés un código de acceso?", para que
-// lo reconozca de un vistazo sin tener que pensar en formato.
+// Sin +504 ni guion a propósito — el número tal cual lo reconocería la
+// persona de un vistazo, sin pensar en formato.
 function soloNumeroLocal(digits: string): string {
   return digits.startsWith('504') && digits.length === 11 ? digits.slice(3) : digits;
 }
 
-function urlAltaRapida(telefono: string, codigo: string): string {
-  // ?paso=codigo lleva directo al formulario de teléfono+código en vez de
-  // la landing normal, y telefono/codigo lo pre-llenan — para no mandarlo
-  // de nuevo a verificar por WhatsApp ni hacerlo escribir a mano datos que
-  // ya le dimos acá mismo.
+// Mismo criterio que normalizarTelefono/conCodigoPais en lib/tenantService
+// (no se importa ese archivo acá porque usa firebase-admin, que rompe el
+// bundle del navegador en un Client Component).
+function telefonoNormalizado(raw: string): string {
+  const limpio = raw.trim();
+  const conCodigo = limpio.startsWith('+') || limpio.replace(/\D/g, '').length > 8 ? limpio : '504' + limpio;
+  return conCodigo.replace(/\D/g, '');
+}
+
+// Ya no hace falta código ni aprobación — el link solo precarga el
+// teléfono en la landing, la persona toca "Entrar" ella misma y ya queda
+// adentro (ver /api/tenants/entrar). Sin auto-submit a propósito: si
+// WhatsApp previsualiza el link antes de que la persona lo toque, un
+// auto-submit le "gastaría" el login a esa previsualización.
+function urlInvitarDirecto(telefono: string): string {
   const numeroLocal = soloNumeroLocal(telefono);
-  const link = `https://corridos.online/?paso=codigo&telefono=${encodeURIComponent(numeroLocal)}&codigo=${encodeURIComponent(codigo)}`;
-  const mensaje = `Con gusto te presentamos la aplicación ${link} — Para ingresar vas a necesitar tu número de teléfono (${numeroLocal}) y tu código de acceso: ${codigo}\n\nImportante: tenés que entrar con este mismo número — si usás otro, no te va a funcionar.`;
+  const link = `https://corridos.online/?telefono=${encodeURIComponent(numeroLocal)}`;
+  const mensaje = `Con gusto te presentamos la aplicación ${link} — Para ingresar vas a necesitar tu número de teléfono (${numeroLocal}), nada más.`;
   return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
@@ -245,9 +254,6 @@ export default function AdminTenantsPage() {
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [telefonoAlta, setTelefonoAlta] = useState('');
-  const [creandoAlta, setCreandoAlta] = useState(false);
-  const [errorAlta, setErrorAlta] = useState('');
-  const [altaCreada, setAltaCreada] = useState<{ telefono: string; codigo: string } | null>(null);
   // 'asc' en esta columna = los más inactivos primero (fecha más vieja o
   // nunca usada) — es el orden que sirve para el caso real: ubicar rápido
   // a quién hay que reactivar.
@@ -264,34 +270,16 @@ export default function AdminTenantsPage() {
     cargarTenants().finally(() => setCargando(false));
   }, [cargarTenants]);
 
-  // Fast-track: dado el número que un prospecto ya escribió por WhatsApp
-  // (ej. desde el anuncio), crea la cuenta ya aprobada. El código llega
-  // recién de la respuesta del servidor — no se puede abrir WhatsApp
-  // automático en ese momento (ya no es un gesto directo del usuario, los
-  // navegadores lo bloquean como popup), así que se muestra un botón para
-  // que el admin lo abra con un click, mismo patrón que el resto de esta
-  // tabla (columna "Código de acceso").
-  async function altaRapida() {
-    if (!telefonoAlta.trim()) return;
-    setCreandoAlta(true);
-    setErrorAlta('');
-    setAltaCreada(null);
-    try {
-      const res = await fetch('/api/admin/alta-rapida', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: telefonoAlta.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErrorAlta(data.error || 'No se pudo crear la cuenta'); return; }
-      setAltaCreada({ telefono: data.telefono, codigo: data.codigo });
-      setTelefonoAlta('');
-      await cargarTenants();
-    } catch {
-      setErrorAlta('Error de conexión con el servidor');
-    } finally {
-      setCreandoAlta(false);
-    }
+  // Para cuando un tenant avisa (por soporte o WhatsApp) que quedó trabado
+  // afuera de su cuenta — libera el bloqueo de "ya hay una sesión abierta
+  // en otro lado" para que pueda volver a entrar con su número.
+  async function liberarSesionDe(telefono: string) {
+    await fetch('/api/admin/tenants/liberar-sesion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefono }),
+    });
+    await cargarTenants();
   }
 
   const filtrados = tenants
@@ -323,7 +311,7 @@ export default function AdminTenantsPage() {
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 0.5rem' }}>⚡ Alta rápida</h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.75rem' }}>
-            Para alguien que ya te escribió por WhatsApp (ej. desde el anuncio) — crea la cuenta ya aprobada y le abre WhatsApp con el código de acceso listo.
+            Para alguien que ya te escribió por WhatsApp (ej. desde el anuncio) — le arma un link directo a la app con su número precargado, listo para mandarle. Entra solo con tocar "Entrar", sin código.
           </p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <input
@@ -331,35 +319,22 @@ export default function AdminTenantsPage() {
               placeholder="Número de teléfono…"
               value={telefonoAlta}
               onChange={e => setTelefonoAlta(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') altaRapida(); }}
               className="input"
               style={{ flex: '1 1 200px', boxSizing: 'border-box' }}
             />
-            <button className="btn-primary" disabled={creandoAlta || !telefonoAlta.trim()} onClick={altaRapida}>
-              {creandoAlta ? '⏳ Creando...' : '⚡ Crear cuenta y enviar código'}
-            </button>
+            <a
+              href={telefonoAlta.trim() ? urlInvitarDirecto(telefonoNormalizado(telefonoAlta)) : undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{
+                textDecoration: 'none', whiteSpace: 'nowrap',
+                pointerEvents: telefonoAlta.trim() ? 'auto' : 'none', opacity: telefonoAlta.trim() ? 1 : 0.5,
+              }}
+            >
+              📲 Generar link y enviar por WhatsApp
+            </a>
           </div>
-          {errorAlta && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '0.5rem' }}>⚠️ {errorAlta}</p>}
-          {altaCreada && (
-            <div style={{
-              marginTop: '0.75rem', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--success)', background: 'rgba(78,201,160,0.08)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
-            }}>
-              <span style={{ fontSize: '0.85rem' }}>
-                ✅ Cuenta creada para <strong>{altaCreada.telefono}</strong> — código <strong>{altaCreada.codigo}</strong>
-              </span>
-              <a
-                href={urlAltaRapida(altaCreada.telefono, altaCreada.codigo)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-                style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
-              >
-                📲 Abrir WhatsApp y enviar
-              </a>
-            </div>
-          )}
         </section>
 
         <section className="panel" style={{ padding: '1.25rem' }}>
@@ -399,7 +374,7 @@ export default function AdminTenantsPage() {
                       {ordenActividad === 'asc' && ' ▲'}
                       {ordenActividad === 'desc' && ' ▼'}
                     </th>
-                    <th style={{ padding: '0.5rem 0.75rem' }}>Código de acceso</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>Sesión</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}></th>
                   </tr>
@@ -431,18 +406,21 @@ export default function AdminTenantsPage() {
                         ) : '—'}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
-                        {t.codigoAcceso ? (
-                          <a
-                            href={urlAltaRapida(t.telefono, t.codigoAcceso)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-secondary"
-                            style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', textDecoration: 'none' }}
-                          >
-                            📲 {t.codigoAcceso}
-                          </a>
+                        {t.sesionActiva ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span className="badge" style={{ background: 'rgba(78,201,160,0.14)', borderColor: 'var(--success)', color: 'var(--success)' }}>
+                              🟢 Activa
+                            </span>
+                            <button
+                              className="btn-icon-xs"
+                              title="Liberar sesión — para cuando el tenant avisa que quedó trabado afuera (perdió el celular, lo formateó, etc.)"
+                              onClick={() => liberarSesionDe(t.telefono)}
+                            >
+                              🔓
+                            </button>
+                          </div>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>vencido</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Libre</span>
                         )}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
