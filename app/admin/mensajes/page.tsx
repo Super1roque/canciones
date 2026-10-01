@@ -157,7 +157,7 @@ function PreviaConversacion({ c }: { c: Conversacion }) {
   return <>—</>;
 }
 
-function Hilo({ telefono, onLeido }: { telefono: string; onLeido: (telefono: string) => void }) {
+function Hilo({ telefono, onLeido, onVolver }: { telefono: string; onLeido: (telefono: string) => void; onVolver: () => void }) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [cargando, setCargando] = useState(true);
   const [texto, setTexto] = useState('');
@@ -214,8 +214,11 @@ function Hilo({ telefono, onLeido }: { telefono: string; onLeido: (telefono: str
   }
 
   return (
-    <section className="panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, minWidth: 0 }}>
-      <h2 style={{ margin: 0 }}>💬 {formatTelefono(telefono)}</h2>
+    <section className="panel msj-hilo" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <button type="button" className="btn-secondary msj-volver" style={{ padding: '0.4rem 0.7rem' }} onClick={onVolver}>← Volver</button>
+        <h2 style={{ margin: 0 }}>💬 {formatTelefono(telefono)}</h2>
+      </div>
 
       <div
         ref={listaRef}
@@ -335,8 +338,21 @@ export default function MensajesPage() {
         </div>
       </header>
 
-      <main className="main" style={{ display: 'flex', gap: '1.25rem', maxWidth: 1100, margin: '0 auto', padding: '1.5rem', alignItems: 'flex-start' }}>
-        <section className="panel" style={{ padding: '1.25rem', width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Media query acá (no en globals.css) porque solo esta página tiene
+          el layout de dos columnas lado a lado — en celular se apilaba
+          todo en una franja angosta en vez de mostrar una cosa a la vez. */}
+      <style>{`
+        .msj-volver { display: none; }
+        @media (max-width: 760px) {
+          .msj-main { flex-direction: column !important; padding: 1rem !important; }
+          .msj-lista { width: 100% !important; }
+          .msj-lista[data-oculto="true"], .msj-hilo[data-oculto="true"] { display: none !important; }
+          .msj-volver { display: inline-flex !important; }
+        }
+      `}</style>
+
+      <main className="main msj-main" style={{ display: 'flex', gap: '1.25rem', maxWidth: 1100, margin: '0 auto', padding: '1.5rem', alignItems: 'flex-start' }}>
+        <section className="panel msj-lista" data-oculto={!!seleccionado} style={{ padding: '1.25rem', width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             Conversaciones
             {!cargando && totalNoLeidos > 0 && <span className="badge">{totalNoLeidos}</span>}
@@ -390,9 +406,9 @@ export default function MensajesPage() {
         </section>
 
         {seleccionado ? (
-          <Hilo key={seleccionado} telefono={seleccionado} onLeido={marcarLeidoLocal} />
+          <Hilo key={seleccionado} telefono={seleccionado} onLeido={marcarLeidoLocal} onVolver={() => setSeleccionado(null)} />
         ) : (
-          <section className="panel" style={{ padding: '1.25rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', minHeight: 320 }}>
+          <section className="panel msj-hilo" data-oculto={!seleccionado} style={{ padding: '1.25rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', minHeight: 320 }}>
             Elegí una conversación para ver los mensajes.
           </section>
         )}
