@@ -54,7 +54,10 @@ export async function avisarNuevoMensajeAdmin(telefono: string, texto?: string):
 
   await Promise.all(snap.docs.map(async (doc) => {
     try {
-      await webpush.sendNotification(doc.data().subscription, payload);
+      // urgency:'high' le pide a FCM que lo trate como prioritario — en
+      // Android, eso lo hace más probable que despierte a Chrome aunque el
+      // sistema esté en modo ahorro de batería con la pantalla apagada.
+      await webpush.sendNotification(doc.data().subscription, payload, { urgency: 'high' });
     } catch (error: unknown) {
       // 410/404 = suscripción vencida (el navegador la invalidó, ej. se
       // desinstaló la PWA) — se borra para no seguir intentando para
