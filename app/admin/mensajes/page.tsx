@@ -33,6 +33,19 @@ function formatTelefono(digits: string) {
   return digits;
 }
 
+// Mismo criterio que normalizarTelefono/conCodigoPais en lib/tenantService
+// (no se importa ese archivo acá porque usa firebase-admin, que rompe el
+// bundle del navegador en un Client Component) — así "9999-8888" y
+// "+504 9999 8888" abren el mismo chat que ya tenga ese tenant en vez de
+// uno nuevo con otro formato.
+function telefonoNormalizado(raw: string): string {
+  const limpio = raw.trim();
+  const conCodigo = limpio.startsWith('+') || limpio.replace(/\D/g, '').length > 8
+    ? limpio
+    : '504' + limpio;
+  return conCodigo.replace(/\D/g, '');
+}
+
 function PreviaConversacion({ c }: { c: Conversacion }) {
   if (c.ultimoTexto) return <>{c.ultimoAutor === 'admin' ? 'Vos: ' : ''}{c.ultimoTexto}</>;
   if (c.ultimaImagen) return <>{c.ultimoAutor === 'admin' ? 'Vos: ' : ''}📷 Foto</>;
@@ -172,6 +185,20 @@ export default function MensajesPage() {
   const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const [telefonoNuevo, setTelefonoNuevo] = useState('');
+
+  // Abre el hilo aunque todavía no exista ninguna conversación con ese
+  // número — no hace falta "crear" nada acá, el primer mensaje que se
+  // mande crea el documento en conversaciones solo (ver enviarMensaje en
+  // lib/chatService.ts). Sirve tanto para arrancarle una conversación a un
+  // tenant que nunca escribió, como para abrir uno que sí tiene historial
+  // sin tener que buscarlo en la lista.
+  function abrirChat() {
+    const telefono = telefonoNormalizado(telefonoNuevo);
+    if (telefono.length < 8) return;
+    setSeleccionado(telefono);
+    setTelefonoNuevo('');
+  }
 
   const cargar = useCallback(() => {
     return fetch('/api/admin/chat')
@@ -209,6 +236,21 @@ export default function MensajesPage() {
             Conversaciones
             {!cargando && totalNoLeidos > 0 && <span className="badge">{totalNoLeidos}</span>}
           </h2>
+
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <input
+              type="tel"
+              placeholder="Número de teléfono…"
+              value={telefonoNuevo}
+              onChange={e => setTelefonoNuevo(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') abrirChat(); }}
+              className="input"
+              style={{ flex: 1, minWidth: 0 }}
+            />
+            <button className="btn-secondary" disabled={!telefonoNuevo.trim()} onClick={abrirChat}>
+              Abrir
+            </button>
+          </div>
 
           {cargando ? (
             <p className="loading-msg">Cargando…</p>
