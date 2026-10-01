@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getStorageBucket } from '@/lib/firebaseService';
 import { listarMensajes, enviarMensaje, marcarLeido } from '@/lib/chatService';
+import { avisarNuevoMensajeAdmin } from '@/lib/pushService';
 
 export const runtime = 'nodejs';
 
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     }
 
     const mensaje = await enviarMensaje(telefono, 'tenant', { texto: texto || undefined, imagenPath, imagenContentType });
+    void avisarNuevoMensajeAdmin(telefono, texto || undefined);
     return NextResponse.json(mensaje, { status: 201 });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

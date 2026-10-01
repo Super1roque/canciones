@@ -15,6 +15,45 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Notificación de "tenant te escribió" — funciona aunque la app esté
+// cerrada del todo, no solo en segundo plano, porque el navegador despierta
+// el Service Worker nada más para esto. Sin `silent`, el navegador/sistema
+// operativo reproduce su sonido de notificación por defecto (igual que
+// hace WhatsApp Web), sin necesidad de un archivo de audio propio.
+self.addEventListener('push', (event) => {
+  let datos = {};
+  try { datos = event.data ? event.data.json() : {}; } catch { /* payload no era JSON */ }
+
+  const titulo = datos.titulo || 'Canciones';
+  event.waitUntil(
+    self.registration.showNotification(titulo, {
+      body: datos.cuerpo || '',
+      icon: '/pwa-icon-192',
+      badge: '/pwa-icon-192',
+      vibrate: [200, 100, 200],
+      data: { url: datos.url || '/admin/mensajes' },
+      tag: 'chat-admin', // agrupa avisos seguidos en una sola notificación en vez de apilarlos
+    }),
+  );
+});
+
+// Si ya hay una pestaña de la app abierta, la enfoca en vez de abrir una
+// nueva — el mismo criterio que usaría cualquier app de mensajería.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/admin/mensajes';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
+      const existente = lista.find((c) => new URL(c.url).origin === self.location.origin);
+      if (existente) {
+        existente.navigate(url);
+        return existente.focus();
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
