@@ -49,9 +49,15 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
 };
 
+// dir="ltr" explícito en el <html> de abajo — sin esto, algunos Android
+// (con "Forzar dirección RTL" activado en Opciones de desarrollador, o con
+// el idioma del sistema en árabe/hebreo) renderizan toda la página de
+// derecha a izquierda: el texto tipeado queda alineado al revés y el orden
+// visual de los flex (como el campo de chat + sus botones) queda espejado.
+// La app es en español, siempre LTR, sin excepción.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" dir="ltr">
       <body>
         {children}
         <RegisterServiceWorker />
