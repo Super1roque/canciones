@@ -17,7 +17,6 @@ export default function ChatTenant() {
   const listaRef = useRef<HTMLDivElement>(null);
 
   const cargar = useCallback(async () => {
-    if (document.visibilityState !== 'visible') return;
     try {
       const res = await fetch('/api/chat/mensajes');
       if (res.ok) setMensajes(await res.json());
@@ -30,14 +29,22 @@ export default function ChatTenant() {
 
   // Mismo patrón de polling que el resto del dashboard (ver
   // DashboardClient): cada 15s y al volver a la pestaña, para que un
-  // mensaje del admin aparezca sin recargar la página.
+  // mensaje del admin aparezca sin recargar la página. A diferencia de
+  // DashboardClient, acá no hay datos iniciales del servidor — si la
+  // carga de montaje también se saltara por estar oculta (ej. la pestaña
+  // se abrió en segundo plano), el panel quedaría en "Cargando…" para
+  // siempre, así que esa primera llamada corre siempre, sin chequear
+  // visibilidad; el chequeo solo aplica al polling recurrente.
   useEffect(() => {
     cargar();
-    const intervalo = setInterval(cargar, 15000);
-    document.addEventListener('visibilitychange', cargar);
+    function actualizarSiVisible() {
+      if (document.visibilityState === 'visible') cargar();
+    }
+    const intervalo = setInterval(actualizarSiVisible, 15000);
+    document.addEventListener('visibilitychange', actualizarSiVisible);
     return () => {
       clearInterval(intervalo);
-      document.removeEventListener('visibilitychange', cargar);
+      document.removeEventListener('visibilitychange', actualizarSiVisible);
     };
   }, [cargar]);
 
@@ -68,7 +75,7 @@ export default function ChatTenant() {
   }
 
   return (
-    <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <div id="soporte" className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', scrollMarginTop: '1rem' }}>
       <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>💬 Soporte</h2>
       <p className={styles.textMuted} style={{ fontSize: '0.82rem', margin: 0 }}>
         Escribinos tu consulta o mandá una foto (por ejemplo, el comprobante de un depósito).
@@ -77,14 +84,16 @@ export default function ChatTenant() {
       <div
         ref={listaRef}
         style={{
-          display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: 320, overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 140, maxHeight: 320, overflowY: 'auto',
           background: 'var(--cr-surface-2)', border: '2px solid var(--cr-border)', borderRadius: 10, padding: '0.75rem',
         }}
       >
         {!cargado ? (
           <p className={styles.textMuted} style={{ margin: 0, fontSize: '0.82rem' }}>Cargando…</p>
         ) : mensajes.length === 0 ? (
-          <p className={styles.textMuted} style={{ margin: 0, fontSize: '0.82rem' }}>Todavía no escribiste nada por acá.</p>
+          <p className={styles.textMuted} style={{ margin: 'auto', fontSize: '0.85rem', textAlign: 'center' }}>
+            💬 Acá vas a ver la conversación.<br />Escribí tu primer mensaje abajo.
+          </p>
         ) : (
           mensajes.map(m => (
             <div key={m.id} style={{ display: 'flex', justifyContent: m.autor === 'tenant' ? 'flex-end' : 'flex-start' }}>
@@ -128,6 +137,11 @@ export default function ChatTenant() {
           onKeyDown={e => { if (e.key === 'Enter' && !enviando) enviar(); }}
           placeholder="Escribí tu mensaje…"
           className={styles.input}
+          // El flex-basis que pone .input (width: 100%) desborda la fila
+          // flex en pantallas angostas y el botón de enviar quedaba
+          // recortado por el overflow:hidden del .panel — minWidth:0 deja
+          // que este campo se achique en vez de forzar el desborde.
+          style={{ flex: '1 1 auto', minWidth: 0, width: 'auto' }}
           disabled={enviando}
         />
         <input
@@ -154,7 +168,7 @@ export default function ChatTenant() {
           disabled={enviando || (!texto.trim() && !archivo)}
           onClick={enviar}
         >
-          {enviando ? '...' : '➤'}
+          {enviando ? '...' : '📤'}
         </button>
       </div>
     </div>

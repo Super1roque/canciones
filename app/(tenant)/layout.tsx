@@ -17,15 +17,26 @@ export default async function TenantLayout({ children }: { children: React.React
       <header className={styles.header}>
         <span className={styles.logo}>🎸 Canciones</span>
         {registrado && (
-          <a
-            href="/dashboard"
-            style={{
-              color: 'var(--cr-gold)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
-              whiteSpace: 'nowrap', flexShrink: 0,
-            }}
-          >
-            💳 Mi cuenta
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <a
+              href="/dashboard#soporte"
+              style={{
+                color: 'var(--cr-text)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              💬 Soporte
+            </a>
+            <a
+              href="/dashboard"
+              style={{
+                color: 'var(--cr-gold)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              💳 Mi cuenta
+            </a>
+          </div>
         )}
       </header>
       {children}
