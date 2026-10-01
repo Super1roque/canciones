@@ -107,10 +107,17 @@ export async function obtenerNoLeidos(telefono: string, lado: Autor): Promise<nu
   return (doc.data()?.[campo] as number) ?? 0;
 }
 
+// update() (no set con merge) a propósito: cualquier tenant que visite su
+// dashboard llama a esto aunque todavía no tenga ningún mensaje — con
+// set+merge eso creaba un documento de "conversación" a medias (sin
+// telefono, sin fecha, nada más que el contador en 0), que después rompía
+// el admin al intentar mostrarlo en la lista. update() en un documento que
+// no existe tira NOT_FOUND, y acá no hay nada que marcar igual, así que se
+// ignora sin problema.
 export async function marcarLeido(telefono: string, lado: Autor): Promise<void> {
   const db = getDb();
   const campo = lado === 'admin' ? 'noLeidosAdmin' : 'noLeidosTenant';
-  await db.collection(CONVERSACIONES).doc(telefono).set({ [campo]: 0 }, { merge: true });
+  await db.collection(CONVERSACIONES).doc(telefono).update({ [campo]: 0 }).catch(() => {});
 }
 
 // Para la bandeja de /admin/mensajes — una fila por tenant que alguna vez

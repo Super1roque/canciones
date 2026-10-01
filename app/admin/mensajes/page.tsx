@@ -28,7 +28,10 @@ function formatFecha(iso: string) {
 
 // Mismo criterio de formato que /admin/tenants — sin +504 ni guion, tal
 // cual lo reconocería el admin de un vistazo.
-function formatTelefono(digits: string) {
+// Nunca debería faltar, pero un registro corrupto en "conversaciones" no
+// puede tumbar toda la lista — mejor una fila rara que una página en blanco.
+function formatTelefono(digits: string | undefined) {
+  if (!digits) return '(sin número)';
   if (digits.startsWith('504') && digits.length === 11) return digits.slice(3);
   return digits;
 }
