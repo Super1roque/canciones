@@ -215,10 +215,7 @@ function Hilo({ telefono, onLeido, onVolver }: { telefono: string; onLeido: (tel
 
   return (
     <section className="panel msj-hilo" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-        <button type="button" className="btn-secondary msj-volver" style={{ padding: '0.4rem 0.7rem' }} onClick={onVolver}>← Volver</button>
-        <h2 style={{ margin: 0 }}>💬 {formatTelefono(telefono)}</h2>
-      </div>
+      <h2 style={{ margin: 0 }}>💬 {formatTelefono(telefono)}</h2>
 
       <div
         ref={listaRef}
@@ -278,6 +275,9 @@ function Hilo({ telefono, onLeido, onVolver }: { telefono: string; onLeido: (tel
       />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={e => setArchivo(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
       <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button type="button" className="btn-secondary msj-volver" style={{ flex: 1, minWidth: 0 }} onClick={onVolver}>
+          ← Volver
+        </button>
         <button type="button" className="btn-secondary" style={{ flex: 1, minWidth: 0 }} disabled={enviando} onClick={() => fileInputRef.current?.click()}>
           Foto
         </button>
