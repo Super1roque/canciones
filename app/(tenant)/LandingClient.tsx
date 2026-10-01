@@ -35,10 +35,17 @@ export default function LandingClient() {
         return;
       }
       trackMetaPixel('CompleteRegistration');
+      // A /dashboard, no a /crear-parodia directo — dashboard/page.tsx ya
+      // decide solo si corresponde mandarlo a crear su primera canción
+      // (usaGratis) o mostrarle su cuenta (saldo, pedir otra canción) si
+      // ya es cliente con historial. Antes esto siempre caía en
+      // crear-parodia, así que alguien con saldo cargado entraba directo
+      // al formulario en vez de ver su cuenta primero.
+      //
       // Recarga real de página (no router.push) — la cookie recién se
       // guardó y una navegación client-side puede ganarle a que quede
       // asentada en el navegador integrado de WhatsApp.
-      window.location.href = '/crear-parodia';
+      window.location.href = '/dashboard';
     } catch {
       setError('Error de conexión con el servidor');
     } finally {

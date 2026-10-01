@@ -22,11 +22,10 @@ function diasDesde(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
 }
 
-// Sin texto prellenado a propósito — este es para cualquier otro tipo de
-// mensaje (avisos, soporte, promos), no el código de acceso, así que se
-// abre la conversación en blanco y el admin escribe lo que corresponda.
+// Para cualquier mensaje directo al tenant (avisos, soporte, promos) — ya
+// no por WhatsApp, abre esa conversación del chat interno directamente.
 function urlEnviarMensaje(telefono: string): string {
-  return `https://wa.me/${telefono}`;
+  return `/admin/mensajes?telefono=${encodeURIComponent(telefono)}`;
 }
 
 // Sin +504 ni guion a propósito — el número tal cual lo reconocería la
@@ -426,8 +425,6 @@ export default function AdminTenantsPage() {
                       <td style={{ padding: '0.6rem 0.75rem' }}>
                         <a
                           href={urlEnviarMensaje(t.telefono)}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="btn-secondary"
                           style={{ fontSize: '0.78rem', whiteSpace: 'nowrap', textDecoration: 'none' }}
                         >

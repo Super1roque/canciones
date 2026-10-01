@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { conLinksClickeables } from '@/lib/linkify';
 
 type EstadoPush = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo';
@@ -290,9 +291,12 @@ function Hilo({ telefono, onLeido, onVolver }: { telefono: string; onLeido: (tel
 }
 
 export default function MensajesPage() {
+  // Llega desde el botón "💬 Mensaje" de /admin/tenants (?telefono=X) —
+  // abre esa conversación directo, sin tener que buscarla en la lista.
+  const searchParams = useSearchParams();
   const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const [seleccionado, setSeleccionado] = useState<string | null>(() => searchParams.get('telefono'));
   const [telefonoNuevo, setTelefonoNuevo] = useState('');
 
   // Abre el hilo aunque todavía no exista ninguna conversación con ese

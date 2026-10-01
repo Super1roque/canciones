@@ -4,7 +4,7 @@ import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
 import { trackMetaPixel } from '@/lib/metaPixel';
-import ChatTenant from './ChatTenant';
+import ChatTenant, { type ChatTenantHandle } from './ChatTenant';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [300, 500, 1000] as const;
@@ -35,13 +35,7 @@ const DATOS_PAGO = {
   cuenta: '14720926485',
   titular: 'Armando Roque Godoy',
   cedula: '0801-1963-05344',
-  whatsapp: '50496895978',
 };
-
-function urlWhatsApp(monto: number, telefono: string) {
-  const mensaje = `Hola, ya transferí L ${monto} para recargar mi saldo en Canciones (mi número: ${telefono}).`;
-  return `https://wa.me/${DATOS_PAGO.whatsapp}?text=${encodeURIComponent(mensaje)}`;
-}
 
 // Mismo patrón que RickyMath: Web Share API si el navegador la soporta
 // (la mayoría de móviles), y si no, directo a WhatsApp con la URL pegada
@@ -131,6 +125,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   const [pedidos, setPedidos] = useState(pedidosIniciales);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [montoAConfirmar, setMontoAConfirmar] = useState<number | null>(null);
+  const [enviandoAviso, setEnviandoAviso] = useState(false);
 
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
 
@@ -142,6 +137,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   // con el que se cargó la página, así que no duplica el aviso entre
   // visitas ni sesiones distintas.
   const saldoAnteriorRef = useRef(tenantInicial.saldo ?? 0);
+  const chatRef = useRef<ChatTenantHandle>(null);
 
   // Trae saldo y pedidos actualizados en segundo plano — así si el admin
   // aprueba una recarga o marca un pedido como entregado, se refleja acá
@@ -191,18 +187,35 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     setMontoAConfirmar(null);
   }
 
-  // Solo abre WhatsApp — no queda nada guardado en el sistema. El
-  // comprobante que llega por ese chat es la única confirmación real; el
-  // admin acredita el saldo a mano desde /admin/tenants recién después de
-  // verlo (antes esto creaba una "recarga pendiente" en Firestore, pero
-  // hubo casos de gente que avisaba sin haber pagado, dejando la cola
-  // llena de solicitudes falsas que nadie iba a resolver).
-  function alAvisarWhatsApp() {
+  // Manda el aviso directo al chat de soporte — ya no por WhatsApp. No
+  // queda nada más guardado en el sistema (no crea una "recarga
+  // pendiente" en Firestore): el comprobante que mande por el chat es la
+  // única confirmación real, y el admin acredita el saldo a mano desde
+  // /admin/tenants recién después de verlo (antes esto SÍ creaba una
+  // recarga pendiente, pero hubo casos de gente que avisaba sin haber
+  // pagado, dejando la cola llena de solicitudes falsas que nadie iba a
+  // resolver).
+  async function alAvisarTransferencia() {
     if (!recargaPendiente) return;
     const monto = recargaPendiente;
-    window.open(urlWhatsApp(monto, tenant.telefono), '_blank', 'noopener,noreferrer');
+    setEnviandoAviso(true);
+    try {
+      const formData = new FormData();
+      formData.append('texto', `Ya transferí L ${monto} para recargar mi saldo. Les mando el comprobante acá abajo 👇`);
+      await fetch('/api/chat/mensajes', { method: 'POST', body: formData });
+    } catch {
+      // Silencioso — igual la bajamos al chat para que mande la foto ahí,
+      // y ese mismo envío reintenta si este aviso de texto no llegó.
+    } finally {
+      setEnviandoAviso(false);
+    }
     setRecargaPendiente(null);
     trackMetaPixel('InitiateCheckout', { value: monto, currency: 'HNL' });
+    // El aviso de texto ya se mandó solo — la foto del comprobante la
+    // tiene que adjuntar ella misma, así que la llevamos directo al panel
+    // de Soporte en vez de dejarla buscarlo en la página.
+    document.getElementById('soporte')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    chatRef.current?.recargar();
   }
 
   return (
@@ -254,8 +267,8 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
             <div className={styles.formGroup}>
               <p style={{ margin: 0 }}>Transferí a esta cuenta:</p>
               <DatosDeposito monto={recargaPendiente} />
-              <button type="button" className={styles.btnPrimary} onClick={alAvisarWhatsApp}>
-                💬 Avisar por WhatsApp que ya transferí
+              <button type="button" className={styles.btnPrimary} disabled={enviandoAviso} onClick={alAvisarTransferencia}>
+                {enviandoAviso ? 'Avisando...' : '💬 Avisar que ya transferí'}
               </button>
             </div>
           ) : (
@@ -324,7 +337,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
           )}
         </div>
 
-        <ChatTenant />
+        <ChatTenant ref={chatRef} />
 
         <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
           <button
@@ -352,7 +365,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
               Vas a recargar L {montoAConfirmar}
             </h3>
             <p style={{ margin: '0 0 1.25rem', lineHeight: 1.6 }}>
-              A continuación vas a ver los datos para hacer el depósito. Una vez que transfieras, avisale al administrador por WhatsApp — ahí es cuando se registra tu pedido. Vas a tener que <strong>comprobarlo con el voucher de la transferencia</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
+              A continuación vas a ver los datos para hacer el depósito. Una vez que transfieras, avisanos acá mismo — ahí es cuando se registra tu pedido. Vas a tener que <strong>mandarnos el voucher de la transferencia por el chat de soporte</strong> — si el comprobante nunca llega, se va a tomar como <strong style={{ color: 'var(--cr-error)' }}>mal uso del sistema</strong>.
             </p>
             <div style={{ marginBottom: '1.25rem' }}>
               <DatosDeposito monto={montoAConfirmar} />

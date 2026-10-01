@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import styles from '../tenant.module.css';
 import type { Mensaje } from '@/lib/chatService';
 import { conLinksClickeables } from '@/lib/linkify';
@@ -8,7 +8,14 @@ function formatHora(iso: string) {
   return new Date(iso).toLocaleString('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatTenant() {
+export type ChatTenantHandle = { recargar: () => void };
+
+// forwardRef para que DashboardClient pueda forzar una recarga inmediata
+// después de mandar un mensaje por fuera de este componente (ej. el aviso
+// de "ya transferí" de la recarga) — si no, ese mensaje recién aparecería
+// acá en el próximo ciclo de polling (hasta 15s), dando la sensación de
+// que no se mandó.
+const ChatTenant = forwardRef<ChatTenantHandle>(function ChatTenant(_props, ref) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [texto, setTexto] = useState('');
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -52,6 +59,8 @@ export default function ChatTenant() {
   useEffect(() => {
     listaRef.current?.scrollTo({ top: listaRef.current.scrollHeight });
   }, [mensajes]);
+
+  useImperativeHandle(ref, () => ({ recargar: cargar }), [cargar]);
 
   async function enviar() {
     const textoLimpio = texto.trim();
@@ -176,4 +185,6 @@ export default function ChatTenant() {
       </div>
     </div>
   );
-}
+});
+
+export default ChatTenant;
