@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from '../tenant.module.css';
 import type { Mensaje } from '@/lib/chatService';
+import { conLinksClickeables } from '@/lib/linkify';
 
 function formatHora(iso: string) {
   return new Date(iso).toLocaleString('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -112,7 +113,7 @@ export default function ChatTenant() {
                     />
                   </a>
                 )}
-                {m.texto && <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.texto}</div>}
+                {m.texto && <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{conLinksClickeables(m.texto)}</div>}
                 <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '0.2rem', textAlign: 'right' }}>{formatHora(m.fecha)}</div>
               </div>
             </div>

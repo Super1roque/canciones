@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { conLinksClickeables } from '@/lib/linkify';
 
 type Autor = 'tenant' | 'admin';
 
@@ -144,7 +145,7 @@ function Hilo({ telefono, onLeido }: { telefono: string; onLeido: (telefono: str
                     />
                   </a>
                 )}
-                {m.texto && <div style={{ fontSize: '0.88rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.texto}</div>}
+                {m.texto && <div style={{ fontSize: '0.88rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{conLinksClickeables(m.texto)}</div>}
                 <div style={{ fontSize: '0.68rem', opacity: 0.75, marginTop: '0.2rem', textAlign: 'right' }}>{formatFecha(m.fecha)}</div>
               </div>
             </div>
