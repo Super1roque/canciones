@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { Rye } from 'next/font/google';
 import styles from './tenant.module.css';
+import SoporteLink from './SoporteLink';
 
 // Fuente festiva tipo cartel para los títulos del tema "corridos" — el
 // resto del texto usa la fuente del sistema (Inter, ya cargada en
@@ -18,15 +19,7 @@ export default async function TenantLayout({ children }: { children: React.React
         <span className={styles.logo}>🎸 Canciones</span>
         {registrado && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <a
-              href="/dashboard#soporte"
-              style={{
-                color: 'var(--cr-text)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              💬 Soporte
-            </a>
+            <SoporteLink />
             <a
               href="/dashboard"
               style={{

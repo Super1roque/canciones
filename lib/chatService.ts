@@ -95,6 +95,18 @@ export async function enviarMensaje(
   return { id: ref.id, ...mensaje };
 }
 
+// Para la señal de "mensajes pendientes" junto a "Soporte"/"Mensajes" en
+// los menús — a diferencia de listarMensajes, esto NO marca nada como
+// leído, así el contador se mantiene hasta que la persona realmente entra
+// a ver la conversación.
+export async function obtenerNoLeidos(telefono: string, lado: Autor): Promise<number> {
+  const db = getDb();
+  const doc = await db.collection(CONVERSACIONES).doc(telefono).get();
+  if (!doc.exists) return 0;
+  const campo = lado === 'admin' ? 'noLeidosAdmin' : 'noLeidosTenant';
+  return (doc.data()?.[campo] as number) ?? 0;
+}
+
 export async function marcarLeido(telefono: string, lado: Autor): Promise<void> {
   const db = getDb();
   const campo = lado === 'admin' ? 'noLeidosAdmin' : 'noLeidosTenant';

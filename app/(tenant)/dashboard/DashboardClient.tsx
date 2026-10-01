@@ -335,7 +335,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
               color: '#fdf3e0', border: 'none', boxShadow: '0 4px 0 #0f5c32',
             }}
           >
-            📤 Compartir Canciones
+            📤 Compartir esta Aplicación
           </button>
         </div>
 

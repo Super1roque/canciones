@@ -811,6 +811,29 @@ export default function Home() {
   const [modalLetra, setModalLetra] = useState<Cancion | null>(null);
   const [modalCancion, setModalCancion] = useState<{ open: boolean; cancion?: Cancion }>({ open: false });
   const [modalCreacion, setModalCreacion] = useState<Creacion | null>(null);
+  const [mensajesNoLeidos, setMensajesNoLeidos] = useState(0);
+
+  // Señal de "hay consultas de tenants sin responder" junto al link de
+  // Mensajes del nav — mismo polling de 15s que el resto de la app, para
+  // enterarse sin tener que entrar a /admin/mensajes a cada rato.
+  useEffect(() => {
+    let cancelado = false;
+    async function cargarNoLeidos() {
+      try {
+        const res = await fetch('/api/admin/chat');
+        if (cancelado || !res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setMensajesNoLeidos(data.reduce((acc: number, c: { noLeidosAdmin?: number }) => acc + (c.noLeidosAdmin || 0), 0));
+        }
+      } catch {
+        // Silencioso — se reintenta en el próximo ciclo.
+      }
+    }
+    cargarNoLeidos();
+    const intervalo = setInterval(cargarNoLeidos, 15000);
+    return () => { cancelado = true; clearInterval(intervalo); };
+  }, []);
 
   const showToast = useCallback((msg: string, type: 'success' | 'error' | '' = '') => {
     setToast({ msg, type });
@@ -856,7 +879,17 @@ export default function Home() {
             ))}
             <a href="/admin/pedidos" className="nav-btn">📦 Pedidos</a>
             <a href="/admin/tenants" className="nav-btn">👥 Tenants</a>
-            <a href="/admin/mensajes" className="nav-btn">💬 Mensajes</a>
+            <a href="/admin/mensajes" className="nav-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              💬 Mensajes
+              {mensajesNoLeidos > 0 && (
+                <span style={{
+                  background: 'var(--error)', color: '#fff', fontSize: '0.68rem', fontWeight: 800,
+                  borderRadius: 999, padding: '0.05rem 0.42rem', minWidth: '1.1rem', textAlign: 'center', lineHeight: 1.4,
+                }}>
+                  {mensajesNoLeidos}
+                </span>
+              )}
+            </a>
             <a href="/admin/reactivar" className="nav-btn">🎯 Reactivar</a>
             <a href="/admin/karaoke" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke</a>
             <a href="/admin/karaoke2" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎤 Karaoke 2</a>
