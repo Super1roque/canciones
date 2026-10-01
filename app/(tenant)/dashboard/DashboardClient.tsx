@@ -4,6 +4,7 @@ import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
 import { trackMetaPixel } from '@/lib/metaPixel';
+import ChatTenant from './ChatTenant';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [300, 500, 1000] as const;
@@ -322,6 +323,8 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
             </div>
           )}
         </div>
+
+        <ChatTenant />
 
         <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
           <button
