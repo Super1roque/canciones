@@ -145,22 +145,22 @@ function Hilo({ telefono, onLeido }: { telefono: string; onLeido: (telefono: str
         </div>
       )}
 
+      <input
+        type="text"
+        value={texto}
+        onChange={e => setTexto(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' && !enviando) enviar(); }}
+        placeholder="Escribí una respuesta…"
+        className="input"
+        style={{ width: '100%', boxSizing: 'border-box' }}
+        disabled={enviando}
+      />
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={e => setArchivo(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
       <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <input
-          type="text"
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !enviando) enviar(); }}
-          placeholder="Escribí una respuesta…"
-          className="input"
-          style={{ flex: 1 }}
-          disabled={enviando}
-        />
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={e => setArchivo(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
-        <button type="button" className="btn-secondary" style={{ whiteSpace: 'nowrap' }} disabled={enviando} onClick={() => fileInputRef.current?.click()} title="Adjuntar foto">
+        <button type="button" className="btn-secondary" style={{ flex: 1, minWidth: 0 }} disabled={enviando} onClick={() => fileInputRef.current?.click()}>
           Foto
         </button>
-        <button type="button" className="btn-primary" disabled={enviando || (!texto.trim() && !archivo)} onClick={enviar}>
+        <button type="button" className="btn-primary" style={{ flex: 1, minWidth: 0 }} disabled={enviando || (!texto.trim() && !archivo)} onClick={enviar}>
           {enviando ? '...' : 'Enviar'}
         </button>
       </div>

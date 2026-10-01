@@ -129,42 +129,44 @@ export default function ChatTenant() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-        <input
-          type="text"
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !enviando) enviar(); }}
-          placeholder="Escribí tu mensaje…"
-          className={styles.input}
-          // El flex-basis que pone .input (width: 100%) desborda la fila
-          // flex en pantallas angostas y el botón de enviar quedaba
-          // recortado por el overflow:hidden del .panel — minWidth:0 deja
-          // que este campo se achique en vez de forzar el desborde.
-          style={{ flex: '1 1 auto', minWidth: 0, width: 'auto' }}
-          disabled={enviando}
-        />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={e => setArchivo(e.target.files?.[0] ?? null)}
-          style={{ display: 'none' }}
-        />
+      {/* Campo de texto en su propia fila (ancho completo, sin competir con
+          nada) y los botones debajo repartiendo el ancho a la mitad cada
+          uno (flex:1 con flex-basis 0 en vez de ancho fijo + texto) — así
+          nunca se pueden desbordar ni recortar entre sí, ni siquiera si el
+          tamaño de letra del sistema del celular viene más grande de lo
+          normal (eso fue justo lo que pasó: con 3 elementos peleando el
+          mismo renglón, el texto más grande de los botones le comía todo
+          el espacio al campo de escritura). */}
+      <input
+        type="text"
+        value={texto}
+        onChange={e => setTexto(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' && !enviando) enviar(); }}
+        placeholder="Escribí tu mensaje…"
+        className={styles.input}
+        disabled={enviando}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={e => setArchivo(e.target.files?.[0] ?? null)}
+        style={{ display: 'none' }}
+      />
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
         <button
           type="button"
           className={styles.btnSecondary}
-          style={{ padding: '0.85rem 0.9rem', minHeight: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}
+          style={{ flex: 1, minWidth: 0, minHeight: 'auto' }}
           disabled={enviando}
           onClick={() => fileInputRef.current?.click()}
-          title="Adjuntar foto"
         >
           Foto
         </button>
         <button
           type="button"
           className={styles.btnPrimary}
-          style={{ padding: '0.85rem 1.1rem', minHeight: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}
+          style={{ flex: 1, minWidth: 0, minHeight: 'auto' }}
           disabled={enviando || (!texto.trim() && !archivo)}
           onClick={enviar}
         >
