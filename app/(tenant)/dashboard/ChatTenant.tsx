@@ -154,21 +154,21 @@ export default function ChatTenant() {
         <button
           type="button"
           className={styles.btnSecondary}
-          style={{ padding: '0.85rem', minHeight: 'auto', flexShrink: 0 }}
+          style={{ padding: '0.85rem 0.9rem', minHeight: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}
           disabled={enviando}
           onClick={() => fileInputRef.current?.click()}
           title="Adjuntar foto"
         >
-          📷
+          Foto
         </button>
         <button
           type="button"
           className={styles.btnPrimary}
-          style={{ padding: '0.85rem 1.1rem', minHeight: 'auto', flexShrink: 0 }}
+          style={{ padding: '0.85rem 1.1rem', minHeight: 'auto', flexShrink: 0, whiteSpace: 'nowrap' }}
           disabled={enviando || (!texto.trim() && !archivo)}
           onClick={enviar}
         >
-          {enviando ? '...' : '📤'}
+          {enviando ? '...' : 'Enviar'}
         </button>
       </div>
     </div>

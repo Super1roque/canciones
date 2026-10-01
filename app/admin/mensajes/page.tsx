@@ -157,8 +157,8 @@ function Hilo({ telefono, onLeido }: { telefono: string; onLeido: (telefono: str
           disabled={enviando}
         />
         <input ref={fileInputRef} type="file" accept="image/*" onChange={e => setArchivo(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
-        <button type="button" className="btn-secondary" disabled={enviando} onClick={() => fileInputRef.current?.click()} title="Adjuntar foto">
-          📷
+        <button type="button" className="btn-secondary" style={{ whiteSpace: 'nowrap' }} disabled={enviando} onClick={() => fileInputRef.current?.click()} title="Adjuntar foto">
+          Foto
         </button>
         <button type="button" className="btn-primary" disabled={enviando || (!texto.trim() && !archivo)} onClick={enviar}>
           {enviando ? '...' : 'Enviar'}

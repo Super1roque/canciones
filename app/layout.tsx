@@ -39,6 +39,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#7a1620',
+  // Sin esto, Android con "modo oscuro forzado" del navegador (común,
+  // a veces activado de fábrica) intenta re-colorear la página adivinando
+  // un esquema de colores — y rompe justo los campos de texto, dejando el
+  // texto tipeado invisible aunque el resto del sitio (ya oscuro a
+  // propósito, tanto el tema tenant como el panel admin) se vea bien.
+  // Esto le avisa al navegador que el sitio ya maneja su propio tema
+  // oscuro y que no tiene que inventarle uno.
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
