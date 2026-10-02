@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { obtenerHistoria, guardarHistoria, type HistoriaData } from '@/lib/miHistoriaService';
+import { obtenerHistoria, guardarHistoria, CLAVE_ADMIN, type HistoriaData } from '@/lib/miHistoriaService';
+import { obtenerLinkPorToken } from '@/lib/historiaLinksService';
 
 export const runtime = 'nodejs';
 
@@ -12,7 +13,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
   try {
     const { clave } = await params;
     const data = await obtenerHistoria(clave);
-    return NextResponse.json(data);
+    // El nombre no vive en mi_historia (eso es el contenido), sino en el
+    // link que lo generó — así la página puede saludar a la persona y
+    // confirmarle que es SU página, sin pedírselo de nuevo.
+    const nombre = clave === CLAVE_ADMIN ? '' : (await obtenerLinkPorToken(clave))?.nombre || '';
+    return NextResponse.json({ ...data, nombre });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json({ error: msg }, { status: 500 });

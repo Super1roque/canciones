@@ -929,6 +929,7 @@ function totalPreguntas() { return ETAPAS.reduce((acc, e) => acc + e.preguntas.l
 // componente es idéntico para ambos casos, ni se entera de la diferencia.
 export default function MiHistoriaApp({ clave }: { clave: string }) {
   const [historiaState, setHistoria] = useState<HistoriaData | null>(null);
+  const [nombre, setNombre] = useState('');
   const [cargando, setCargando] = useState(true);
   const [pantalla, setPantalla] = useState<Pantalla>('home');
   const [etapaActual, setEtapaActual] = useState(0);
@@ -940,8 +941,10 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
   useEffect(() => {
     fetch('/api/historia/' + clave).then(r => r.json()).then(data => {
-      const h: HistoriaData = Object.assign(historiaVacia(), data);
+      const { nombre: nombreRecibido, ...resto } = data;
+      const h: HistoriaData = Object.assign(historiaVacia(), resto);
       setHistoria(h);
+      setNombre(nombreRecibido || '');
       if (h.progreso) { setEtapaActual(h.progreso.etapaActual); setPreguntaActual(h.progreso.preguntaActual); }
       setCargando(false);
     }).catch(() => { setHistoria(historiaVacia()); setCargando(false); });
@@ -1255,7 +1258,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
       <div className="mh-wrap">
         {pantalla === 'home' && (
-          <HomeScreen hayProgreso={hayProgreso} onContinuar={() => irA('interview')} onEmpezar={empezar} />
+          <HomeScreen hayProgreso={hayProgreso} nombre={nombre} onContinuar={() => irA('interview')} onEmpezar={empezar} />
         )}
 
         {pantalla === 'interview' && (
@@ -1329,11 +1332,16 @@ function AutoTextarea({ value, onChange, placeholder, className, disabled, minHe
   );
 }
 
-function HomeScreen({ hayProgreso, onContinuar, onEmpezar }: { hayProgreso: boolean; onContinuar: () => void; onEmpezar: () => void }) {
+function HomeScreen({ hayProgreso, nombre, onContinuar, onEmpezar }: { hayProgreso: boolean; nombre: string; onContinuar: () => void; onEmpezar: () => void }) {
   return (
     <>
       <div className="mh-hero">
         <div className="mh-eyebrow" style={{ textAlign: 'center' }}>Mi Historia</div>
+        {nombre && (
+          <p style={{ textAlign: 'center', fontWeight: 600, fontSize: '1.05rem', margin: '0 0 0.75rem' }}>
+            Hola, {nombre} 👋 — esta es tu página, solo tuya.
+          </p>
+        )}
         <h1>Cuenta tu vida.<br />Nosotros la convertimos en historia.</h1>
         <p>Este proyecto te va a llevar, poco a poco, por los momentos, personas, decisiones, alegrías, dificultades y recuerdos que han formado tu vida. No hace falta escribir perfecto — contalo como lo recordés. Podés parar cuando quieras y seguir otro día.</p>
         <div className="mh-row" style={{ justifyContent: 'center' }}>

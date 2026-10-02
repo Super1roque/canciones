@@ -131,14 +131,15 @@ function CeldaSaldo({ telefono, saldo, onActualizado }: { telefono: string; sald
 // para un tenant puntual — esa herramienta no aparece en su dashboard
 // normal, solo queda disponible para quien reciba este link directo.
 function GenerarLinkHistoria() {
+  const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState('');
-  const [resultado, setResultado] = useState<{ telefono: string; url: string } | null>(null);
+  const [resultado, setResultado] = useState<{ telefono: string; nombre: string; url: string } | null>(null);
   const [copiado, setCopiado] = useState(false);
 
   async function generar() {
-    if (!telefono.trim()) return;
+    if (!nombre.trim() || !telefono.trim()) return;
     setGenerando(true);
     setError('');
     setResultado(null);
@@ -146,7 +147,7 @@ function GenerarLinkHistoria() {
       const res = await fetch('/api/admin/historia-links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: telefono.trim() }),
+        body: JSON.stringify({ telefono: telefono.trim(), nombre: nombre.trim() }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'No se pudo generar el link'); return; }
@@ -174,15 +175,24 @@ function GenerarLinkHistoria() {
       </p>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <input
+          type="text"
+          placeholder="Nombre de la persona…"
+          value={nombre}
+          onChange={e => setNombre(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') generar(); }}
+          className="input"
+          style={{ flex: '1 1 180px', boxSizing: 'border-box' }}
+        />
+        <input
           type="tel"
           placeholder="Número de teléfono…"
           value={telefono}
           onChange={e => setTelefono(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') generar(); }}
           className="input"
-          style={{ flex: '1 1 200px', boxSizing: 'border-box' }}
+          style={{ flex: '1 1 180px', boxSizing: 'border-box' }}
         />
-        <button className="btn-primary" disabled={generando || !telefono.trim()} onClick={generar}>
+        <button className="btn-primary" disabled={generando || !nombre.trim() || !telefono.trim()} onClick={generar}>
           {generando ? '⏳ Generando...' : '📖 Generar link'}
         </button>
       </div>
@@ -194,7 +204,7 @@ function GenerarLinkHistoria() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
         }}>
           <span style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>
-            ✅ Link para <strong>{resultado.telefono}</strong>: {resultado.url}
+            ✅ Link para <strong>{resultado.nombre}</strong> ({resultado.telefono}): {resultado.url}
           </span>
           <button className="btn-primary" onClick={copiar} style={{ whiteSpace: 'nowrap' }}>
             {copiado ? '✅ Copiado' : '📋 Copiar'}
