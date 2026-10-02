@@ -1319,16 +1319,70 @@ function AutoTextarea({ value, onChange, placeholder, className, disabled, minHe
   value: string; onChange: (v: string) => void; placeholder?: string; className?: string; disabled?: boolean; minHeight?: number;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const [grabando, setGrabando] = useState(false);
+  const [transcribiendo, setTranscribiendo] = useState(false);
+  const [errorVoz, setErrorVoz] = useState('');
+  const grabadorRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const valorRef = useRef(value);
+  valorRef.current = value;
+
   useEffect(() => {
     const el = ref.current;
     if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
   }, [value]);
+
+  async function alternarGrabacion() {
+    if (grabando) { grabadorRef.current?.stop(); return; }
+    setErrorVoz('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const grabador = new MediaRecorder(stream);
+      chunksRef.current = [];
+      grabador.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      grabador.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        setGrabando(false);
+        setTranscribiendo(true);
+        try {
+          const blob = new Blob(chunksRef.current, { type: grabador.mimeType || 'audio/webm' });
+          const fd = new FormData();
+          fd.append('audio', blob, 'grabacion.webm');
+          const res = await fetch('/api/historia/transcribir', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (!res.ok) { setErrorVoz(data.error || 'No se pudo transcribir la grabación.'); return; }
+          const previo = valorRef.current.trim();
+          onChange(previo ? previo + ' ' + data.texto : data.texto);
+        } catch {
+          setErrorVoz('Error de conexión al transcribir.');
+        } finally {
+          setTranscribiendo(false);
+        }
+      };
+      grabadorRef.current = grabador;
+      grabador.start();
+      setGrabando(true);
+    } catch {
+      setErrorVoz('No se pudo acceder al micrófono — revisá los permisos del navegador.');
+    }
+  }
+
   return (
-    <textarea
-      ref={ref} className={'mh-answer ' + (className || '')} placeholder={placeholder} disabled={disabled}
-      value={value} onChange={e => onChange(e.target.value)}
-      style={{ minHeight: minHeight || 140 }}
-    />
+    <div>
+      <textarea
+        ref={ref} className={'mh-answer ' + (className || '')} placeholder={placeholder} disabled={disabled}
+        value={value} onChange={e => onChange(e.target.value)}
+        style={{ minHeight: minHeight || 140 }}
+      />
+      {!disabled && (
+        <div className="mh-row" style={{ marginTop: '0.5rem', alignItems: 'center', gap: '0.6rem' }}>
+          <button type="button" className={'mh-chip' + (grabando || transcribiendo ? ' selected' : '')} disabled={transcribiendo} onClick={alternarGrabacion}>
+            {transcribiendo ? <><span className="mh-spinner" /> Transcribiendo...</> : grabando ? '⏹ Detener grabación' : '🎤 Responder hablando'}
+          </button>
+          {errorVoz && <span style={{ fontSize: '0.78rem', color: 'var(--mh-danger)' }}>{errorVoz}</span>}
+        </div>
+      )}
+    </div>
   );
 }
 

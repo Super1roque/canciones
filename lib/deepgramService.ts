@@ -135,6 +135,37 @@ export async function transcribirPalabras(
   return { error: lastError || 'No se pudo transcribir el audio con ningún modelo.' };
 }
 
+// Dictado de voz a texto (p. ej. para responder hablando en Mi Historia) —
+// a diferencia de transcribirPalabras, acá no se filtran palabras comunes
+// ("por", "la", "de"...): ese filtro es específico para descartar créditos
+// de subtítulos en canciones y mutilaría una respuesta hablada normal.
+export async function transcribirHabla(
+  audioBuffer: ArrayBuffer,
+  contentType: string
+): Promise<{ texto: string } | { error: string }> {
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) return { error: 'DEEPGRAM_API_KEY no configurada' };
+
+  const res = await fetchConReintentos(
+    `https://api.deepgram.com/v1/listen?model=nova-2&language=es&punctuate=true&smart_format=true`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Token ${apiKey}`, 'Content-Type': contentType },
+      body: audioBuffer,
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    return { error: `Deepgram error ${res.status}: ${err}` };
+  }
+
+  const data = await res.json();
+  const texto: string = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '';
+  if (!texto) return { error: 'No se detectó voz en la grabación.' };
+  return { texto };
+}
+
 const AURA_VOICES = new Set([
   'sirio', 'estrella', 'javier', 'luciano', 'olivia', 'valerio',
   'nestor', 'carina', 'alvaro', 'diana', 'agustina', 'silvia',
