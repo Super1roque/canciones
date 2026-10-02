@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../tenant.module.css';
 
-type Estado = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo';
+type Estado = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo' | 'error';
 
 // El navegador solo acepta la clave pública del push como Uint8Array, no
 // como el string base64url que da VAPID — es la conversión estándar para
@@ -21,6 +21,7 @@ function claveComoUint8Array(base64: string): Uint8Array {
 // activar solo ni con el load de la página.
 export default function NotificacionesTenant() {
   const [estado, setEstado] = useState<Estado>('cargando');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -50,11 +51,22 @@ export default function NotificacionesTenant() {
         // un Uint8Array normal, que el navegador acepta sin problema.
         applicationServerKey: claveComoUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
       });
-      await fetch('/api/tenants/push', {
+      const res = await fetch('/api/tenants/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(suscripcion),
       });
+      if (!res.ok) {
+        // Sin este chequeo, un fallo acá (ej. la sesión venció) quedaba
+        // invisible: el navegador SÍ quedaba suscripto pero el servidor
+        // nunca se enteraba, así que nunca le iba a llegar nada — mostraba
+        // "activo" sin que hubiera pasado nada de verdad.
+        await suscripcion.unsubscribe().catch(() => {});
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || 'No se pudo guardar la suscripción');
+        setEstado('error');
+        return;
+      }
       setEstado('activo');
     } catch (error) {
       console.error('activar notificaciones:', error);
@@ -86,6 +98,17 @@ export default function NotificacionesTenant() {
       <p className={styles.textMuted} style={{ fontSize: '0.76rem', margin: 0 }}>
         🔕 Bloqueaste las notificaciones — para activarlas, habilitalas desde el candado/ícono de la barra de direcciones.
       </p>
+    );
+  }
+
+  if (estado === 'error') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <p className={styles.error} style={{ fontSize: '0.78rem', margin: 0 }}>⚠️ {errorMsg} — recargá la página y probá de nuevo.</p>
+        <button type="button" className={styles.btnPrimary} style={{ fontSize: '0.85rem', width: '100%' }} onClick={activar}>
+          🔔 Reintentar
+        </button>
+      </div>
     );
   }
 

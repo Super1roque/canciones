@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { conLinksClickeables } from '@/lib/linkify';
 
-type EstadoPush = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo';
+type EstadoPush = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo' | 'error';
 
 // El navegador solo acepta la clave pública del push como Uint8Array, no
 // como el string base64url que da VAPID — es la conversión estándar para
@@ -21,6 +21,7 @@ function claveComoUint8Array(base64: string): Uint8Array {
 // puede activar solo ni con el load de la página.
 function NotificacionesPush() {
   const [estado, setEstado] = useState<EstadoPush>('cargando');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -50,11 +51,22 @@ function NotificacionesPush() {
         // Uint8Array normal, que el navegador acepta sin problema.
         applicationServerKey: claveComoUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
       });
-      await fetch('/api/admin/push', {
+      const res = await fetch('/api/admin/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(suscripcion),
       });
+      if (!res.ok) {
+        // Sin este chequeo, un fallo acá quedaba invisible: el navegador
+        // SÍ quedaba suscripto pero el servidor nunca se enteraba, así que
+        // nunca iba a llegar nada — mostraba "activo" sin que hubiera
+        // pasado nada de verdad.
+        await suscripcion.unsubscribe().catch(() => {});
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || 'No se pudo guardar la suscripción');
+        setEstado('error');
+        return;
+      }
       setEstado('activo');
     } catch (error) {
       console.error('activar notificaciones:', error);
@@ -86,6 +98,17 @@ function NotificacionesPush() {
       <p style={{ fontSize: '0.76rem', color: 'var(--error)', margin: 0 }}>
         🔕 Bloqueaste las notificaciones — para activarlas, habilitalas desde el candado/ícono de la barra de direcciones.
       </p>
+    );
+  }
+
+  if (estado === 'error') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
+        <p style={{ fontSize: '0.76rem', color: 'var(--error)', margin: 0 }}>⚠️ {errorMsg}</p>
+        <button type="button" className="btn-primary" style={{ fontSize: '0.78rem' }} onClick={activar}>
+          🔔 Reintentar
+        </button>
+      </div>
     );
   }
 
