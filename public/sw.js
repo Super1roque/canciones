@@ -31,8 +31,14 @@ self.addEventListener('push', (event) => {
       icon: '/pwa-icon-192',
       badge: '/pwa-icon-192',
       vibrate: [200, 100, 200],
-      data: { url: datos.url || '/admin/mensajes' },
-      tag: 'chat-admin', // agrupa avisos seguidos en una sola notificación en vez de apilarlos
+      data: { url: datos.url || '/' },
+      // tag agrupa avisos seguidos del mismo tipo en una sola notificación
+      // en vez de apilarlos — pero sin renotify:true, un aviso nuevo con
+      // el mismo tag REEMPLAZA en silencio al anterior (sin sonido ni
+      // vibración) en vez de volver a alertar. Eso era justo el bug: el
+      // segundo mensaje seguido no sonaba porque pisaba al primero callado.
+      tag: datos.tag || 'canciones-general',
+      renotify: true,
     }),
   );
 });
@@ -41,7 +47,7 @@ self.addEventListener('push', (event) => {
 // nueva — el mismo criterio que usaría cualquier app de mensajería.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/admin/mensajes';
+  const url = event.notification.data?.url || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
       const existente = lista.find((c) => new URL(c.url).origin === self.location.origin);

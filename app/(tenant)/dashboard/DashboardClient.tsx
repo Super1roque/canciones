@@ -5,6 +5,7 @@ import type { Tenant } from '@/lib/tenantService';
 import type { Pedido } from '@/lib/pedidoService';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import ChatTenant, { type ChatTenantHandle } from './ChatTenant';
+import NotificacionesTenant from './NotificacionesTenant';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [300, 500, 1000] as const;
@@ -299,6 +300,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>Tus canciones pedidas</h2>
+          <NotificacionesTenant />
           {pedidos.length === 0 ? (
             <p className={styles.textMuted}>Todavía no pediste ninguna canción.</p>
           ) : (

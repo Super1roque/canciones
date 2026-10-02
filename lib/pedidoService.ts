@@ -109,9 +109,14 @@ export async function listarTodosPedidos(): Promise<Pedido[]> {
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
 
-export async function marcarPedidoEntregado(id: string): Promise<void> {
+// Devuelve el pedido actualizado (no solo void) para que quien llame pueda
+// avisarle al tenant que ya está lista, sin tener que volver a pedirlo.
+export async function marcarPedidoEntregado(id: string): Promise<Pedido> {
   const db = getDb();
-  await db.collection(COLLECTION).doc(id).update({ estado: 'entregada' });
+  const ref = db.collection(COLLECTION).doc(id);
+  await ref.update({ estado: 'entregada' });
+  const doc = await ref.get();
+  return toPedido(doc.id, doc.data()!);
 }
 
 // Guarda en el pedido el id del doc de `canciones_compartidas` que le

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { listarTodosPedidos, marcarPedidoEntregado } from '@/lib/pedidoService';
+import { avisarCancionLista } from '@/lib/pushService';
 
 export async function GET() {
   const pedidos = await listarTodosPedidos();
@@ -11,7 +12,8 @@ export async function PATCH(request: Request) {
     const { id } = await request.json();
     if (!id) return NextResponse.json({ error: 'Falta el id del pedido' }, { status: 400 });
 
-    await marcarPedidoEntregado(id);
+    const pedido = await marcarPedidoEntregado(id);
+    void avisarCancionLista(pedido.telefono, pedido.cancion_base);
     return NextResponse.json({ ok: true });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
