@@ -3,10 +3,10 @@ import { pathFotoHistoria, eliminarFotoHistoria } from '@/lib/miHistoriaService'
 
 export const runtime = 'nodejs';
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ clave: string; id: string }> }) {
   try {
-    const { id } = await params;
-    const file = getStorageBucket().file(pathFotoHistoria(id));
+    const { clave, id } = await params;
+    const file = getStorageBucket().file(pathFotoHistoria(clave, id));
     const [existe] = await file.exists();
     if (!existe) return new Response('No encontrada', { status: 404 });
     const [buffer] = await file.download();
@@ -22,8 +22,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  await eliminarFotoHistoria(id);
+export async function DELETE(_request: Request, { params }: { params: Promise<{ clave: string; id: string }> }) {
+  const { clave, id } = await params;
+  await eliminarFotoHistoria(clave, id);
   return Response.json({ ok: true });
 }

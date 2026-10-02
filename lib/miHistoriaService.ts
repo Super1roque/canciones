@@ -1,10 +1,12 @@
 import { getDb, getStorageBucket } from './firebaseService';
 
 const COLLECTION = 'mi_historia';
-const DOC_ID = 'principal';
 
-// Una sola biografía por ahora (herramienta personal del admin, no
-// multi-usuario) — todo vive en un único documento.
+// Clave del documento del admin — el resto de las historias (una por cada
+// link que se le da a un tenant, ver lib/historiaLinksService.ts) usan de
+// clave el token random de su link.
+export const CLAVE_ADMIN = 'principal';
+
 export interface HistoriaData {
   meta: { creado: string; actualizado: string };
   respuestas: Record<string, {
@@ -31,32 +33,34 @@ function estadoVacio(): HistoriaData {
   };
 }
 
-export async function obtenerHistoria(): Promise<HistoriaData> {
+export async function obtenerHistoria(clave: string): Promise<HistoriaData> {
   const db = getDb();
-  const doc = await db.collection(COLLECTION).doc(DOC_ID).get();
+  const doc = await db.collection(COLLECTION).doc(clave).get();
   if (!doc.exists) return estadoVacio();
   return Object.assign(estadoVacio(), doc.data());
 }
 
-export async function guardarHistoria(data: HistoriaData): Promise<void> {
+export async function guardarHistoria(clave: string, data: HistoriaData): Promise<void> {
   const db = getDb();
   data.meta.actualizado = new Date().toISOString();
-  await db.collection(COLLECTION).doc(DOC_ID).set(data);
+  await db.collection(COLLECTION).doc(clave).set(data);
 }
 
 // Mismo criterio que el audio en el resto de la app: nunca una URL de
 // Storage directa/firmada — las fotos se sirven por nuestra propia API
-// (/api/admin/mi-historia/foto/[id]), que descarga el archivo del bucket
-// server-side. El path es determinístico a partir del id, así no hace
-// falta guardarlo aparte.
-export function pathFotoHistoria(id: string): string {
-  return `mi-historia/${id}`;
+// (/api/historia/[clave]/foto/[id]), que descarga el archivo del bucket
+// server-side. Separadas por carpeta (clave/id), no solo por id random —
+// así el link de un tenant nunca puede leer ni borrar la foto de otra
+// historia aunque adivinara el id, porque ni siquiera existe bajo SU
+// carpeta.
+export function pathFotoHistoria(clave: string, id: string): string {
+  return `mi-historia/${clave}/${id}`;
 }
 
-export async function subirFotoHistoria(buffer: Buffer, contentType: string, id: string): Promise<void> {
-  await getStorageBucket().file(pathFotoHistoria(id)).save(buffer, { metadata: { contentType } });
+export async function subirFotoHistoria(clave: string, buffer: Buffer, contentType: string, id: string): Promise<void> {
+  await getStorageBucket().file(pathFotoHistoria(clave, id)).save(buffer, { metadata: { contentType } });
 }
 
-export async function eliminarFotoHistoria(id: string): Promise<void> {
-  await getStorageBucket().file(pathFotoHistoria(id)).delete().catch(() => {});
+export async function eliminarFotoHistoria(clave: string, id: string): Promise<void> {
+  await getStorageBucket().file(pathFotoHistoria(clave, id)).delete().catch(() => {});
 }

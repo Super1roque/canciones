@@ -127,6 +127,84 @@ function CeldaSaldo({ telefono, saldo, onActualizado }: { telefono: string; sald
   );
 }
 
+// Genera (o reusa, si ya se le había dado antes) el link de "Mi Historia"
+// para un tenant puntual — esa herramienta no aparece en su dashboard
+// normal, solo queda disponible para quien reciba este link directo.
+function GenerarLinkHistoria() {
+  const [telefono, setTelefono] = useState('');
+  const [generando, setGenerando] = useState(false);
+  const [error, setError] = useState('');
+  const [resultado, setResultado] = useState<{ telefono: string; url: string } | null>(null);
+  const [copiado, setCopiado] = useState(false);
+
+  async function generar() {
+    if (!telefono.trim()) return;
+    setGenerando(true);
+    setError('');
+    setResultado(null);
+    try {
+      const res = await fetch('/api/admin/historia-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: telefono.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'No se pudo generar el link'); return; }
+      setResultado(data);
+    } catch {
+      setError('Error de conexión con el servidor');
+    } finally {
+      setGenerando(false);
+    }
+  }
+
+  function copiar() {
+    if (!resultado) return;
+    navigator.clipboard.writeText(resultado.url).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+
+  return (
+    <section className="panel" style={{ padding: '1.25rem' }}>
+      <h2 style={{ margin: '0 0 0.5rem' }}>📖 Link de Mi Historia</h2>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.75rem' }}>
+        Le da acceso a un tenant puntual a la herramienta de "Mi Historia" (la misma que usás vos) sin que aparezca en su dashboard — solo con este link, sin login.
+      </p>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <input
+          type="tel"
+          placeholder="Número de teléfono…"
+          value={telefono}
+          onChange={e => setTelefono(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') generar(); }}
+          className="input"
+          style={{ flex: '1 1 200px', boxSizing: 'border-box' }}
+        />
+        <button className="btn-primary" disabled={generando || !telefono.trim()} onClick={generar}>
+          {generando ? '⏳ Generando...' : '📖 Generar link'}
+        </button>
+      </div>
+      {error && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '0.5rem' }}>⚠️ {error}</p>}
+      {resultado && (
+        <div style={{
+          marginTop: '0.75rem', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--success)', background: 'rgba(78,201,160,0.08)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>
+            ✅ Link para <strong>{resultado.telefono}</strong>: {resultado.url}
+          </span>
+          <button className="btn-primary" onClick={copiar} style={{ whiteSpace: 'nowrap' }}>
+            {copiado ? '✅ Copiado' : '📋 Copiar'}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 type PedidoResumen = { id: string; cancion_base: string; fecha: string; estado: string; tieneLink: boolean };
 type RecargaResumen = { id: string; monto: number; credito: number; estado: string; fecha: string };
 type InfoBorrado = {
@@ -335,6 +413,8 @@ export default function AdminTenantsPage() {
             </a>
           </div>
         </section>
+
+        <GenerarLinkHistoria />
 
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
