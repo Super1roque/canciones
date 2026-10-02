@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import OnboardingVideo from './OnboardingVideo';
+import BotonResponderHablando from '@/components/BotonResponderHablando';
 
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
@@ -239,6 +240,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                       value={historia}
                       onChange={e => setHistoria(e.target.value)}
                     />
+                    <BotonResponderHablando valorActual={historia} onTexto={setHistoria} className={styles.btnSecondary} />
                   </div>
 
                   <button className={styles.btnPrimary} onClick={handleGenerar} disabled={generando}>
