@@ -1553,7 +1553,14 @@ function PhotosScreen({ clave, fotos, onAgregar, onBorrar }: { clave: string; fo
           setFile(null); setF({ descripcion: '', año: '', lugar: '', personas: '', queOcurria: '', porQueImportante: '', etapaRelacionada: '' });
         }}>+ Agregar a la galería</button>
       </div>
-      <h3>Galería ({fotos.length})</h3>
+      <div className="mh-row mh-between" style={{ alignItems: 'center' }}>
+        <h3 style={{ margin: 0 }}>Galería ({fotos.length})</h3>
+        {fotos.length > 0 && (
+          <a className="mh-btn mh-btn-secondary mh-btn-sm" style={{ textDecoration: 'none' }} href={'/api/historia/' + clave + '/fotos-zip'} download>
+            📥 Descargar todas (ZIP)
+          </a>
+        )}
+      </div>
       <div className="mh-photo-grid">
         {fotos.map((f2, i) => (
           <div className="mh-photo-card" key={f2.id}>
