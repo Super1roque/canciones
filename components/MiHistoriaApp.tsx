@@ -36,6 +36,8 @@ Tu trabajo consiste en **convertirlos en un libro biográfico completo**, utiliz
 
 La historia debe sentirse como la vida de una persona real: con lugares, recuerdos, decisiones, dificultades, emociones, personas importantes, pequeñas escenas y momentos que permitan al lector imaginar que estuvo allí.
 
+**Estilo narrativo obligatorio: narrativa novelada, en todos los capítulos, sin excepción.** Esto significa escribir con los recursos de una novela —escenas construidas, ritmo, descripciones sensoriales, arcos dentro de cada capítulo— y no como una entrevista transcripta, un informe o una lista de preguntas y respuestas. La diferencia está en la forma de contarlo, nunca en los hechos: todo lo narrado debe seguir siendo estrictamente verídico, según las reglas de la sección 2.
+
 ---
 
 # 2. REGLA PRINCIPAL: LA VERDAD ES LA FUENTE PRIMARIA
@@ -495,7 +497,7 @@ Esto permitirá realizar una segunda entrevista.
 
 # 17. VOZ DEL PROTAGONISTA
 
-La narración debe estar escrita preferentemente en **primera persona**, como si el protagonista estuviera contando su propia vida.
+La narración debe estar escrita preferentemente en **primera persona**, como si el protagonista estuviera contando su propia vida, con narrativa novelada (ver sección 1): construida en escenas y con ritmo de novela, nunca como una transcripción de preguntas y respuestas.
 
 Debe sonar:
 
