@@ -13,15 +13,15 @@ interface LineaTiempo { start: number; end: number; text: string }
 
 interface SceneLine { text: string; start?: number; end?: number }
 interface ScenePayload { lines: SceneLine[]; searchQuery: string; duration?: number }
-interface VentanaVerso { text: string; start: number; end: number }
+interface VentanaOracion { text: string; start: number; end: number }
 
-const MIN_LINEA = 1.0; // mismo piso que usa el servidor para repartir duración por línea
+const MIN_LINEA = 1.0; // mismo piso que usa el servidor para repartir duración por oración
 
-// Reparte una duración total entre versos proporcionalmente al largo de su
-// texto — es la MISMA lógica que usa el servidor (generate-lyric-video)
-// cuando no hay tiempos reales de Deepgram (modo letra manual). Se duplica
-// acá solo para poder MOSTRAR de antemano los mismos tiempos que va a usar
-// el video, no para generarlo (eso lo sigue haciendo el servidor).
+// Reparte una duración total entre oraciones proporcionalmente al largo de
+// su texto — es la MISMA lógica que usa el servidor (generate-lyric-video)
+// cuando no hay tiempos reales de Deepgram (modo relato pegado a mano). Se
+// duplica acá solo para poder MOSTRAR de antemano los mismos tiempos que
+// va a usar el video, no para generarlo (eso lo sigue haciendo el servidor).
 function repartirDuracionesLocal(textos: string[], totalDuration: number, piso: number): number[] {
   const n = textos.length;
   const pesos = textos.map(t => Math.max(t.trim().length, 10));
@@ -37,41 +37,38 @@ const formatMMSS = (s: number) => {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 };
 
-// Agrupa la letra en estrofas (bloques separados por una línea en blanco)
-// — cada estrofa es UNA sola escena/búsqueda de Pexels, para no gastar una
-// consulta por cada línea suelta. Si no hay líneas en blanco (letra pegada
-// sin separar), cada línea queda como su propia estrofa de una sola línea.
-// Se usa en el modo SIN audio (letra escrita a mano).
-function agruparEstrofas(lyrics: string): string[][] {
-  return lyrics
-    .split(/\n\s*\n/)
-    .map(bloque => bloque.split('\n').map(l => l.trim()).filter(Boolean))
-    .filter(estrofa => estrofa.length > 0);
+// Divide el relato en oraciones: cada una termina en punto, sin importar
+// los saltos de línea o párrafos que traiga el texto pegado — cada oración
+// es UNA escena/búsqueda de Pexels propia. Se usa en el modo SIN audio
+// (relato pegado a mano).
+function dividirEnOraciones(texto: string): string[] {
+  return texto
+    .split(/(?<=\.)\s+/)
+    .map(s => s.trim())
+    .filter(Boolean);
 }
 
 // Agrupa los cues (palabra por palabra, con timestamps reales de Deepgram)
-// en líneas por pausas naturales — mismo criterio que usa /api/detect-sections
-// para no perder la sincronía entre esa detección y el agrupado acá.
-function agruparCuesEnLineas(cues: Cue[]): LineaTiempo[] {
-  const lineas: LineaTiempo[] = [];
+// en ORACIONES — se cierra una oración apenas una palabra termina en punto,
+// no por pausas de silencio (un narrador puede hacer una pausa larga en
+// medio de una misma oración, o casi ninguna entre dos oraciones seguidas).
+function agruparCuesEnOraciones(cues: Cue[]): LineaTiempo[] {
+  const oraciones: LineaTiempo[] = [];
   let cur: LineaTiempo | null = null;
   for (const cue of cues) {
     if (!cur) {
       cur = { start: cue.start, end: cue.end, text: cue.text };
     } else {
-      const gap = cue.start - cur.end;
-      const wordCount = cur.text.split(/\s+/).length;
-      if (gap > 0.8 || wordCount >= 10) {
-        lineas.push(cur);
-        cur = { start: cue.start, end: cue.end, text: cue.text };
-      } else {
-        cur.end = cue.end;
-        cur.text += ' ' + cue.text;
-      }
+      cur.end = cue.end;
+      cur.text += ' ' + cue.text;
+    }
+    if (/\.$/.test(cue.text.trim())) {
+      oraciones.push(cur);
+      cur = null;
     }
   }
-  if (cur) lineas.push(cur);
-  return lineas;
+  if (cur) oraciones.push(cur);
+  return oraciones;
 }
 
 const TEMAS_SUGERIDOS = ['Rancheros', 'De ciudad', 'Playa', 'Naturaleza', 'Retro / vintage', 'Nocturno / neón'];
@@ -90,7 +87,7 @@ export default function VideoLetraPage() {
   const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [verseWindows, setVerseWindows] = useState<VentanaVerso[]>([]);
+  const [verseWindows, setVerseWindows] = useState<VentanaOracion[]>([]);
 
   const [quota, setQuota] = useState<{ limit: number; remaining: number; reset: number } | null>(null);
 
@@ -101,8 +98,7 @@ export default function VideoLetraPage() {
       .catch(() => {});
   }, []);
 
-  const stanzas = agruparEstrofas(lyrics);
-  const lines = stanzas.flat();
+  const lines = dividirEnOraciones(lyrics);
 
   const onAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,47 +127,47 @@ export default function VideoLetraPage() {
   const formatearReset = (unixSeconds: number) =>
     new Date(unixSeconds * 1000).toLocaleDateString('es-HN', { day: 'numeric', month: 'long' });
 
-  // Transcribe el audio con Deepgram y lo agrupa en líneas por pausas
-  // naturales (mismo criterio que /karaoke) — cada línea, con su tiempo
-  // real, es la unidad que después busca su PROPIO clip en Pexels.
-  async function transcribirYAgruparLineas(audio: File): Promise<LineaTiempo[]> {
+  // Transcribe el audio con Deepgram (nova-2, sin filtrar palabras comunes
+  // — eso es para canciones) y lo agrupa en ORACIONES: cada una, con su
+  // tiempo real, es la unidad que después busca su PROPIO clip en Pexels.
+  async function transcribirYAgruparOraciones(audio: File): Promise<LineaTiempo[]> {
     const form = new FormData();
     form.append('audio', audio);
-    const transRes = await fetch('/api/transcribe', { method: 'POST', body: form });
+    const transRes = await fetch('/api/transcribe-narracion', { method: 'POST', body: form });
     if (!transRes.ok) {
       const data = await transRes.json().catch(() => ({ error: 'Error desconocido' }));
       throw new Error(data.error ?? 'No se pudo transcribir el audio');
     }
     const { cues } = await transRes.json() as { cues: Cue[] };
-    if (!cues?.length) throw new Error('No se detectó letra cantada en el audio');
+    if (!cues?.length) throw new Error('No se detectó voz narrada en el audio');
 
-    const lineasConTiempo = agruparCuesEnLineas(cues);
-    if (!lineasConTiempo.length) throw new Error('No se pudo agrupar la letra transcripta en líneas');
-    return lineasConTiempo;
+    const oracionesConTiempo = agruparCuesEnOraciones(cues);
+    if (!oracionesConTiempo.length) throw new Error('No se pudo separar el relato transcripto en oraciones');
+    return oracionesConTiempo;
   }
 
   async function handleGenerate() {
-    if (!audioFile && !stanzas.length) return;
+    if (!audioFile && !lines.length) return;
     setGenerating(true);
     setError(null);
     setDownloadUrl(null);
     setVerseWindows([]);
 
     try {
-      let versos: SceneLine[];
+      let oraciones: SceneLine[];
 
       if (audioFile) {
-        setProgress('Transcribiendo el audio y detectando los versos…');
-        versos = await transcribirYAgruparLineas(audioFile);
+        setProgress('Transcribiendo el audio y detectando las oraciones…');
+        oraciones = await transcribirYAgruparOraciones(audioFile);
       } else {
-        versos = lines.map(text => ({ text }));
+        oraciones = lines.map(text => ({ text }));
       }
 
-      setProgress(`Buscando una búsqueda visual para cada uno de los ${versos.length} versos…`);
+      setProgress(`Buscando una búsqueda visual para cada una de las ${oraciones.length} oraciones…`);
       const scenesRes = await fetch('/api/lyrics-scenes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lines: versos.map(v => v.text), theme: theme.trim() || undefined }),
+        body: JSON.stringify({ lines: oraciones.map(v => v.text), theme: theme.trim() || undefined }),
       });
       if (!scenesRes.ok) {
         const data = await scenesRes.json().catch(() => ({ error: 'Error desconocido' }));
@@ -179,15 +175,17 @@ export default function VideoLetraPage() {
       }
       const { queries } = await scenesRes.json() as { queries: string[] };
 
-      // Cada verso es su propia "escena" de una sola línea — así cada uno
+      // Cada oración es su propia "escena" de una sola línea — así cada una
       // busca y descarga su PROPIO clip de Pexels, en vez de compartir un
-      // clip con otros versos.
-      // El primer verso arranca en video-time 0 aunque en el audio real
-      // empiece más tarde (intro instrumental) — si no, el video entero
-      // queda adelantado respecto al audio por exactamente ese intro, y la
-      // letra deja de coincidir con la imagen desde ahí en adelante.
-      const scenes: ScenePayload[] = versos.map((v, i) => {
-        const start = i === 0 ? 0 : v.start;
+      // clip con otras oraciones.
+      // Cada oración arranca exactamente donde terminó la anterior (la
+      // primera, en video-time 0) aunque en el audio real haya un silencio
+      // o pausa narrativa antes de que empiece — así ese silencio queda
+      // "dentro" del plano previo en vez de perderse: si no, cada pausa
+      // entre oraciones deja al video más y más adelantado respecto al
+      // audio real a medida que avanza el relato.
+      const scenes: ScenePayload[] = oraciones.map((v, i) => {
+        const start = i === 0 ? 0 : oraciones[i - 1].end;
         return {
           lines: [v],
           searchQuery: queries[i] ?? 'cinematic abstract background',
@@ -195,22 +193,22 @@ export default function VideoLetraPage() {
         };
       });
 
-      // Ventanas de tiempo de cada verso en el video FINAL — reales si vienen
-      // de Deepgram, o estimadas con la misma lógica que usa el servidor si
-      // es letra manual. Solo para mostrarlas junto al texto y poder
-      // verificar la sincronía sin tener que abrir el video.
+      // Ventanas de tiempo de cada oración en el video FINAL — reales si
+      // vienen de Deepgram, o estimadas con la misma lógica que usa el
+      // servidor si es relato pegado a mano. Solo para mostrarlas junto al
+      // texto y poder verificar la sincronía sin tener que abrir el video.
       const duracionesParaMostrar = scenes.every(s => typeof s.duration === 'number' && (s.duration as number) > 0)
         ? scenes.map(s => s.duration as number)
-        : repartirDuracionesLocal(versos.map(v => v.text), duration, MIN_LINEA);
+        : repartirDuracionesLocal(oraciones.map(v => v.text), duration, MIN_LINEA);
       let acumulado = 0;
-      setVerseWindows(versos.map((v, i) => {
+      setVerseWindows(oraciones.map((v, i) => {
         const d = duracionesParaMostrar[i];
         const ventana = { text: v.text, start: acumulado, end: acumulado + d };
         acumulado += d;
         return ventana;
       }));
 
-      setProgress(`Buscando ${scenes.length} plano${scenes.length > 1 ? 's' : ''} en Pexels (uno por verso) y armando el video… (puede tardar 1-2 minutos)`);
+      setProgress(`Buscando ${scenes.length} plano${scenes.length > 1 ? 's' : ''} en Pexels (uno por oración) y armando el video… (puede tardar 1-2 minutos)`);
       const form = new FormData();
       form.append('scenes', JSON.stringify(scenes));
       form.append('orientation', orientation);
@@ -243,15 +241,15 @@ export default function VideoLetraPage() {
       <header className="header">
         <div className="header-inner">
           <div className="logo">
-            <span className="logo-icon">🎞️</span>
-            <span className="logo-text">Video de Letra</span>
+            <span className="logo-icon">📖</span>
+            <span className="logo-text">Video de Relato</span>
           </div>
           <a href="/admin" className="nav-btn">← Volver</a>
         </div>
       </header>
 
       <div className="karaoke-body" style={{ maxWidth: 640 }}>
-        <h1 className="karaoke-title">Video con<span>metraje de stock</span></h1>
+        <h1 className="karaoke-title">Relato narrado con<span>metraje de stock</span></h1>
 
         {quota && (
           <div style={{
@@ -275,27 +273,27 @@ export default function VideoLetraPage() {
         )}
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-          Subí el audio de la canción (se transcribe con Deepgram, igual que en Karaoke, y se sincroniza solo)
-          o pegá la letra a mano — cada verso busca su propio clip en Pexels según lo que dice ESE verso, así
-          el plano cambia línea por línea y acompaña de verdad lo que se está diciendo. Sin texto en pantalla.
+          Subí el audio del relato (se transcribe con Deepgram y se sincroniza solo) o pegá el texto a mano —
+          cada oración (las que terminan en punto) busca su propio clip en Pexels según lo que dice ESA oración,
+          así el plano cambia oración por oración y acompaña de verdad lo que se está narrando. Sin texto en pantalla.
         </p>
 
-        {/* ── Letra (solo si no hay audio) ── */}
+        {/* ── Relato (solo si no hay audio) ── */}
         <div className="form-group" style={{
           marginBottom: '1.25rem',
           opacity: audioFile ? 0.45 : 1, pointerEvents: audioFile ? 'none' : 'auto',
         }}>
-          <label>Letra de la canción (un verso por línea)</label>
+          <label>Texto del relato (se separa solo por oraciones)</label>
           {audioFile ? (
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              🔒 Con audio subido, la letra y los tiempos salen de la transcripción automática.
+              🔒 Con audio subido, el texto y los tiempos salen de la transcripción automática.
             </p>
           ) : (
             <>
               <textarea
                 value={lyrics}
                 onChange={e => { setLyrics(e.target.value); setDownloadUrl(null); setError(null); }}
-                placeholder={'Pegá la letra acá…\nUn verso por línea.\n\nCada verso busca su propio plano en Pexels — las líneas en blanco entre estrofas son solo para organizar el texto.'}
+                placeholder={'Pegá el relato acá, como un párrafo normal…\n\nCada oración (termina en punto) busca su propio plano en Pexels — no hace falta separar en líneas, se detectan solas.'}
                 rows={10}
                 style={{
                   width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.92rem',
@@ -305,7 +303,7 @@ export default function VideoLetraPage() {
               />
               {lines.length > 0 && (
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {lines.length} verso{lines.length > 1 ? 's' : ''} → {lines.length} plano{lines.length > 1 ? 's' : ''} distintos en Pexels (uno por verso)
+                  {lines.length} oración{lines.length > 1 ? 'es' : ''} → {lines.length} plano{lines.length > 1 ? 's' : ''} distintos en Pexels (uno por oración)
                 </span>
               )}
             </>
@@ -344,7 +342,7 @@ export default function VideoLetraPage() {
             ))}
           </div>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.6rem', marginBottom: 0 }}>
-            Sesga las búsquedas de Pexels hacia esa ambientación en todos los versos. Dejalo vacío para que la IA elija libremente según la letra.
+            Sesga las búsquedas de Pexels hacia esa ambientación en todas las oraciones. Dejalo vacío para que la IA elija libremente según el relato.
           </p>
         </div>
 
@@ -385,11 +383,11 @@ export default function VideoLetraPage() {
         }}>
           <p style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase',
             letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0' }}>
-            Audio (recomendado — sincroniza letra y tiempos solo)
+            Audio (recomendado — sincroniza el texto y los tiempos solo)
           </p>
           {!audioFile ? (
             <button className="kk-btn" style={{ alignSelf: 'flex-start' }} onClick={() => audioInputRef.current?.click()}>
-              🎵 Subir audio de la canción
+              🎵 Subir audio del relato (MP3)
             </button>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem' }}>
@@ -429,7 +427,7 @@ export default function VideoLetraPage() {
             </div>
           ) : (
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              🔒 Letra, tiempos y duración se toman de la transcripción del audio subido ({audioDuration != null ? secToLabel(audioDuration) : '…'})
+              🔒 Texto, tiempos y duración se toman de la transcripción del audio subido ({audioDuration != null ? secToLabel(audioDuration) : '…'})
             </p>
           )}
         </div>
@@ -438,7 +436,7 @@ export default function VideoLetraPage() {
         <button
           className="btn-primary"
           onClick={handleGenerate}
-          disabled={generating || (!audioFile && !stanzas.length)}
+          disabled={generating || (!audioFile && !lines.length)}
           style={{ alignSelf: 'flex-start', marginBottom: '1rem' }}
         >
           {generating ? '⏳ Generando…' : '🎞️ Generar video'}
@@ -475,7 +473,7 @@ export default function VideoLetraPage() {
             background: 'rgba(74,222,128,0.08)', border: '1px solid #4ade80', marginBottom: '1rem',
           }}>
             <p style={{ color: '#4ade80', fontWeight: 600, marginBottom: '0.75rem' }}>✅ Video listo</p>
-            <a href={downloadUrl} download="video_letra.mp4" className="btn-primary"
+            <a href={downloadUrl} download="video_relato.mp4" className="btn-primary"
               style={{ display: 'inline-block', textDecoration: 'none' }}>
               ⬇️ Descargar MP4
             </a>
@@ -486,7 +484,7 @@ export default function VideoLetraPage() {
           </div>
         )}
 
-        {/* ── Versos con sus tiempos, para verificar la sincronía ── */}
+        {/* ── Oraciones con sus tiempos, para verificar la sincronía ── */}
         {verseWindows.length > 0 && (
           <div style={{
             padding: '1rem 1.25rem', borderRadius: 'var(--radius)',
@@ -494,7 +492,7 @@ export default function VideoLetraPage() {
           }}>
             <p style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase',
               letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
-              Versos y sus tiempos en el video
+              Oraciones y sus tiempos en el video
             </p>
             <ol style={{ margin: 0, paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               {verseWindows.map((v, i) => (
@@ -508,14 +506,14 @@ export default function VideoLetraPage() {
 
         <div className="kk-info" style={{ marginTop: '2rem' }}>
           <strong>Cómo funciona:</strong><br />
-          <strong>Con audio</strong> — se transcribe con Deepgram (como en Karaoke) y se agrupa en versos por pausas
-          naturales, cada uno con su tiempo real.<br />
-          <strong>Sin audio</strong> — cada línea que escribís es un verso, y la duración se reparte proporcional
-          al largo del texto.<br />
-          En ambos casos: la IA genera una búsqueda en inglés específica para CADA verso (según lo que ese verso
-          dice, no un tema genérico compartido) y Pexels busca un clip para cada una — un plano distinto por
-          verso, sincronizado con lo que se está diciendo en ese momento. No se quema texto sobre el video.<br />
-          Esto gasta 1 consulta de Pexels por verso (mirá el cupo arriba). Si elegís un
+          <strong>Con audio</strong> — se transcribe con Deepgram y se agrupa en ORACIONES (cada una termina en
+          punto, no por pausas de silencio), cada una con su tiempo real.<br />
+          <strong>Sin audio</strong> — pegás el relato como texto corrido y se separa solo en oraciones por los
+          puntos; la duración se reparte proporcional al largo de cada una.<br />
+          En ambos casos: la IA genera una búsqueda en inglés específica para CADA oración (según lo que esa
+          oración narra, no un tema genérico compartido) y Pexels busca un clip para cada una — un plano distinto
+          por oración, sincronizado con lo que se está narrando en ese momento. No se quema texto sobre el video.<br />
+          Esto gasta 1 consulta de Pexels por oración (mirá el cupo arriba). Si elegís un
           <strong> tema/ambientación</strong>, todas las búsquedas se sesgan hacia ese estilo (ej. rancheros,
           ciudad) — Pexels es metraje real, así que esto funciona para temas/ambientaciones concretas, no para
           estilos de dibujo o animación (cómic, manga).

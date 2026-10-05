@@ -166,6 +166,37 @@ export async function transcribirHabla(
   return { texto };
 }
 
+// Transcripción con timestamps por palabra para narraciones/relatos (video
+// con metraje de stock) — a diferencia de transcribirPalabras, acá NO se
+// filtran palabras comunes (ese filtro es para descartar créditos de
+// subtítulos en canciones, y en un relato hablado normal "la", "de", "por"
+// son palabras reales que no hay que perder) y se usa directamente nova-2
+// (soporta puntuación en español), sin pasar primero por whisper-large —
+// eso es para voz mezclada con música, no para una persona narrando sola.
+export async function transcribirNarracion(
+  audioBuffer: ArrayBuffer,
+  contentType: string
+): Promise<{ cues: Cue[] } | { error: string }> {
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) return { error: 'DEEPGRAM_API_KEY no configurada' };
+
+  const result = await tryModel('nova-2', audioBuffer, contentType, apiKey);
+  if ('error' in result) return { error: result.error };
+
+  const { words } = result;
+  if (words.length === 0) {
+    return { error: 'No se detectaron palabras. Verificá que el audio tenga voz clara.' };
+  }
+
+  const cues: Cue[] = words.map((w, i) => ({
+    start: w.start,
+    end: words[i + 1]?.start ?? w.end,
+    text: w.punctuated_word || w.word,
+  }));
+
+  return { cues };
+}
+
 const AURA_VOICES = new Set([
   'sirio', 'estrella', 'javier', 'luciano', 'olivia', 'valerio',
   'nestor', 'carina', 'alvaro', 'diana', 'agustina', 'silvia',
