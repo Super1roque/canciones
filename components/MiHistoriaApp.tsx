@@ -784,8 +784,127 @@ Tu objetivo final es que, al terminar de leerlo, alguien que nunca conoció al p
 
 **"Ahora siento que conozco su historia."**`;
 
+// Prompt de redacción aparte — no tiene relación con los datos de la
+// historia real del protagonista (no usa fuente primaria ni prohíbe
+// inventar, al revés que el Prompt Maestro de arriba). Sigue la misma
+// convención de formato (secciones numeradas, reglas explícitas, control
+// de calidad antes de entregar) para que sea fácil de usar junto al otro,
+// pero es explícitamente para FICCIÓN.
+const PROMPT_BORROSCOSO = `# PROMPT BORROSCOSO — VOZ NARRATIVA DE EMILY BRONTË
+
+## 1. TU PAPEL
+
+Actúa como una narradora de ficción gótica del siglo XIX, escribiendo estrictamente con la voz, la sintaxis y el estilo literario de Emily Brontë en *Cumbres Borrascosas* (Wuthering Heights).
+
+Tu trabajo no es resumir ni modernizar: es **escribir la escena completa**, como si perteneciera a esa novela.
+
+---
+
+# 2. REGLA PRINCIPAL: ACÁ SÍ ES FICCIÓN (a diferencia del Prompt Maestro)
+
+Este prompt es distinto del "Prompt Maestro" de Mi Historia en un punto esencial: aquel exige que todo sea verídico, fuente primaria, sin inventar nada. Este prompt es exactamente lo opuesto en ese único aspecto — la premisa que se indique en la sección 9 es ficción declarada, y tu trabajo es inventar la escena completa (personajes, diálogo, entorno) dentro de los límites de esa premisa y del estilo pedido.
+
+Lo que SÍ se mantiene igual que el Prompt Maestro: la disciplina de estilo, la fidelidad absoluta a una voz, y la prohibición de aflojar las reglas de tono "para hacerlo más agradable" al lector.
+
+---
+
+# 3. SINTAXIS Y RITMO
+
+Frases elaboradas de estilo decimonónico, con cláusulas subordinadas encadenadas y un ritmo cadencioso pero contundente — nunca liviano.
+
+Evita el lenguaje moderno. Evita también el refinamiento social a la Jane Austen: esta prosa es más salvaje, más directa, más terrenal.
+
+Alterná oraciones largas, casi torrenciales, con golpes cortos y secos que corten el ritmo cuando la emoción lo exija.
+
+---
+
+# 4. IMÁGENES ELEMENTALES (vocabulario)
+
+Describí las emociones y la psicología de los personajes a través de metáforas de la naturaleza dura: fuego, viento helado, piedra, tormenta, raíces, tierra, hielo, páramo.
+
+Sustituí siempre lo abstracto por lo físico. En vez de "estaba muy enojado", escribí sobre "un odio duro como el pedernal" o "una furia que helaba la sangre".
+
+No hay adjetivos decorativos sueltos — cada imagen tiene que poder tocarse, pesar, doler.
+
+---
+
+# 5. TONO VISCERAL Y AMORAL
+
+La pasión no suena romántica ni dulce: suena obsesiva, destructiva, feroz.
+
+Retratá la crueldad, el rencor o la devoción extrema con frialdad absoluta o con desesperación brutal — nunca con sentimentalismo.
+
+Rechazo total de la cursilería: los amantes de este estilo no se dicen palabras cariñosas; se amenazan, se acusan de traición, o juran que ni la muerte ni el infierno podrán separarlos.
+
+La narración no busca complacer moralmente al lector ni ofrecerle un alivio: presenta la naturaleza humana en su estado más indómito, sin pedir perdón por ello.
+
+---
+
+# 6. DIÁLOGOS DESCARADOS
+
+Tajantes, desafiantes, cargados de orgullo o despecho.
+
+Sin concesiones a la cortesía social — nadie en esta prosa dialoga para quedar bien.
+
+Cada línea de diálogo debe sonar como una herida abierta o como un desafío, nunca como una conversación de salón.
+
+---
+
+# 7. RITMO DE TENSIÓN CONSTANTE
+
+La escena no da respiro. No hay alivio cómico, no hay pausa amable.
+
+Cada párrafo empuja la tensión un paso más — hacia la obsesión, hacia la ruina, hacia la tormenta que se avecina, literal o emocional.
+
+---
+
+# 8. PERSPECTIVA
+
+Elegí UNA, según lo que pida quien use este prompt:
+
+* **Primera persona** — un testigo o protagonista que observa (y a veces padece) la obsesión de otros.
+* **Tercera persona focalizada** — pegada a la conciencia de un solo personaje, sin omnisciencia distante.
+
+Si no se especifica, usá primera persona en un testigo — es el recurso más característico de *Cumbres Borrascosas* (Nelly Dean, Lockwood).
+
+---
+
+# 9. SITUACIÓN / PREMISA
+
+[Acá va la premisa corta que te den — por ejemplo: "Un hombre regresa tras años de ausencia a una casa en ruinas durante una nevada y se encara con la mujer que amaba, que ahora pertenece a otro."]
+
+Si no te dan una premisa, PEDILA antes de escribir — no inventes una situación de la nada; la libertad creativa de este prompt es de **estilo**, no de argumento sin dirección.
+
+---
+
+# 10. EJEMPLO DE CALIBRACIÓN DE ESTILO
+
+Este fragmento es solo un ejemplo de referencia (no lo copies ni lo parafrasees) — marca el nivel de intensidad y la textura de prosa que este prompt busca:
+
+> "No había en su rostro ni un atisbo de la dulzura que los años suelen posar sobre los mortales, sino la misma dureza de la roca azotada por el cierzo. Me miró no como quien reconoce a un viejo amigo, sino como quien contempla el fantasma de su propia ruina. '¿Has venido a medir mi desdicha, o a comprobar si la tierra finalmente ha devorado mi orgullo?', dijo, y su voz tenía el crujido del hielo al quebrarse bajo la pisada. No había en sus palabras súplica ni remordimiento; solo la llama obstinada de una pasión que, lejos de consumirse, había incinerado todo cuanto la rodeaba."
+
+Usalo como vara de medir el tono — escribí algo nuevo que suene exactamente así de intenso.
+
+---
+
+# 11. CONTROL DE CALIDAD ANTES DE ENTREGAR LA ESCENA
+
+* ¿Hay alguna emoción descrita en abstracto en vez de a través de una imagen física/elemental?
+* ¿Se coló algún diálogo "amable" o socialmente educado?
+* ¿La sintaxis suena moderna o demasiado pulida en algún tramo?
+* ¿Hay algún momento de alivio cómico o ternura que rompa la tensión sin motivo?
+* ¿La pasión descripta suena dulce en vez de feroz en algún punto?
+
+Si alguna respuesta es sí, reescribí ese tramo antes de entregar.
+
+---
+
+# 12. PRINCIPIO FINAL
+
+No estás escribiendo una imitación cariñosa de Emily Brontë. Estás escribiendo CON su voz: salvaje, elemental, sin piedad por el lector ni por los personajes. La belleza de este estilo está en su dureza, no a pesar de ella.`;
+
 type EstadoPregunta = 'sin_responder' | 'respondida' | 'necesita_profundizacion' | 'completada' | 'no_responder' | 'no_recuerdo';
-type Respuesta = { texto: string; estado: EstadoPregunta; volverDespues: boolean; profundizaciones: { pregunta: string; respuesta: string }[] };
+type Respuesta = { texto: string; estado: EstadoPregunta; volverDespues: boolean; profundizaciones: { pregunta: string; respuesta: string }[]; tieneAudio?: boolean };
 type Persona = {
   id: string; nombre: string; apodo: string; relacion: string; nacimiento: string; fallecimiento: string;
   comoConoci: string; significado: string; aprendi: string; recuerdos: string; diria: string;
@@ -799,7 +918,7 @@ type Evento = {
   descripcion: string; importancia: string;
 };
 type Contradiccion = { id: string; nota: string };
-type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt';
+type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso';
 
 type HistoriaData = {
   meta: { creado: string; actualizado: string };
@@ -817,7 +936,7 @@ function historiaVacia(): HistoriaData {
   return { meta: { creado: ahora, actualizado: ahora }, respuestas: {}, notasLibres: [], personas: [], fotografias: [], lineaDeTiempo: [], contradicciones: [] };
 }
 
-const ETAPAS: { titulo: string; intro?: string; grandes?: boolean; preguntas: string[] }[] = [
+export const ETAPAS: { titulo: string; intro?: string; grandes?: boolean; preguntas: string[] }[] = [
   { titulo: 'Datos básicos', preguntas: [
     '¿Cuál es tu nombre completo?', '¿Cómo te llaman normalmente tus familiares y amigos?', '¿Cuándo y dónde naciste?',
     '¿Dónde vives actualmente?', '¿Cómo te describirías brevemente a alguien que nunca te ha conocido?',
@@ -923,7 +1042,7 @@ const ETAPAS: { titulo: string; intro?: string; grandes?: boolean; preguntas: st
   ]},
 ];
 
-function claveResp(e: number, p: number) { return 'e' + e + '_p' + p; }
+export function claveResp(e: number, p: number) { return 'e' + e + '_p' + p; }
 function totalPreguntas() { return ETAPAS.reduce((acc, e) => acc + e.preguntas.length, 0); }
 
 // clave identifica DE QUIÉN es esta historia en Firestore/Storage — 'principal'
@@ -1024,6 +1143,24 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
       }
       h.respuestas[k] = r;
     });
+  }
+  // Sube la grabación cruda de la respuesta actual (además de la
+  // transcripción, que ya se agregó al texto por separado) para que la
+  // página de Memoria pueda reproducir la voz real — no bloquea ni
+  // reintenta si falla, es un plus, no algo de lo que dependa guardar la
+  // respuesta en sí.
+  async function subirAudioDeRespuestaActual(blob: Blob) {
+    const k = claveResp(etapaActual, preguntaActual);
+    try {
+      const fd = new FormData();
+      fd.append('audio', blob, 'grabacion.webm');
+      const res = await fetch('/api/historia/' + clave + '/audio/' + k, { method: 'POST', body: fd });
+      if (!res.ok) return;
+      actualizar(h => {
+        const r = h.respuestas[k];
+        if (r) r.tieneAudio = true;
+      }, true);
+    } catch { /* la transcripción ya se guardó; perder el audio no es crítico */ }
   }
   function marcarEstadoEspecial(tipo: EstadoPregunta) {
     actualizar(h => {
@@ -1250,7 +1387,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
               {([
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
                 ['timeline', '🕐', 'Línea de vida'], ['review', '📋', 'Revisar'], ['final', '⬇️', 'Exportar'],
-                ['prompt', '📜', 'Prompt maestro'],
+                ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'],
               ] as [Pantalla, string, string][]).map(([id, icon, label]) => (
                 <button key={id} className={'mh-tab' + (pantalla === id ? ' active' : '')} onClick={() => irA(id)}>{icon} <span>{label}</span></button>
               ))}
@@ -1270,6 +1407,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
             resp={getResp(historia, etapaActual, preguntaActual)}
             pidiendoProfundizacion={pidiendoProfundizacion}
             onTexto={ActualizarRespuestaTexto}
+            onAudioGrabado={subirAudioDeRespuestaActual}
             onEspecial={marcarEstadoEspecial}
             onVolverDespues={toggleVolverDespues}
             onFollowup={actualizarFollowup}
@@ -1294,7 +1432,18 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
         {pantalla === 'people' && <PeopleScreen personas={historia.personas} onAgregar={agregarPersona} onBorrar={borrarPersona} />}
         {pantalla === 'photos' && <PhotosScreen clave={clave} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} />}
         {pantalla === 'timeline' && <TimelineScreen eventos={historia.lineaDeTiempo} onAgregar={agregarEvento} onBorrar={borrarEvento} />}
-        {pantalla === 'prompt' && <PromptScreen texto={PROMPT_MAESTRO} />}
+        {pantalla === 'prompt' && (
+          <PromptScreen
+            titulo="📜 Prompt maestro" texto={PROMPT_MAESTRO}
+            hint="Guardado acá para más adelante — cuando tengas la entrevista completa, pegás esto al inicio de una conversación de IA junto con el material exportado, y le pedís que escriba el libro siguiendo estas reglas."
+          />
+        )}
+        {pantalla === 'promptBorroscoso' && (
+          <PromptScreen
+            titulo="🌬️ Prompt Borroscoso" texto={PROMPT_BORROSCOSO}
+            hint="Para escribir ficción con la voz de Emily Brontë (Cumbres Borrascosas) — no tiene que ver con tu historia real, es una herramienta de redacción aparte. Pegalo en una conversación de IA, completá la premisa y la perspectiva, y pedí la escena."
+          />
+        )}
         {pantalla === 'review' && (
           <ReviewScreen
             getRespDe={(e, p) => getResp(historia, e, p)} notasLibres={historia.notasLibres}
@@ -1305,7 +1454,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
         )}
         {pantalla === 'final' && (
           <FinalScreen
-            historia={historia} etapaCompleta={i => etapaCompleta(historia, i)} contarRespondidas={() => contarRespondidas(historia)}
+            clave={clave} historia={historia} etapaCompleta={i => etapaCompleta(historia, i)} contarRespondidas={() => contarRespondidas(historia)}
             onExportar={exportar} onIrEntrevista={() => irA('interview')} onIrRevisar={() => irA('review')}
           />
         )}
@@ -1318,8 +1467,13 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
 // ===================== SUBCOMPONENTES =====================
 
-function AutoTextarea({ value, onChange, placeholder, className, disabled, minHeight }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; className?: string; disabled?: boolean; minHeight?: number;
+function AutoTextarea({ value, onChange, onAudioGrabado, placeholder, className, disabled, minHeight }: {
+  value: string; onChange: (v: string) => void;
+  // Solo lo usa la respuesta principal de la entrevista — guarda la
+  // grabación cruda para que Memoria pueda reproducir la voz real (ver
+  // InterviewScreen). El resto de los usos de AutoTextarea no lo pasan.
+  onAudioGrabado?: (blob: Blob) => void;
+  placeholder?: string; className?: string; disabled?: boolean; minHeight?: number;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -1337,7 +1491,7 @@ function AutoTextarea({ value, onChange, placeholder, className, disabled, minHe
       />
       {!disabled && (
         <BotonResponderHablando
-          valorActual={value} onTexto={onChange}
+          valorActual={value} onTexto={onChange} onAudioBlob={onAudioGrabado}
           className="mh-chip" classNameActivo="selected" spinnerClassName="mh-spinner"
         />
       )}
@@ -1379,9 +1533,9 @@ function HomeScreen({ hayProgreso, nombre, onContinuar, onEmpezar }: { hayProgre
   );
 }
 
-function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe }: {
+function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onAudioGrabado, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe }: {
   etapaActual: number; preguntaActual: number; resp: Respuesta; pidiendoProfundizacion: boolean;
-  onTexto: (t: string) => void; onEspecial: (t: EstadoPregunta) => void; onVolverDespues: () => void;
+  onTexto: (t: string) => void; onAudioGrabado: (blob: Blob) => void; onEspecial: (t: EstadoPregunta) => void; onVolverDespues: () => void;
   onFollowup: (i: number, t: string) => void; onProfundizar: () => void; onAnterior: () => void;
   onGuardarYSalir: () => void; onSiguiente: () => void; getRespDe: (e: number, p: number) => Respuesta;
 }) {
@@ -1415,8 +1569,9 @@ function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundiza
         {etapa.intro && preguntaActual === 0 && <p className="mh-hint" style={{ marginBottom: '1rem' }}>{etapa.intro}</p>}
         <div className="mh-question-text">{pregunta}</div>
 
-        <AutoTextarea value={resp.texto} onChange={onTexto} disabled={disabledEdit} minHeight={etapa.grandes ? 200 : 140}
+        <AutoTextarea value={resp.texto} onChange={onTexto} onAudioGrabado={onAudioGrabado} disabled={disabledEdit} minHeight={etapa.grandes ? 200 : 140}
           placeholder="Escribí lo que recuerdes — una frase, un párrafo, o varias páginas si hace falta." />
+        {resp.tieneAudio && <div className="mh-hint">🎙️ Esta respuesta tiene tu voz real guardada — se va a poder escuchar en Memoria.</div>}
         <div className="mh-hint">No necesitás escribir perfecto. Contalo como lo recordés — nosotros nos encargamos de convertirlo después en una historia.</div>
 
         <div className="mh-row" style={{ marginTop: '0.75rem' }}>
@@ -1669,7 +1824,7 @@ function ReviewScreen({ getRespDe, notasLibres, contradicciones, onIr, onAgregar
   );
 }
 
-function PromptScreen({ texto }: { texto: string }) {
+function PromptScreen({ titulo, hint, texto }: { titulo: string; hint: string; texto: string }) {
   const [copiado, setCopiado] = useState(false);
 
   async function copiar() {
@@ -1686,11 +1841,8 @@ function PromptScreen({ texto }: { texto: string }) {
   return (
     <>
       <div className="mh-card">
-        <h1 style={{ marginTop: 0 }}>📜 Prompt maestro</h1>
-        <p className="mh-hint" style={{ marginTop: 0 }}>
-          Guardado acá para más adelante — cuando tengas la entrevista completa, pegás esto al inicio de una
-          conversación de IA junto con el material exportado, y le pedís que escriba el libro siguiendo estas reglas.
-        </p>
+        <h1 style={{ marginTop: 0 }}>{titulo}</h1>
+        <p className="mh-hint" style={{ marginTop: 0 }}>{hint}</p>
         <button className="mh-btn mh-btn-gold" onClick={copiar}>{copiado ? '✓ Copiado' : '📋 Copiar prompt completo'}</button>
       </div>
       <div className="mh-card">
@@ -1703,8 +1855,8 @@ function PromptScreen({ texto }: { texto: string }) {
   );
 }
 
-function FinalScreen({ historia, etapaCompleta, contarRespondidas, onExportar, onIrEntrevista, onIrRevisar }: {
-  historia: HistoriaData; etapaCompleta: (i: number) => boolean; contarRespondidas: () => number;
+function FinalScreen({ clave, historia, etapaCompleta, contarRespondidas, onExportar, onIrEntrevista, onIrRevisar }: {
+  clave: string; historia: HistoriaData; etapaCompleta: (i: number) => boolean; contarRespondidas: () => number;
   onExportar: (f: 'txt' | 'md' | 'json' | 'ia') => void; onIrEntrevista: () => void; onIrRevisar: () => void;
 }) {
   const etapasCompletas = ETAPAS.filter((_, i) => etapaCompleta(i)).length;
@@ -1726,6 +1878,13 @@ function FinalScreen({ historia, etapaCompleta, contarRespondidas, onExportar, o
         ].map(([num, label]) => (
           <div className="mh-stat" key={label}><div className="mh-stat-num">{num}</div><div className="mh-stat-label">{label}</div></div>
         ))}
+      </div>
+      <div className="mh-card">
+        <h3 style={{ marginTop: 0 }}>🏛️ Página de Memoria</h3>
+        <p className="mh-hint" style={{ marginTop: 0 }}>Una página de lectura, sin edición, para compartir con la familia — navegan por capítulos, ven las fotos, y escuchan tu voz real en las respuestas que grabaste (o una lectura generada en las que no).</p>
+        <a className="mh-btn mh-btn-gold" style={{ textDecoration: 'none' }} href={'/historia/' + clave + '/memoria'} target="_blank" rel="noopener noreferrer">
+          🏛️ Abrir página de Memoria
+        </a>
       </div>
       <div className="mh-card">
         <h3 style={{ marginTop: 0 }}>Exportar mi historia</h3>

@@ -7,9 +7,13 @@ import { useRef, useState } from 'react';
 // texto) y agrega el resultado a lo que ya hubiera escrito. Se usa tanto
 // en Mi Historia (components/MiHistoriaApp.tsx) como en el campo de
 // historia de Crear Parodia.
-export default function BotonResponderHablando({ valorActual, onTexto, className, classNameActivo, spinnerClassName }: {
+export default function BotonResponderHablando({ valorActual, onTexto, onAudioBlob, className, classNameActivo, spinnerClassName }: {
   valorActual: string;
   onTexto: (nuevoValor: string) => void;
+  // Opcional: si se pasa, recibe la grabación cruda (además de la
+  // transcripción) — para los pocos lugares que además quieren GUARDAR el
+  // audio (ver Memoria en Mi Historia), no solo convertirlo a texto.
+  onAudioBlob?: (blob: Blob) => void;
   className?: string;
   classNameActivo?: string;
   spinnerClassName?: string;
@@ -43,6 +47,7 @@ export default function BotonResponderHablando({ valorActual, onTexto, className
           if (!res.ok) { setError(data.error || 'No se pudo transcribir la grabación.'); return; }
           const previo = valorRef.current.trim();
           onTexto(previo ? previo + ' ' + data.texto : data.texto);
+          onAudioBlob?.(blob);
         } catch {
           setError('Error de conexión al transcribir.');
         } finally {

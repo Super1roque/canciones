@@ -14,6 +14,7 @@ export interface HistoriaData {
     estado: 'sin_responder' | 'respondida' | 'necesita_profundizacion' | 'completada' | 'no_responder' | 'no_recuerdo';
     volverDespues: boolean;
     profundizaciones: { pregunta: string; respuesta: string }[];
+    tieneAudio?: boolean;
   }>;
   notasLibres: { id: string; etapaIdx: number; texto: string; fecha: string }[];
   personas: Record<string, unknown>[];
@@ -63,4 +64,21 @@ export async function subirFotoHistoria(clave: string, buffer: Buffer, contentTy
 
 export async function eliminarFotoHistoria(clave: string, id: string): Promise<void> {
   await getStorageBucket().file(pathFotoHistoria(clave, id)).delete().catch(() => {});
+}
+
+// Grabación de voz real de una respuesta puntual (etapa+pregunta, p. ej.
+// "e2_p3") — guardada aparte de la transcripción, para que la página de
+// Memoria pueda reproducir la voz real de quien contó la historia en vez
+// de solo mostrar el texto. Mismo criterio de aislamiento por carpeta que
+// las fotos.
+export function pathAudioRespuesta(clave: string, claveResp: string): string {
+  return `mi-historia/${clave}/audio/${claveResp}.webm`;
+}
+
+export async function subirAudioRespuesta(clave: string, claveResp: string, buffer: Buffer, contentType: string): Promise<void> {
+  await getStorageBucket().file(pathAudioRespuesta(clave, claveResp)).save(buffer, { metadata: { contentType } });
+}
+
+export async function eliminarAudioRespuesta(clave: string, claveResp: string): Promise<void> {
+  await getStorageBucket().file(pathAudioRespuesta(clave, claveResp)).delete().catch(() => {});
 }
