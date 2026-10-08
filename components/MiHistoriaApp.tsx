@@ -921,6 +921,88 @@ Si alguna respuesta es sí, reescribí ese tramo antes de entregar.
 
 No estás escribiendo una imitación cariñosa de Emily Brontë. Estás escribiendo CON su voz: salvaje, elemental, sin piedad por el lector ni por los personajes. La belleza de este estilo está en su dureza, no a pesar de ella.`;
 
+const PROMPT_MIMESIS = `# PROMPT MÍMESIS — ESCENA DRAMATIZADA SIN INVENTAR HECHOS
+
+## 1. TU PAPEL
+
+Actúa como un editor literario que toma una biografía real —contada en respuestas, no en escenas— y la reescribe en forma de mímesis: mostrando cada momento como si estuviera pasando, con ritmo, silencio y gesto, en vez de resumirlo con el narrador contándolo desde afuera.
+
+---
+
+# 2. REGLA PRINCIPAL: LA ESCENA SE VISTE, EL ELENCO NO SE INVENTA
+
+Este prompt es un punto intermedio entre el Prompt Maestro (verdad estricta, cero puesta en escena) y el Prompt Borroscoso (ficción declarada, libertad total). Acá sí podés imaginar cómo se vivió un momento real — pero no podés inventar qué pasó, quién dijo qué, ni qué hábitos o cosas tenía una persona real.
+
+La regla corta: **podés vestir la escena, pero no podés inventar el elenco.** El clima, el ritmo, un gesto genérico, el silencio entre dos frases — se puede imaginar. Un hábito, un objeto, una palabra textual nueva atribuida a una persona real que nadie mencionó — no se inventa nunca.
+
+---
+
+# 3. QUÉ SÍ SE PUEDE INVENTAR
+
+* Ambientación física neutra: luz, distancia, temperatura, sonido de fondo — siempre que no afirme un dato verificable que el material no dio (no inventes que llovía si nadie lo dijo; sí vale "la tarde ya caía" si la escena es de tarde).
+* Gestos y reacciones genéricas, coherentes con el tono que la persona describió: quedarse callado, apretar la mandíbula, bajar la voz, mirar hacia otro lado.
+* El orden interno de una escena — quién habla primero, cómo se organiza una conversación ya contada — siempre que no cambie lo que de verdad ocurrió.
+* El ritmo de la prosa: frases cortas para un golpe emocional, frases largas para una descripción — esto es estilo, no invención de hechos.
+
+---
+
+# 4. QUÉ NUNCA SE PUEDE INVENTAR
+
+* **Hábitos, objetos o acciones concretas** de una persona real que nadie mencionó — un cigarro, un tic, una bebida, un objeto que portaba. Si el material no lo dice, no existió para esta escena.
+* **Datos verificables nuevos**: clima específico de un día puntual, una fecha, un lugar, un nombre que no está en el material.
+* **Incidentes nuevos**: una escena completa inventada (una caída, una pelea, un accidente) que no tiene base en ninguna respuesta real, aunque sea plausible.
+* Nada de esto cambia aunque sea "razonable" o "le pega al personaje" — si no está en el material, no se inventa.
+
+---
+
+# 5. DIÁLOGO: SOLO EL QUE ES REAL
+
+Dramatizá en forma de diálogo (guion largo, cambio de párrafo por hablante) únicamente lo que la persona citó o parafraseó como algo que de verdad se dijo — propio o de un tercero que ella reporta. Nunca le pongas una frase textual nueva a una persona real que la fuente no reporta haber dicho, ni siquiera una frase corta y genérica tipo "qué bueno verte". Si hace falta una interacción y no hay diálogo real que dramatizar, contala narrada, no como diálogo inventado.
+
+---
+
+# 6. FORMATO DE DIÁLOGO
+
+Cuando sí haya diálogo real para dramatizar, aplicá las mismas reglas del Prompt Maestro: voz y personalidad propia por hablante, guion largo (—) al inicio de cada intervención con cambio de párrafo, sin etiquetas entre corchetes, y acotaciones integradas en el propio inciso de diálogo en vez de como oraciones aparte.
+
+---
+
+# 7. CUANDO EL DATO NO ESTÁ CONFIRMADO
+
+Si una fecha, un lugar o un detalle no está claro en el material, no lo inventes ni lo redondees para que "quede mejor" la escena — dejalo fuera de la escena o nombralo con la misma vaguedad con la que aparece en la fuente ("una tarde que no recuerda con exactitud").
+
+---
+
+# 8. EJEMPLO DE CALIBRACIÓN
+
+Mismo hecho real — un hermano sentado con el protagonista después de un entierro — en sus tres niveles:
+
+> **Demasiado plano (sin mímesis):** "Mi hermano siempre estuvo conmigo, incluso cuando murió mi padre."
+
+> **Nivel correcto (mímesis moderada):** "Después del entierro, se queda un rato sentado con su hermano en el patio, los dos frente al mismo campo de tierra donde de niños jugaban potra. No hablan mucho — no hace falta."
+
+> **Demasiado lejos (inventa elenco):** "Su hermano le pasa un cigarro que ninguno de los dos suele fumar, y dice: 'Nos tocó a nosotros ahora.'"
+
+El nivel correcto viste la escena (el patio, el campo, el silencio — todos datos reales o generales) sin inventarle al hermano un hábito (fumar) ni una frase textual que nunca dijo.
+
+---
+
+# 9. CONTROL DE CALIDAD ANTES DE ENTREGAR LA ESCENA
+
+* ¿Alguna persona real dice una frase textual que el material no reporta?
+* ¿Alguna persona real tiene un hábito, objeto o acción concreta que nadie mencionó?
+* ¿Inventé un dato verificable nuevo — clima de un día puntual, fecha, lugar, nombre?
+* ¿Inventé un incidente completo que no tiene base en el material?
+* ¿Até fechas o lugares "por conveniencia" cuando la fuente era vaga?
+
+Si alguna respuesta es sí, corregí esa parte antes de entregar — volvela ambientación neutra o quitala.
+
+---
+
+# 10. PRINCIPIO FINAL
+
+Esto no es ficción y no es tampoco un resumen seco. Es la misma verdad, mostrada en vez de contada. La libertad de este prompt está en el cómo se vivió cada momento — nunca en el qué pasó ni en quién dijo qué.`;
+
 type EstadoPregunta = 'sin_responder' | 'respondida' | 'necesita_profundizacion' | 'completada' | 'no_responder' | 'no_recuerdo';
 type Respuesta = { texto: string; estado: EstadoPregunta; volverDespues: boolean; profundizaciones: { pregunta: string; respuesta: string }[]; tieneAudio?: boolean };
 type Persona = {
@@ -936,7 +1018,7 @@ type Evento = {
   descripcion: string; importancia: string;
 };
 type Contradiccion = { id: string; nota: string };
-type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso';
+type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso' | 'promptMimesis';
 
 type HistoriaData = {
   meta: { creado: string; actualizado: string };
@@ -1286,6 +1368,10 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     await fetch('/api/historia/' + clave + '/foto/' + id, { method: 'DELETE' }).catch(() => {});
     actualizar(h => { h.fotografias.splice(i, 1); }, true);
   }
+  function editarFoto(i: number, meta: Omit<Foto, 'id'>) {
+    actualizar(h => { h.fotografias[i] = { ...h.fotografias[i], ...meta }; }, true);
+    mostrarToast('Foto actualizada ✓');
+  }
 
   // -------- Línea de tiempo --------
   function agregarEvento(ev: Omit<Evento, 'id'>) {
@@ -1405,7 +1491,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
               {([
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
                 ['timeline', '🕐', 'Línea de vida'], ['review', '📋', 'Revisar'], ['final', '⬇️', 'Exportar'],
-                ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'],
+                ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'], ['promptMimesis', '🎭', 'Prompt Mímesis'],
               ] as [Pantalla, string, string][]).map(([id, icon, label]) => (
                 <button key={id} className={'mh-tab' + (pantalla === id ? ' active' : '')} onClick={() => irA(id)}>{icon} <span>{label}</span></button>
               ))}
@@ -1448,7 +1534,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
         )}
 
         {pantalla === 'people' && <PeopleScreen personas={historia.personas} onAgregar={agregarPersona} onBorrar={borrarPersona} />}
-        {pantalla === 'photos' && <PhotosScreen clave={clave} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} />}
+        {pantalla === 'photos' && <PhotosScreen clave={clave} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} onEditar={editarFoto} />}
         {pantalla === 'timeline' && <TimelineScreen eventos={historia.lineaDeTiempo} onAgregar={agregarEvento} onBorrar={borrarEvento} />}
         {pantalla === 'prompt' && (
           <PromptScreen
@@ -1460,6 +1546,12 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
           <PromptScreen
             titulo="🌬️ Prompt Borroscoso" texto={PROMPT_BORROSCOSO}
             hint="Para escribir ficción con la voz de Emily Brontë (Cumbres Borrascosas) — no tiene que ver con tu historia real, es una herramienta de redacción aparte. Pegalo en una conversación de IA, completá la premisa y la perspectiva, y pedí la escena."
+          />
+        )}
+        {pantalla === 'promptMimesis' && (
+          <PromptScreen
+            titulo="🎭 Prompt Mímesis" texto={PROMPT_MIMESIS}
+            hint="Punto intermedio entre el Prompt Maestro y el Prompt Borroscoso: dramatiza tu historia real como escena —clima, gesto, silencio— sin inventar hechos, hábitos ni diálogo de personas reales que no dijeron eso. Pegalo junto con el material exportado ('Exportar para IA') al inicio de una conversación de IA."
           />
         )}
         {pantalla === 'review' && (
@@ -1695,10 +1787,42 @@ function PeopleScreen({ personas, onAgregar, onBorrar }: { personas: Persona[]; 
   );
 }
 
-function PhotosScreen({ clave, fotos, onAgregar, onBorrar }: { clave: string; fotos: Foto[]; onAgregar: (f: File, meta: Omit<Foto, 'id'>) => void; onBorrar: (i: number) => void }) {
+type FotoMeta = Omit<Foto, 'id'>;
+const FOTO_META_VACIA: FotoMeta = { descripcion: '', año: '', lugar: '', personas: '', queOcurria: '', porQueImportante: '', etapaRelacionada: '' };
+
+function FotoCampos({ f, set }: { f: FotoMeta; set: (k: keyof FotoMeta) => (v: string) => void }) {
+  return (
+    <>
+      <div className="mh-field" style={{ marginTop: '0.75rem' }}><label className="mh-field-label">Descripción</label><AutoTextarea value={f.descripcion} onChange={set('descripcion')} minHeight={70} /></div>
+      <div className="mh-row" style={{ gap: '0.75rem' }}>
+        <div className="mh-field" style={{ flex: 1 }}><label className="mh-field-label">Año aproximado</label><input className="mh-text-input" value={f.año} onChange={e => set('año')(e.target.value)} /></div>
+        <div className="mh-field" style={{ flex: 1 }}><label className="mh-field-label">Lugar</label><input className="mh-text-input" value={f.lugar} onChange={e => set('lugar')(e.target.value)} /></div>
+      </div>
+      <div className="mh-field"><label className="mh-field-label">Personas que aparecen</label><input className="mh-text-input" value={f.personas} onChange={e => set('personas')(e.target.value)} /></div>
+      <div className="mh-field"><label className="mh-field-label">¿Qué estaba ocurriendo?</label><AutoTextarea value={f.queOcurria} onChange={set('queOcurria')} minHeight={70} /></div>
+      <div className="mh-field"><label className="mh-field-label">¿Por qué es importante?</label><AutoTextarea value={f.porQueImportante} onChange={set('porQueImportante')} minHeight={70} /></div>
+      <div className="mh-field">
+        <label className="mh-field-label">Etapa relacionada</label>
+        <select className="mh-text-input" value={f.etapaRelacionada} onChange={e => set('etapaRelacionada')(e.target.value)}>
+          <option value="">— sin especificar —</option>
+          {ETAPAS.map((e, i) => <option key={i} value={i}>{e.titulo}</option>)}
+        </select>
+      </div>
+    </>
+  );
+}
+
+function PhotosScreen({ clave, fotos, onAgregar, onBorrar, onEditar }: { clave: string; fotos: Foto[]; onAgregar: (f: File, meta: FotoMeta) => void; onBorrar: (i: number) => void; onEditar: (i: number, meta: FotoMeta) => void }) {
   const [file, setFile] = useState<File | null>(null);
-  const [f, setF] = useState({ descripcion: '', año: '', lugar: '', personas: '', queOcurria: '', porQueImportante: '', etapaRelacionada: '' });
-  function set(k: keyof typeof f) { return (v: string) => setF(prev => ({ ...prev, [k]: v })); }
+  const [f, setF] = useState<FotoMeta>(FOTO_META_VACIA);
+  function set(k: keyof FotoMeta) { return (v: string) => setF(prev => ({ ...prev, [k]: v })); }
+  const [editandoIdx, setEditandoIdx] = useState<number | null>(null);
+  const [editF, setEditF] = useState<FotoMeta>(FOTO_META_VACIA);
+  function setEdit(k: keyof FotoMeta) { return (v: string) => setEditF(prev => ({ ...prev, [k]: v })); }
+  function empezarEdicion(i: number, foto: Foto) {
+    const { id, ...meta } = foto;
+    setEditF(meta); setEditandoIdx(i);
+  }
   return (
     <>
       <div className="mh-eyebrow">Módulo</div>
@@ -1707,25 +1831,11 @@ function PhotosScreen({ clave, fotos, onAgregar, onBorrar }: { clave: string; fo
       <div className="mh-card">
         <h3 style={{ marginTop: 0 }}>Agregar fotografía</h3>
         <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
-        <div className="mh-field" style={{ marginTop: '0.75rem' }}><label className="mh-field-label">Descripción</label><AutoTextarea value={f.descripcion} onChange={set('descripcion')} minHeight={70} /></div>
-        <div className="mh-row" style={{ gap: '0.75rem' }}>
-          <div className="mh-field" style={{ flex: 1 }}><label className="mh-field-label">Año aproximado</label><input className="mh-text-input" value={f.año} onChange={e => set('año')(e.target.value)} /></div>
-          <div className="mh-field" style={{ flex: 1 }}><label className="mh-field-label">Lugar</label><input className="mh-text-input" value={f.lugar} onChange={e => set('lugar')(e.target.value)} /></div>
-        </div>
-        <div className="mh-field"><label className="mh-field-label">Personas que aparecen</label><input className="mh-text-input" value={f.personas} onChange={e => set('personas')(e.target.value)} /></div>
-        <div className="mh-field"><label className="mh-field-label">¿Qué estaba ocurriendo?</label><AutoTextarea value={f.queOcurria} onChange={set('queOcurria')} minHeight={70} /></div>
-        <div className="mh-field"><label className="mh-field-label">¿Por qué es importante?</label><AutoTextarea value={f.porQueImportante} onChange={set('porQueImportante')} minHeight={70} /></div>
-        <div className="mh-field">
-          <label className="mh-field-label">Etapa relacionada</label>
-          <select className="mh-text-input" value={f.etapaRelacionada} onChange={e => set('etapaRelacionada')(e.target.value)}>
-            <option value="">— sin especificar —</option>
-            {ETAPAS.map((e, i) => <option key={i} value={i}>{e.titulo}</option>)}
-          </select>
-        </div>
+        <FotoCampos f={f} set={set} />
         <button className="mh-btn mh-btn-primary" onClick={() => {
           if (!file) return;
           onAgregar(file, f);
-          setFile(null); setF({ descripcion: '', año: '', lugar: '', personas: '', queOcurria: '', porQueImportante: '', etapaRelacionada: '' });
+          setFile(null); setF(FOTO_META_VACIA);
         }}>+ Agregar a la galería</button>
       </div>
       <div className="mh-row mh-between" style={{ alignItems: 'center' }}>
@@ -1740,9 +1850,22 @@ function PhotosScreen({ clave, fotos, onAgregar, onBorrar }: { clave: string; fo
         {fotos.map((f2, i) => (
           <div className="mh-photo-card" key={f2.id}>
             <img src={'/api/historia/' + clave + '/foto/' + f2.id} alt="" />
-            <div className="mh-cap">{f2.descripcion || 'Sin descripción'}<br />{f2.año}
-              <div style={{ marginTop: '0.3rem' }}><button className="mh-btn-ghost mh-btn-sm" onClick={() => onBorrar(i)}>🗑️ quitar</button></div>
-            </div>
+            {editandoIdx === i ? (
+              <div className="mh-cap">
+                <FotoCampos f={editF} set={setEdit} />
+                <div style={{ marginTop: '0.3rem', display: 'flex', gap: '0.5rem' }}>
+                  <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={() => { onEditar(i, editF); setEditandoIdx(null); }}>Guardar</button>
+                  <button className="mh-btn-ghost mh-btn-sm" onClick={() => setEditandoIdx(null)}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <div className="mh-cap">{f2.descripcion || 'Sin descripción'}<br />{f2.año}
+                <div style={{ marginTop: '0.3rem', display: 'flex', gap: '0.5rem' }}>
+                  <button className="mh-btn-ghost mh-btn-sm" onClick={() => empezarEdicion(i, f2)}>✏️ editar</button>
+                  <button className="mh-btn-ghost mh-btn-sm" onClick={() => onBorrar(i)}>🗑️ quitar</button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
