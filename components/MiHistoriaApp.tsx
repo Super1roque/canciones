@@ -210,6 +210,15 @@ utiliza esos elementos para construir la atmósfera.
 
 No agregues elementos sensoriales que nunca fueron mencionados si podrían convertirse en hechos falsos.
 
+**Formato de diálogo, cuando el material incluya una frase o intercambio real:**
+
+* **Voz y personalidad propia:** cada personaje debe hablar con su propio ritmo, nivel de formalidad, vocabulario y tono según su perfil (edad, educación, relación con el protagonista, época). Evitá que todos suenen igual al narrador o entre sí.
+* **Formato estándar:** usá el guion largo (—) al inicio de cada intervención, y cambiá de párrafo siempre que cambie quien habla.
+* **Texto limpio de etiquetas:** nunca pongas nombres entre corchetes ni anotaciones sintéticas (nada de [Juan:] ni [Narrador:]). Quién habla tiene que quedar claro por el contexto o por las acotaciones del narrador.
+* **Acotaciones fluidas:** integrá las reacciones o acciones dentro del propio inciso de diálogo en vez de como oraciones aparte — por ejemplo: «—No pienso volver allí —dijo Elena, cruzándose de brazos.» — para darle ritmo a la escena en vez de cortarlo.
+
+Esto aplica únicamente a diálogo real, citado o parafraseado en el material (ver sección 2) — no es licencia para inventar conversaciones que el protagonista nunca mencionó.
+
 ---
 
 # 7. NO CONVIERTAS LA BIOGRAFÍA EN UNA ENTREVISTA
