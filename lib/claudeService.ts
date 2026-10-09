@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { PROMPT_MIMESIS } from './prompts';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -239,4 +240,29 @@ export async function generarGalimatias(palabras: string[]): Promise<string[]> {
   }
 
   return resultado.map(String);
+}
+
+// Vista previa en vivo de Mi Historia: mientras alguien va respondiendo el
+// cuestionario, puede pedir un adelanto corto escrito con sus propias
+// respuestas (Prompt Mímesis) para sentir que lo que está contando se está
+// convirtiendo en algo real — motivación para seguir respondiendo con más
+// apertura. Es solo UNA escena breve, no un capítulo ni el libro completo.
+export async function generarVistaPreviaHistoria(materialRespondido: string): Promise<string> {
+  const userPrompt = `A partir del siguiente material autobiográfico real, elegí UN solo momento o recuerdo que te parezca especialmente vívido y escribí UNA escena corta (entre 120 y 220 palabras) siguiendo al pie de la letra las reglas del prompt de arriba.
+
+Esto es una VISTA PREVIA para motivar a la persona a seguir respondiendo el cuestionario — no es el libro ni un capítulo completo. Elegí el momento más concreto y con más detalle disponible (no el más abstracto), para que la escena tenga con qué trabajar.
+
+Empezá con un título corto y evocador para la escena, en una línea y en texto plano (sin #, sin **, sin ningún símbolo de markdown), y después el texto. No agregues explicaciones, comentarios ni nada antes o después — solo el título y la escena.
+
+MATERIAL AUTOBIOGRÁFICO REAL:
+${materialRespondido}`;
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 900,
+    system: PROMPT_MIMESIS,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  return (response.content[0] as { type: 'text'; text: string }).text;
 }
