@@ -119,6 +119,25 @@ export function contarPreguntasRespondidas(historia: HistoriaData): number {
   return Object.values(historia.respuestas).filter(r => r.texto && r.texto.trim()).length;
 }
 
+// Igual que construirMaterialRespondido, pero acotado a UNA sola etapa —
+// pensado para pedirle a la IA un prompt de imagen puntual para esa etapa,
+// en vez de mandarle la historia completa.
+export function construirMaterialEtapa(historia: HistoriaData, etapaIndex: number): string {
+  const etapa = ETAPAS[etapaIndex];
+  if (!etapa) return '';
+  let out = '';
+  const preguntasRespondidas = etapa.preguntas
+    .map((preg, pi) => ({ preg, r: historia.respuestas[claveResp(etapaIndex, pi)] }))
+    .filter(({ r }) => r && r.texto && r.texto.trim());
+  if (preguntasRespondidas.length === 0) return '';
+  out += 'ETAPA: ' + etapa.titulo + '\n\n';
+  preguntasRespondidas.forEach(({ preg, r }) => {
+    out += 'Pregunta: ' + preg + '\nRespuesta: ' + r.texto.trim() + '\n';
+    r.profundizaciones.forEach(f => { if (f.respuesta.trim()) out += '  · ' + f.pregunta + ' → ' + f.respuesta + '\n'; });
+  });
+  return out.trim();
+}
+
 // Texto plano con lo que la persona ya respondió — mismo criterio que
 // construirTexto() en MiHistoriaApp.tsx, pero reducido a solo preguntas
 // con respuesta real (sin encabezados de etapas vacías) y sin el resto del

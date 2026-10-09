@@ -266,3 +266,40 @@ ${materialRespondido}`;
 
   return (response.content[0] as { type: 'text'; text: string }).text;
 }
+
+const SYSTEM_PROMPT_FOTO = `Eres un experto en escribir prompts para generadores de imágenes con IA (Midjourney, DALL·E, Stable Diffusion), especializado en fotografía evocadora de escenas de vida real.
+
+A partir de lo que una persona contó sobre una etapa de su vida, tu trabajo es escribir UN prompt de imagen, en inglés, que describa una fotografía que podría ilustrar esa etapa — el lugar, la época, los objetos, la luz, el ambiente.
+
+Regla obligatoria: la imagen nunca debe depender de mostrar el rostro de una persona real de frente ni de forma reconocible, porque la IA no sabe cómo es físicamente esa persona. Si la escena necesita personas, describilas:
+- de espaldas, o
+- en silueta, o
+- fuera de foco / en segundo plano, o
+- recortadas (solo manos, solo pies, solo un hombro), o
+- directamente ausentes, enfocando el lugar y los objetos en vez de la gente.
+
+Nunca pidas un rostro específico, una expresión facial, ni la palabra "portrait" o "retrato". Preferí planos abiertos, de ambiente, o detalles cercanos de objetos y texturas.
+
+IMPORTANTE: Respondé ÚNICAMENTE con el prompt final, en inglés, listo para pegar en un generador de imágenes. Sin explicaciones, sin comillas, sin markdown, sin texto en español.`;
+
+// Prompt de imagen (para pegar en Midjourney/DALL·E/etc.) para ilustrar una
+// etapa puntual de la biografía, pensado para cuando no hay foto real de
+// ese momento — evita rostros reconocibles porque la IA no sabe cómo es
+// físicamente la persona real.
+export async function generarPromptFotoEtapa(tituloEtapa: string, material: string): Promise<string> {
+  const userPrompt = `Etapa de la biografía: "${tituloEtapa}"
+
+Material real de esa etapa:
+${material}
+
+Escribí el prompt de imagen para esta etapa, siguiendo las reglas del system prompt.`;
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 400,
+    system: SYSTEM_PROMPT_FOTO,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  return (response.content[0] as { type: 'text'; text: string }).text.trim();
+}

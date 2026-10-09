@@ -465,7 +465,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
         )}
 
         {pantalla === 'people' && <PeopleScreen personas={historia.personas} onAgregar={agregarPersona} onBorrar={borrarPersona} />}
-        {pantalla === 'photos' && <PhotosScreen clave={clave} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} onEditar={editarFoto} />}
+        {pantalla === 'photos' && <PhotosScreen clave={clave} esPrincipal={esPrincipal} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} onEditar={editarFoto} />}
         {pantalla === 'timeline' && <TimelineScreen eventos={historia.lineaDeTiempo} onAgregar={agregarEvento} onBorrar={borrarEvento} />}
         {pantalla === 'prompt' && esPrincipal && (
           <PromptScreen
@@ -805,7 +805,78 @@ function FotoCampos({ f, set }: { f: FotoMeta; set: (k: keyof FotoMeta) => (v: s
   );
 }
 
-function PhotosScreen({ clave, fotos, onAgregar, onBorrar, onEditar }: { clave: string; fotos: Foto[]; onAgregar: (f: File, meta: FotoMeta) => void; onBorrar: (i: number) => void; onEditar: (i: number, meta: FotoMeta) => void }) {
+// Genera, con IA, un prompt de imagen (en inglés, para Midjourney/DALL·E/
+// etc.) a partir de lo respondido en una etapa puntual — pensado para
+// cuando no hay foto real de ese momento, y se quiere subir después una
+// ilustrativa. El prompt pedido explícitamente evita rostros reconocibles
+// de frente, porque la IA de imágenes no sabe cómo es físicamente la
+// persona real.
+function GenerarPromptFoto({ clave }: { clave: string }) {
+  const [etapaIndex, setEtapaIndex] = useState(0);
+  const [estado, setEstado] = useState<'inicial' | 'cargando' | 'lista' | 'insuficiente' | 'error'>('inicial');
+  const [prompt, setPrompt] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [copiado, setCopiado] = useState(false);
+
+  async function generar() {
+    setEstado('cargando'); setMensaje(''); setCopiado(false);
+    try {
+      const res = await fetch('/api/historia/' + clave + '/prompt-foto', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ etapaIndex }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMensaje(data.error || 'No se pudo generar el prompt'); setEstado('error'); return; }
+      if (data.insuficiente) { setMensaje(data.mensaje); setEstado('insuficiente'); return; }
+      setPrompt(data.prompt);
+      setEstado('lista');
+    } catch {
+      setMensaje('Error de conexión al generar el prompt');
+      setEstado('error');
+    }
+  }
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Si el navegador bloquea el clipboard, el texto sigue ahí abajo para seleccionar a mano.
+    }
+  }
+
+  return (
+    <div className="mh-card">
+      <div className="mh-eyebrow">✨ Prompt de imagen con IA</div>
+      <h3 style={{ marginTop: 0 }}>Generar una foto ilustrativa para una etapa</h3>
+      <p className="mh-hint" style={{ marginTop: 0 }}>Para las etapas sin foto real: elegí una, y generamos un prompt en inglés para pegar en Midjourney, DALL·E u otro generador de imágenes. Evita a propósito mostrar rostros de frente o reconocibles — la IA no sabe cómo es físicamente la persona real.</p>
+      <div className="mh-field">
+        <label className="mh-field-label">Etapa</label>
+        <select className="mh-text-input" value={etapaIndex} onChange={e => { setEtapaIndex(Number(e.target.value)); setEstado('inicial'); }}>
+          {ETAPAS.map((e, i) => <option key={i} value={i}>{i + 1}. {e.titulo}</option>)}
+        </select>
+      </div>
+      <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
+        {estado === 'cargando' ? '⏳ Generando prompt...' : '✨ Generar prompt de imagen'}
+      </button>
+      {estado === 'insuficiente' && <p className="mh-hint" style={{ marginTop: '0.6rem' }}>✍️ {mensaje}</p>}
+      {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{mensaje}</p>}
+      {estado === 'lista' && (
+        <div style={{ marginTop: '1rem' }}>
+          <pre style={{
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'var(--font-mh-sans), system-ui, sans-serif',
+            fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 0.75rem', background: 'var(--mh-paper)',
+            border: '1px solid var(--mh-border)', borderRadius: '12px', padding: '0.9rem 1rem',
+          }}>{prompt}</pre>
+          <button className="mh-btn mh-btn-gold mh-btn-sm" onClick={copiar}>{copiado ? '✓ Copiado' : '📋 Copiar prompt'}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhotosScreen({ clave, esPrincipal, fotos, onAgregar, onBorrar, onEditar }: { clave: string; esPrincipal: boolean; fotos: Foto[]; onAgregar: (f: File, meta: FotoMeta) => void; onBorrar: (i: number) => void; onEditar: (i: number, meta: FotoMeta) => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [f, setF] = useState<FotoMeta>(FOTO_META_VACIA);
   function set(k: keyof FotoMeta) { return (v: string) => setF(prev => ({ ...prev, [k]: v })); }
@@ -831,6 +902,7 @@ function PhotosScreen({ clave, fotos, onAgregar, onBorrar, onEditar }: { clave: 
           setFile(null); setF(FOTO_META_VACIA);
         }}>+ Agregar a la galería</button>
       </div>
+      {esPrincipal && <GenerarPromptFoto clave={clave} />}
       <div className="mh-row mh-between" style={{ alignItems: 'center' }}>
         <h3 style={{ margin: 0 }}>Galería ({fotos.length})</h3>
         {fotos.length > 0 && (
