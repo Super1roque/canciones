@@ -12,7 +12,7 @@ export { ETAPAS, claveResp };
 // se rompe (Turbopack: "next/font/google queries have exactly one entry")
 // cuando el mismo componente lo importan dos páginas distintas, que es
 // justo el caso acá (app/admin/mi-historia y app/historia/[clave]).
-const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Karla:wght@400;500;600;700;800&display=swap';
+const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;1,400&family=Karla:wght@400;500;600;700;800&display=swap';
 
 // =============================================================================
 // MI HISTORIA — Constructor de Biografías
@@ -39,7 +39,7 @@ type Evento = {
   descripcion: string; importancia: string;
 };
 type Contradiccion = { id: string; nota: string };
-type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso' | 'promptMimesis';
+type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso' | 'promptMimesis' | 'capituloPreview';
 
 type HistoriaData = {
   meta: { creado: string; actualizado: string };
@@ -77,6 +77,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [toast, setToast] = useState('');
   const [pidiendoProfundizacion, setPidiendoProfundizacion] = useState(false);
+  const [capituloPreview, setCapituloPreview] = useState<{ titulo: string; texto: string } | null>(null);
   const guardarTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -402,7 +403,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     <div className="mh-root">
       <link rel="stylesheet" href={GOOGLE_FONTS_URL} />
       <style>{ESTILOS}</style>
-      {pantalla !== 'home' && (
+      {pantalla !== 'home' && pantalla !== 'capituloPreview' && (
         <div className="mh-topbar">
           <div className="mh-topbar-inner">
             <div className="mh-brand" onClick={() => irA('home')}>📖 <span>Mi Historia</span></div>
@@ -442,6 +443,14 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
             onGuardarYSalir={() => mostrarToast('Progreso guardado ✓')}
             onSiguiente={irSiguiente}
             getRespDe={(e, p) => getResp(historia, e, p)}
+            onCapituloListo={(titulo, texto) => { setCapituloPreview({ titulo, texto }); irA('capituloPreview'); }}
+          />
+        )}
+
+        {pantalla === 'capituloPreview' && capituloPreview && (
+          <CapituloPreviewScreen
+            titulo={capituloPreview.titulo} texto={capituloPreview.texto}
+            onVolver={() => irA('interview')}
           />
         )}
 
@@ -565,11 +574,12 @@ function HomeScreen({ hayProgreso, nombre, onContinuar, onEmpezar }: { hayProgre
   );
 }
 
-function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onAudioGrabado, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe }: {
+function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onAudioGrabado, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe, onCapituloListo }: {
   clave: string; etapaActual: number; preguntaActual: number; resp: Respuesta; pidiendoProfundizacion: boolean;
   onTexto: (t: string) => void; onAudioGrabado: (blob: Blob) => void; onEspecial: (t: EstadoPregunta) => void; onVolverDespues: () => void;
   onFollowup: (i: number, t: string) => void; onProfundizar: () => void; onAnterior: () => void;
   onGuardarYSalir: () => void; onSiguiente: () => void; getRespDe: (e: number, p: number) => Respuesta;
+  onCapituloListo: (titulo: string, texto: string) => void;
 }) {
   const etapa = ETAPAS[etapaActual];
   const pregunta = etapa.preguntas[preguntaActual];
@@ -591,7 +601,7 @@ function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoPro
         </div>
       </div>
 
-      <VistaPreviaHistoria clave={clave} />
+      <VistaPreviaHistoria clave={clave} onListo={onCapituloListo} />
 
       <div className="mh-card">
         <div className="mh-row mh-between" style={{ marginBottom: '0.5rem' }}>
@@ -643,13 +653,14 @@ function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoPro
   );
 }
 
-// Parsea la respuesta de /vista-previa: primera línea = título corto,
-// resto = la escena. Si Claude no sigue ese formato (no debería pasar, pero
-// por las dudas) se muestra todo como cuerpo, sin título.
-function VistaPreviaHistoria({ clave }: { clave: string }) {
-  const [estado, setEstado] = useState<'inicial' | 'cargando' | 'lista' | 'insuficiente' | 'error'>('inicial');
-  const [titulo, setTitulo] = useState('');
-  const [texto, setTexto] = useState('');
+// Parsea la respuesta de /vista-previa: primera línea = título corto, resto
+// = la escena. Si Claude no sigue ese formato (no debería pasar, pero por
+// las dudas) se muestra todo como cuerpo, sin título. Cuando el adelanto
+// queda listo, se lo pasa al padre (onListo) para que lo muestre como
+// página de capítulo aparte — este componente solo maneja el botón y los
+// estados de espera/insuficiente/error.
+function VistaPreviaHistoria({ clave, onListo }: { clave: string; onListo: (titulo: string, texto: string) => void }) {
+  const [estado, setEstado] = useState<'inicial' | 'cargando' | 'insuficiente' | 'error'>('inicial');
   const [mensaje, setMensaje] = useState('');
 
   async function generar() {
@@ -661,9 +672,8 @@ function VistaPreviaHistoria({ clave }: { clave: string }) {
       if (data.insuficiente) { setMensaje(data.mensaje); setEstado('insuficiente'); return; }
       const lineas = (data.texto as string).trim().split('\n');
       const primera = lineas[0]?.replace(/^#+\s*/, '').replace(/^\*\*(.*)\*\*$/, '$1').trim() || '';
-      setTitulo(primera);
-      setTexto(lineas.slice(1).join('\n').trim());
-      setEstado('lista');
+      setEstado('inicial');
+      onListo(primera, lineas.slice(1).join('\n').trim());
     } catch {
       setMensaje('Error de conexión al generar el adelanto');
       setEstado('error');
@@ -674,23 +684,30 @@ function VistaPreviaHistoria({ clave }: { clave: string }) {
     <div className="mh-card">
       <div className="mh-eyebrow">✨ Adelanto</div>
       <h3 style={{ marginTop: 0 }}>Ver un adelanto de tu historia</h3>
-      {estado !== 'lista' && (
-        <>
-          <p className="mh-hint" style={{ marginTop: 0 }}>Con lo que ya contaste, podemos mostrarte una pequeña muestra de cómo se va a leer tu historia.</p>
-          <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
-            {estado === 'cargando' ? '⏳ Escribiendo tu adelanto...' : '✨ Ver un adelanto de tu historia'}
-          </button>
-          {estado === 'insuficiente' && <p className="mh-hint" style={{ marginTop: '0.6rem' }}>✍️ {mensaje}</p>}
-          {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{mensaje}</p>}
-        </>
-      )}
-      {estado === 'lista' && (
-        <>
-          {titulo && <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>{titulo}</div>}
-          <p className="mh-body-text">{texto}</p>
-          <button className="mh-btn mh-btn-secondary mh-btn-sm" style={{ marginTop: '0.5rem' }} onClick={generar}>🔄 Generar otro adelanto</button>
-        </>
-      )}
+      <p className="mh-hint" style={{ marginTop: 0 }}>Con lo que ya contaste, podemos mostrarte cómo se va a leer un capítulo de tu historia.</p>
+      <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
+        {estado === 'cargando' ? '⏳ Escribiendo tu adelanto...' : '✨ Ver un adelanto de tu historia'}
+      </button>
+      {estado === 'insuficiente' && <p className="mh-hint" style={{ marginTop: '0.6rem' }}>✍️ {mensaje}</p>}
+      {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{mensaje}</p>}
+    </div>
+  );
+}
+
+// Página de capítulo a pantalla completa — el adelanto generado, maquetado
+// como una página de libro real (tipografía serif, letra capital, título de
+// capítulo) en vez de texto plano en una tarjeta de la app.
+function CapituloPreviewScreen({ titulo, texto, onVolver }: { titulo: string; texto: string; onVolver: () => void }) {
+  const parrafos = texto.split(/\n+/).filter(p => p.trim());
+  return (
+    <div className="mh-capitulo">
+      <button className="mh-btn mh-btn-ghost mh-capitulo-volver" onClick={onVolver}>← Volver a mi historia</button>
+      <div className="mh-capitulo-kicker">Adelanto de tu historia</div>
+      <h1 className="mh-capitulo-titulo">{titulo || 'Un adelanto de tu historia'}</h1>
+      <div className="mh-capitulo-divider" />
+      {parrafos.map((p, i) => <p key={i} className={'mh-capitulo-p' + (i === 0 ? ' mh-capitulo-p-first' : '')}>{p}</p>)}
+      <p className="mh-capitulo-nota">Esto es solo un adelanto, armado con lo que ya contaste — a medida que respondas más preguntas, tu historia real va a ir creciendo mucho más allá de esta escena.</p>
+      <button className="mh-btn mh-btn-primary" onClick={onVolver}>← Volver a mi historia</button>
     </div>
   );
 }
@@ -1106,4 +1123,14 @@ const ESTILOS = `
 .mh-divider { height: 1px; background: var(--mh-border); margin: 1.5rem 0; border: none; }
 .mh-kv { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.85rem; padding: 0.55rem 0; cursor: pointer; border-bottom: 1px solid var(--mh-border); }
 .mh-kv .mh-k { flex: 1; }
+
+/* ---------- Página de capítulo (vista previa a pantalla completa) ---------- */
+.mh-capitulo { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+.mh-capitulo-volver { padding-left: 0; margin-bottom: 1.5rem; }
+.mh-capitulo-kicker { text-align: center; font-family: var(--font-mh-sans), sans-serif; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mh-gold); margin-bottom: 0.8rem; }
+.mh-capitulo-titulo { font-family: var(--font-mh-serif), serif; font-weight: 600; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; text-align: center; color: var(--mh-ink); margin: 0 0 1.6rem; text-wrap: balance; }
+.mh-capitulo-divider { width: 64px; height: 3px; margin: 0 auto 2.2rem; border-radius: 2px; background: linear-gradient(90deg, var(--mh-gold-soft), var(--mh-wine)); }
+.mh-capitulo-p { font-family: 'Lora', Georgia, serif; font-size: 1.08rem; line-height: 1.85; color: var(--mh-ink); margin: 0 0 1.3rem; }
+.mh-capitulo-p-first::first-letter { font-family: var(--font-mh-serif), serif; font-weight: 600; font-size: 3.2rem; float: left; line-height: 0.8; padding: 0.1rem 0.45rem 0 0; color: var(--mh-wine); }
+.mh-capitulo-nota { font-family: var(--font-mh-sans), sans-serif; font-size: 0.82rem; font-style: italic; color: var(--mh-ink-soft); line-height: 1.6; background: var(--mh-paper-deep); border: 1px solid var(--mh-border); border-radius: 12px; padding: 1rem 1.2rem; margin: 2.2rem 0 2rem; }
 `;
