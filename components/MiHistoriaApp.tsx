@@ -1148,8 +1148,13 @@ function totalPreguntas() { return ETAPAS.reduce((acc, e) => acc + e.preguntas.l
 // clave identifica DE QUIÉN es esta historia en Firestore/Storage — 'principal'
 // para el admin (ver app/admin/mi-historia/page.tsx), o el token del link
 // cuando la abre un tenant (ver app/historia/[clave]/page.tsx). El resto del
-// componente es idéntico para ambos casos, ni se entera de la diferencia.
+// componente es idéntico para ambos casos — la única diferencia es esPrincipal,
+// que oculta las pestañas de prompts (herramientas internas) para los tenants.
 export default function MiHistoriaApp({ clave }: { clave: string }) {
+  // Los prompts (Maestro, Borroscoso, Mímesis) son herramientas internas —
+  // solo deben verse en la clave "principal" (la del dueño), nunca en los
+  // links que se le generan a un tenant puntual (clave = token random).
+  const esPrincipal = clave === 'principal';
   const [historiaState, setHistoria] = useState<HistoriaData | null>(null);
   const [nombre, setNombre] = useState('');
   const [cargando, setCargando] = useState(true);
@@ -1491,7 +1496,9 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
               {([
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
                 ['timeline', '🕐', 'Línea de vida'], ['review', '📋', 'Revisar'], ['final', '⬇️', 'Exportar'],
-                ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'], ['promptMimesis', '🎭', 'Prompt Mímesis'],
+                ...(esPrincipal ? [
+                  ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'], ['promptMimesis', '🎭', 'Prompt Mímesis'],
+                ] as [Pantalla, string, string][] : []),
               ] as [Pantalla, string, string][]).map(([id, icon, label]) => (
                 <button key={id} className={'mh-tab' + (pantalla === id ? ' active' : '')} onClick={() => irA(id)}>{icon} <span>{label}</span></button>
               ))}
@@ -1536,19 +1543,19 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
         {pantalla === 'people' && <PeopleScreen personas={historia.personas} onAgregar={agregarPersona} onBorrar={borrarPersona} />}
         {pantalla === 'photos' && <PhotosScreen clave={clave} fotos={historia.fotografias} onAgregar={agregarFoto} onBorrar={borrarFoto} onEditar={editarFoto} />}
         {pantalla === 'timeline' && <TimelineScreen eventos={historia.lineaDeTiempo} onAgregar={agregarEvento} onBorrar={borrarEvento} />}
-        {pantalla === 'prompt' && (
+        {pantalla === 'prompt' && esPrincipal && (
           <PromptScreen
             titulo="📜 Prompt maestro" texto={PROMPT_MAESTRO}
             hint="Guardado acá para más adelante — cuando tengas la entrevista completa, pegás esto al inicio de una conversación de IA junto con el material exportado, y le pedís que escriba el libro siguiendo estas reglas."
           />
         )}
-        {pantalla === 'promptBorroscoso' && (
+        {pantalla === 'promptBorroscoso' && esPrincipal && (
           <PromptScreen
             titulo="🌬️ Prompt Borroscoso" texto={PROMPT_BORROSCOSO}
             hint="Para escribir ficción con la voz de Emily Brontë (Cumbres Borrascosas) — no tiene que ver con tu historia real, es una herramienta de redacción aparte. Pegalo en una conversación de IA, completá la premisa y la perspectiva, y pedí la escena."
           />
         )}
-        {pantalla === 'promptMimesis' && (
+        {pantalla === 'promptMimesis' && esPrincipal && (
           <PromptScreen
             titulo="🎭 Prompt Mímesis" texto={PROMPT_MIMESIS}
             hint="Punto intermedio entre el Prompt Maestro y el Prompt Borroscoso: dramatiza tu historia real como escena —clima, gesto, silencio— sin inventar hechos, hábitos ni diálogo de personas reales que no dijeron eso. Pegalo junto con el material exportado ('Exportar para IA') al inicio de una conversación de IA."
