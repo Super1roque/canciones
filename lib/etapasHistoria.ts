@@ -112,6 +112,13 @@ export const ETAPAS: { titulo: string; intro?: string; grandes?: boolean; pregun
 
 export function claveResp(e: number, p: number): string { return 'e' + e + '_p' + p; }
 
+// Cuántas preguntas tienen respuesta real (con texto), sin importar la
+// etapa — usado para decidir si ya hay material suficiente para pedirle a
+// la IA un adelanto, en vez de gastar una llamada con casi nada.
+export function contarPreguntasRespondidas(historia: HistoriaData): number {
+  return Object.values(historia.respuestas).filter(r => r.texto && r.texto.trim()).length;
+}
+
 // Texto plano con lo que la persona ya respondió — mismo criterio que
 // construirTexto() en MiHistoriaApp.tsx, pero reducido a solo preguntas
 // con respuesta real (sin encabezados de etapas vacías) y sin el resto del

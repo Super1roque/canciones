@@ -428,6 +428,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
         {pantalla === 'interview' && (
           <InterviewScreen
+            clave={clave}
             etapaActual={etapaActual} preguntaActual={preguntaActual}
             resp={getResp(historia, etapaActual, preguntaActual)}
             pidiendoProfundizacion={pidiendoProfundizacion}
@@ -446,7 +447,6 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
         {pantalla === 'stageEnd' && (
           <StageEndScreen
-            clave={clave}
             etapaActual={etapaActual}
             onVolver={() => irA('interview')}
             onGuardarNota={guardarNotaLibre}
@@ -565,8 +565,8 @@ function HomeScreen({ hayProgreso, nombre, onContinuar, onEmpezar }: { hayProgre
   );
 }
 
-function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onAudioGrabado, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe }: {
-  etapaActual: number; preguntaActual: number; resp: Respuesta; pidiendoProfundizacion: boolean;
+function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoProfundizacion, onTexto, onAudioGrabado, onEspecial, onVolverDespues, onFollowup, onProfundizar, onAnterior, onGuardarYSalir, onSiguiente, getRespDe }: {
+  clave: string; etapaActual: number; preguntaActual: number; resp: Respuesta; pidiendoProfundizacion: boolean;
   onTexto: (t: string) => void; onAudioGrabado: (blob: Blob) => void; onEspecial: (t: EstadoPregunta) => void; onVolverDespues: () => void;
   onFollowup: (i: number, t: string) => void; onProfundizar: () => void; onAnterior: () => void;
   onGuardarYSalir: () => void; onSiguiente: () => void; getRespDe: (e: number, p: number) => Respuesta;
@@ -590,6 +590,8 @@ function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundiza
           })}
         </div>
       </div>
+
+      <VistaPreviaHistoria clave={clave} />
 
       <div className="mh-card">
         <div className="mh-row mh-between" style={{ marginBottom: '0.5rem' }}>
@@ -645,24 +647,25 @@ function InterviewScreen({ etapaActual, preguntaActual, resp, pidiendoProfundiza
 // resto = la escena. Si Claude no sigue ese formato (no debería pasar, pero
 // por las dudas) se muestra todo como cuerpo, sin título.
 function VistaPreviaHistoria({ clave }: { clave: string }) {
-  const [estado, setEstado] = useState<'inicial' | 'cargando' | 'lista' | 'error'>('inicial');
+  const [estado, setEstado] = useState<'inicial' | 'cargando' | 'lista' | 'insuficiente' | 'error'>('inicial');
   const [titulo, setTitulo] = useState('');
   const [texto, setTexto] = useState('');
-  const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
   async function generar() {
-    setEstado('cargando'); setError('');
+    setEstado('cargando'); setMensaje('');
     try {
       const res = await fetch('/api/historia/' + clave + '/vista-previa', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'No se pudo generar el adelanto'); setEstado('error'); return; }
+      if (!res.ok) { setMensaje(data.error || 'No se pudo generar el adelanto'); setEstado('error'); return; }
+      if (data.insuficiente) { setMensaje(data.mensaje); setEstado('insuficiente'); return; }
       const lineas = (data.texto as string).trim().split('\n');
       const primera = lineas[0]?.replace(/^#+\s*/, '').replace(/^\*\*(.*)\*\*$/, '$1').trim() || '';
       setTitulo(primera);
       setTexto(lineas.slice(1).join('\n').trim());
       setEstado('lista');
     } catch {
-      setError('Error de conexión al generar el adelanto');
+      setMensaje('Error de conexión al generar el adelanto');
       setEstado('error');
     }
   }
@@ -677,7 +680,8 @@ function VistaPreviaHistoria({ clave }: { clave: string }) {
           <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
             {estado === 'cargando' ? '⏳ Escribiendo tu adelanto...' : '✨ Ver un adelanto de tu historia'}
           </button>
-          {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{error}</p>}
+          {estado === 'insuficiente' && <p className="mh-hint" style={{ marginTop: '0.6rem' }}>✍️ {mensaje}</p>}
+          {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{mensaje}</p>}
         </>
       )}
       {estado === 'lista' && (
@@ -691,8 +695,8 @@ function VistaPreviaHistoria({ clave }: { clave: string }) {
   );
 }
 
-function StageEndScreen({ clave, etapaActual, onVolver, onGuardarNota, onSiguienteEtapa, esUltima }: {
-  clave: string; etapaActual: number; onVolver: () => void; onGuardarNota: (t: string) => void; onSiguienteEtapa: () => void; esUltima: boolean;
+function StageEndScreen({ etapaActual, onVolver, onGuardarNota, onSiguienteEtapa, esUltima }: {
+  etapaActual: number; onVolver: () => void; onGuardarNota: (t: string) => void; onSiguienteEtapa: () => void; esUltima: boolean;
 }) {
   const [nota, setNota] = useState('');
   return (
@@ -702,7 +706,6 @@ function StageEndScreen({ clave, etapaActual, onVolver, onGuardarNota, onSiguien
         <h2 style={{ margin: '0.5rem 0' }}>¡Etapa completada!</h2>
         <p className="mh-hint">Terminaste &quot;{ETAPAS[etapaActual].titulo}&quot; — etapa {etapaActual + 1} de {ETAPAS.length}.</p>
       </div>
-      <VistaPreviaHistoria clave={clave} />
       <div className="mh-card">
         <div className="mh-eyebrow">¿Recordaste algo más?</div>
         <p className="mh-hint" style={{ marginTop: 0 }}>A veces una pregunta despierta un recuerdo completamente diferente. Escribilo acá aunque no sepas en qué parte de tu historia encaja.</p>
