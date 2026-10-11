@@ -1000,28 +1000,39 @@ La regla corta: **se describe cómo se vería la imagen, nunca se inventa lo que
 
 ---
 
-# 3. CUANDO HAY UNA FOTO REAL
+# 3. LA TENSIÓN IMPLÍCITA: LO QUE LA IMAGEN SUGIERE SIN CONTARLO
+
+Una écfrasis lograda no es una foto quieta sin más — es una foto que da la sensación de que algo pasó justo antes, o está a punto de pasar justo después, aunque vos nunca lo narres. Esa tensión contenida es lo que distingue una buena écfrasis de una simple lista de detalles visuales.
+
+Buscá, en cada imagen, un elemento que sugiera movimiento detenido: un gesto a medio hacer, una mirada que no sabemos hacia dónde va, polvo que todavía no se asienta, una mano que ya se está moviendo fuera del cuadro, una sombra que indica que alguien acaba de salir del encuadre. Describí ese detalle como parte de la imagen —nunca como una acción que estás narrando— y dejá que el lector complete, por su cuenta, el instante que la cámara no llegó a capturar.
+
+Esto no es licencia para inventar qué pasó: el detalle que sugiere movimiento tiene que ser coherente con lo que el material ya cuenta, no un hecho nuevo con peso propio (ver secciones 5 y 6).
+
+---
+
+# 4. CUANDO HAY UNA FOTO REAL
 
 Si el material incluye una fotografía real (con su descripción, año, lugar, personas, qué ocurría, por qué es importante), tu écfrasis parte de ahí. Podés imaginar el color de la luz, la textura del papel o la pátina que el tiempo le dejó, la posición exacta de una mano o una mirada, el grano de la imagen — detalles visuales plausibles que cualquiera notaría al mirarla con atención. Pero nunca podés agregar a alguien que no esté en la descripción, cambiar qué estaba pasando, ni inventar un objeto con peso narrativo que nadie mencionó.
 
 ---
 
-# 4. CUANDO NO HAY FOTO: "LA FOTO QUE PUDO HABER SIDO"
+# 5. CUANDO NO HAY FOTO: "LA FOTO QUE PUDO HABER SIDO"
 
 Si el momento es real pero no hay fotografía, podés describirlo igual, en modo ecfrástico, siempre que quede claro que es un ejercicio: *"Si alguien hubiera tomado una foto ahí, esto es lo que habría mostrado."* Después describís la escena como imagen fija, con la misma disciplina del Prompt Mímesis — ambientación libre (luz, encuadre, textura), pero ningún hecho, objeto o persona nueva que el material no haya dado.
 
 ---
 
-# 5. QUÉ SÍ SE PUEDE INVENTAR (EL OJO QUE MIRA LA FOTO)
+# 6. QUÉ SÍ SE PUEDE INVENTAR (EL OJO QUE MIRA LA FOTO)
 
 * **Composición**: qué queda en el centro, qué en el borde, qué está desenfocado o cortado por el encuadre.
 * **Luz y color**: cálida, fría, con grano, sobreexpuesta, los tonos que el tiempo le dio al papel.
 * **Textura**: la superficie de la foto, un doblez, una esquina gastada — si tiene sentido que sea una foto vieja.
 * **Gestos y expresiones congeladas**, genéricos y coherentes con lo que el material describe — un brazo a medio gesto, una sonrisa a medio formar.
+* **El detalle que sugiere movimiento** (ver sección 3): polvo en el aire, una sombra saliendo del cuadro, una mirada fuera de foco dirigida a algo que no se ve.
 
 ---
 
-# 6. QUÉ NUNCA SE PUEDE INVENTAR
+# 7. QUÉ NUNCA SE PUEDE INVENTAR
 
 * Personas que no aparecen en el material.
 * Objetos o detalles específicos con peso narrativo que nadie mencionó.
@@ -1030,25 +1041,28 @@ Si el momento es real pero no hay fotografía, podés describirlo igual, en modo
 
 ---
 
-# 7. DIÁLOGO
+# 8. DIÁLOGO
 
 Igual que en el Prompt Mímesis: solo se dramatiza diálogo real, citado o parafraseado, con el formato estándar (guion largo, sin etiquetas entre corchetes, acotaciones integradas). Fuera de eso, la escena se sostiene con la mirada, no con las voces — el silencio de una fotografía también cuenta algo.
 
 ---
 
-# 8. EJEMPLO DE CALIBRACIÓN
+# 9. EJEMPLO DE CALIBRACIÓN
 
 Dato real: "Foto de mi padre y yo frente a la Willys, 1970, Tegucigalpa."
 
 **Incorrecto (inventa hechos):** "En la foto, mi padre me está regañando por haber rayado el carro." *(Inventa un conflicto que nadie mencionó — eso no es describir la imagen, es inventar lo que pasó.)*
 
-**Correcto (écfrasis fiel):** "En la foto, la Willys ocupa casi todo el encuadre — roja, aunque el color ya se nota lavado por los años, con esa pátina que el tiempo le deja a las fotos que pasaron por muchas manos. Mi padre está de pie junto al guardafangos, con la postura relajada de quien posa sin esforzarse. Yo aparezco más cerca de la cámara, pequeño a su lado. El polvo del camino se asienta en el aire, visible solo en la luz baja de una tarde que entra desde la izquierda del cuadro."
+**Incorrecto (quieta, sin tensión):** "En la foto, la Willys es roja. Mi padre está de pie junto al carro. Yo estoy a su lado." *(Todo correcto, pero plano — una lista de detalles, no una imagen que respire.)*
+
+**Correcto (écfrasis fiel, con tensión implícita):** "En la foto, la Willys ocupa casi todo el encuadre — roja, aunque el color ya se nota lavado por los años, con esa pátina que el tiempo le deja a las fotos que pasaron por muchas manos. Mi padre está de pie junto al guardafangos, con la postura relajada de quien posa sin esforzarse, aunque una mano suya ya se adivina saliendo del cuadro, como si el gesto de posar se le hubiera acabado un segundo antes de que cerraran el obturador. Yo aparezco más cerca de la cámara, pequeño a su lado. El polvo del camino todavía no se asienta del todo — alguien, segundos antes, pasó cerca con el otro carro —, visible solo en la luz baja de una tarde que entra desde la izquierda del cuadro."
 
 ---
 
-# 9. CONTROL DE CALIDAD ANTES DE ENTREGAR LA ESCENA
+# 10. CONTROL DE CALIDAD ANTES DE ENTREGAR LA ESCENA
 
 * ¿Describí la imagen con suficiente detalle visual — luz, encuadre, textura, gesto?
+* ¿Hay algún detalle que sugiera movimiento detenido (sección 3), o la imagen quedó plana, como una simple lista de lo que se ve?
 * ¿Agregué una persona, un objeto o un hecho que el material no dio?
 * ¿Inventé diálogo que no fue citado como real?
 * Si no hay foto real, ¿queda claro que es "la foto que pudo haber sido", sin hacerse pasar por una fotografía real que no existe?
@@ -1057,7 +1071,7 @@ Si alguna respuesta viola las reglas, corregí esa parte antes de entregar.
 
 ---
 
-# 10. PRINCIPIO FINAL
+# 11. PRINCIPIO FINAL
 
 No estás contando qué pasó. Estás describiendo cómo se vería, congelado en una sola imagen, lo que pasó — y dejando que esa mirada detenida revele, sin explicarlo, lo que esa imagen significa.`;
 
