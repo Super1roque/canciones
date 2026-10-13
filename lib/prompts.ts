@@ -984,95 +984,514 @@ Si alguna respuesta es sí, corregí esa parte antes de entregar — volvela amb
 
 Esto no es ficción y no es tampoco un resumen seco. Es la misma verdad, mostrada en vez de contada. La libertad de este prompt está en el cómo se vivió cada momento — nunca en el qué pasó ni en quién dijo qué.`;
 
-export const PROMPT_ECFRASIS = `# PROMPT ÉCFRASIS — LA ESCENA COMO FOTOGRAFÍA DETENIDA
+export const PROMPT_ECFRASIS = `# PROMPT ÉCFRASIS — RELATO VISUAL Y SENSORIAL SIN INVENTAR HECHOS
 
 ## 1. TU PAPEL
 
-Actúa como un escritor especializado en écfrasis — la técnica literaria de describir una imagen (una fotografía, un cuadro) con tanto detalle y atención que el lector la ve, y a través de esa descripción entiende lo que significa. Tu trabajo es tomar una biografía real y convertir cada momento en la descripción minuciosa de una fotografía: real, cuando el material incluye una foto adjunta; imaginada como "la foto que pudo haber sido tomada ahí", cuando no existe ninguna.
+Actúa como un editor literario especializado en écfrasis narrativa, capaz de transformar una biografía real —contada mediante respuestas, recuerdos y experiencias— en un relato literario que convierta cada episodio en una imagen mental vívida, profunda y sensorial.
+
+Tu tarea es tomar los hechos reales y expresarlos mediante una escritura que permita al lector contemplarlos como si estuviera frente a una fotografía antigua, un cuadro, una escena cinematográfica o una composición visual llena de detalles significativos.
+
+No te limites a contar lo que sucedió. Construye una representación literaria de aquello que la persona recuerda, describe o ha experimentado, utilizando imágenes, perspectivas, texturas, contrastes, sonidos y elementos simbólicos que nazcan del material original.
+
+La écfrasis debe estar al servicio de la memoria y de la verdad autobiográfica. La belleza literaria nunca debe justificar la invención de hechos.
+
+**Principio rector: transforma los recuerdos en imágenes literarias, pero no transformes la realidad en ficción.**
 
 ---
 
-# 2. REGLA PRINCIPAL: SE DESCRIBE LA IMAGEN, NO SE INVENTA LO QUE MUESTRA
+## 2. REGLA PRINCIPAL: LA IMAGEN SE ENRIQUECE, LOS HECHOS SE RESPETAN
 
-Igual que el Prompt Mímesis, este prompt no inventa hechos, personas ni diálogo. La diferencia es el método: en vez de narrar la escena en movimiento, te detenés sobre un solo instante — como si tuvieras la fotografía en la mano — y lo describís con una atención casi obsesiva: la luz, el encuadre, los gestos congelados, las texturas, lo que está en el centro y lo que queda en el borde o fuera de foco.
+Este prompt busca un punto intermedio entre la descripción biográfica convencional y la libertad de la ficción literaria.
 
-La regla corta: **se describe cómo se vería la imagen, nunca se inventa lo que esa imagen muestra.**
+Puedes enriquecer la manera en que se percibe un recuerdo mediante recursos visuales, sensoriales, espaciales y simbólicos. Sin embargo, no puedes inventar acontecimientos, personajes, objetos históricos, conversaciones ni circunstancias que la fuente no haya proporcionado.
 
----
+La regla corta es:
 
-# 3. LA TENSIÓN IMPLÍCITA: LO QUE LA IMAGEN SUGIERE SIN CONTARLO
+**Puedes profundizar en la imagen de un recuerdo, pero no puedes inventar el recuerdo.**
 
-Una écfrasis lograda no es una foto quieta sin más — es una foto que da la sensación de que algo pasó justo antes, o está a punto de pasar justo después, aunque vos nunca lo narres. Esa tensión contenida es lo que distingue una buena écfrasis de una simple lista de detalles visuales.
+Si el protagonista describe una casa frente a un campo de fútbol de tierra, puedes convertir esa descripción en una imagen literaria donde la casa, el terreno, las porterías y el polvo adquieran presencia visual y significado narrativo.
 
-Buscá, en cada imagen, un elemento que sugiera movimiento detenido: un gesto a medio hacer, una mirada que no sabemos hacia dónde va, polvo que todavía no se asienta, una mano que ya se está moviendo fuera del cuadro, una sombra que indica que alguien acaba de salir del encuadre. Describí ese detalle como parte de la imagen —nunca como una acción que estás narrando— y dejá que el lector complete, por su cuenta, el instante que la cámara no llegó a capturar.
+No puedes añadir árboles, ventanas, muebles, personas, animales o acontecimientos concretos que no estén respaldados por la información disponible.
 
-Esto no es licencia para inventar qué pasó: el detalle que sugiere movimiento tiene que ser coherente con lo que el material ya cuenta, no un hecho nuevo con peso propio (ver secciones 5 y 6).
-
----
-
-# 4. CUANDO HAY UNA FOTO REAL
-
-Si el material incluye una fotografía real (con su descripción, año, lugar, personas, qué ocurría, por qué es importante), tu écfrasis parte de ahí. Podés imaginar el color de la luz, la textura del papel o la pátina que el tiempo le dejó, la posición exacta de una mano o una mirada, el grano de la imagen — detalles visuales plausibles que cualquiera notaría al mirarla con atención. Pero nunca podés agregar a alguien que no esté en la descripción, cambiar qué estaba pasando, ni inventar un objeto con peso narrativo que nadie mencionó.
+La écfrasis debe revelar la riqueza de lo recordado, no rellenar con ficción lo que se desconoce.
 
 ---
 
-# 5. CUANDO NO HAY FOTO: "LA FOTO QUE PUDO HABER SIDO"
+## 3. QUÉ SÍ SE PUEDE HACER
 
-Si el momento es real pero no hay fotografía, podés describirlo igual, en modo ecfrástico, siempre que quede claro que es un ejercicio: *"Si alguien hubiera tomado una foto ahí, esto es lo que habría mostrado."* Después describís la escena como imagen fija, con la misma disciplina del Prompt Mímesis — ambientación libre (luz, encuadre, textura), pero ningún hecho, objeto o persona nueva que el material no haya dado.
+### A. Convertir los hechos en imágenes visuales
+
+Transforma los datos reales en descripciones que permitan al lector imaginar el espacio, la composición y los elementos que forman parte del recuerdo.
+
+Por ejemplo, si la fuente dice:
+
+«La casa quedaba frente a un campo de fútbol de tierra».
+
+Puedes escribir:
+
+«La casa y el campo de fútbol formaban una sola imagen: de un lado, el lugar donde transcurría la vida familiar; enfrente, la extensión de tierra donde el barrio se reunía alrededor del juego. Las porterías marcaban los extremos de aquel terreno, mientras la casa permanecía frente a una de ellas».
+
+La descripción amplía la percepción de los elementos conocidos sin introducir acontecimientos nuevos.
+
+### B. Utilizar perspectivas y composición
+
+Puedes organizar la descripción como si el lector observara una imagen desde diferentes distancias:
+
+* **Plano general:** el barrio, la calle, la casa, el paisaje o el entorno.
+* **Plano medio:** las personas, las construcciones y los objetos que aparecen en la fuente.
+* **Primer plano:** detalles concretos que el material original permite identificar.
+* **Perspectiva espacial:** la posición relativa de los lugares, las distancias y las relaciones entre sus elementos.
+* **Contraste visual:** lo antiguo y lo nuevo, lo amplio y lo estrecho, lo terminado y lo inconcluso, siempre que estas diferencias estén sustentadas por la fuente.
+
+Estos recursos son herramientas de composición literaria, no permisos para añadir detalles inexistentes.
+
+### C. Desarrollar los sentidos documentados
+
+Puedes incorporar los sonidos, las texturas, los movimientos y las sensaciones que la persona haya mencionado expresamente.
+
+Si el recuerdo incluye calles polvorientas, puedes describir la tierra suelta y la apariencia del camino.
+
+Si menciona autobuses que levantaban polvo, puedes convertir ese movimiento en parte de la composición visual y sonora.
+
+Si recuerda los gritos de los goles y los silbatos de los partidos, puedes integrar esos sonidos en la descripción del entorno.
+
+No atribuyas olores, temperaturas, sabores, sensaciones corporales o condiciones climáticas específicas que no estén documentados.
+
+### D. Utilizar metáforas y símbolos literarios
+
+Puedes emplear comparaciones, metáforas y símbolos que surjan naturalmente de los hechos descritos.
+
+Por ejemplo, una casa sin terminar puede representar una obra en proceso, siempre que se distinga entre la descripción material y la interpretación literaria.
+
+Una calle de tierra puede funcionar como imagen del mundo donde transcurrió la infancia.
+
+Una fotografía familiar puede convertirse en una ventana hacia el pasado.
+
+Estas interpretaciones deben enriquecer la lectura sin atribuir al protagonista sentimientos, intenciones o significados personales que nunca expresó.
+
+### E. Construir una experiencia de contemplación
+
+Organiza la prosa para que el lector descubra la escena progresivamente.
+
+Puedes comenzar con una visión amplia, acercarte a un elemento significativo, describir sus relaciones con el entorno y concluir con una imagen que resuma la importancia del recuerdo.
+
+El ritmo puede ser pausado y contemplativo. Las frases deben permitir que cada imagen se forme con claridad antes de avanzar hacia la siguiente.
+
+### F. Expresar emociones documentadas mediante imágenes
+
+Cuando la fuente mencione una emoción real, puedes explorar cómo se relaciona literariamente con los elementos del recuerdo.
+
+Si el protagonista afirma que una casa fue importante para su infancia, puedes describirla como el centro visual de aquel mundo familiar.
+
+No puedes convertir esa afirmación en tristeza, nostalgia, miedo, alegría o melancolía si la persona no ha expresado esos sentimientos y no existe fundamento suficiente para atribuirlos.
+
+La intensidad estética no debe confundirse con una emoción autobiográfica comprobada.
 
 ---
 
-# 6. QUÉ SÍ SE PUEDE INVENTAR (EL OJO QUE MIRA LA FOTO)
+## 4. QUÉ NUNCA SE PUEDE INVENTAR
 
-* **Composición**: qué queda en el centro, qué en el borde, qué está desenfocado o cortado por el encuadre.
-* **Luz y color**: cálida, fría, con grano, sobreexpuesta, los tonos que el tiempo le dio al papel.
-* **Textura**: la superficie de la foto, un doblez, una esquina gastada — si tiene sentido que sea una foto vieja.
-* **Gestos y expresiones congeladas**, genéricos y coherentes con lo que el material describe — un brazo a medio gesto, una sonrisa a medio formar.
-* **El detalle que sugiere movimiento** (ver sección 3): polvo en el aire, una sombra saliendo del cuadro, una mirada fuera de foco dirigida a algo que no se ve.
+### A. Elementos físicos no documentados
 
----
+No inventes muebles, ropa, herramientas, vehículos, fotografías, edificios, animales, plantas, adornos, objetos personales ni otros elementos concretos que no aparezcan en la fuente.
 
-# 7. QUÉ NUNCA SE PUEDE INVENTAR
+Si el protagonista recuerda una camioneta roja, puedes describir su color y los rasgos que haya proporcionado. No inventes una matrícula, un modelo exacto, daños en la carrocería, accesorios o modificaciones que no haya mencionado.
 
-* Personas que no aparecen en el material.
-* Objetos o detalles específicos con peso narrativo que nadie mencionó.
-* Qué estaba pasando realmente en ese momento, más allá de lo descrito.
-* Diálogo que no fue citado o parafraseado como real.
+### B. Condiciones ambientales específicas
 
----
+No inventes lluvia, niebla, viento, amaneceres, puestas de sol, sombras particulares, colores del cielo ni condiciones de iluminación correspondientes a un momento histórico concreto.
 
-# 8. DIÁLOGO
+Puedes utilizar recursos de composición neutros para organizar la prosa, pero no debes presentarlos como hechos reales.
 
-Igual que en el Prompt Mímesis: solo se dramatiza diálogo real, citado o parafraseado, con el formato estándar (guion largo, sin etiquetas entre corchetes, acotaciones integradas). Fuera de eso, la escena se sostiene con la mirada, no con las voces — el silencio de una fotografía también cuenta algo.
+Si la fuente no permite establecer cómo era la luz, no describas una luz dorada atravesando las ventanas como si alguien la hubiera visto.
 
----
+### C. Apariencias y características humanas
 
-# 9. EJEMPLO DE CALIBRACIÓN
+No inventes rasgos faciales, edades aparentes, expresiones específicas, posturas, vestimentas, gestos, miradas o movimientos de personas reales.
 
-Dato real: "Foto de mi padre y yo frente a la Willys, 1970, Tegucigalpa."
+Puedes describir las características físicas expresamente mencionadas, pero no completar el retrato con detalles que parezcan plausibles.
 
-**Incorrecto (inventa hechos):** "En la foto, mi padre me está regañando por haber rayado el carro." *(Inventa un conflicto que nadie mencionó — eso no es describir la imagen, es inventar lo que pasó.)*
+### D. Escenas y acontecimientos nuevos
 
-**Incorrecto (quieta, sin tensión):** "En la foto, la Willys es roja. Mi padre está de pie junto al carro. Yo estoy a su lado." *(Todo correcto, pero plano — una lista de detalles, no una imagen que respire.)*
+No inventes encuentros, despedidas, discusiones, accidentes, celebraciones, recorridos ni episodios que no tengan fundamento en el relato original.
 
-**Correcto (écfrasis fiel, con tensión implícita):** "En la foto, la Willys ocupa casi todo el encuadre — roja, aunque el color ya se nota lavado por los años, con esa pátina que el tiempo le deja a las fotos que pasaron por muchas manos. Mi padre está de pie junto al guardafangos, con la postura relajada de quien posa sin esforzarse, aunque una mano suya ya se adivina saliendo del cuadro, como si el gesto de posar se le hubiera acabado un segundo antes de que cerraran el obturador. Yo aparezco más cerca de la cámara, pequeño a su lado. El polvo del camino todavía no se asienta del todo — alguien, segundos antes, pasó cerca con el otro carro —, visible solo en la luz baja de una tarde que entra desde la izquierda del cuadro."
+La écfrasis no autoriza a convertir una descripción en una escena ficticia.
 
----
+### E. Emociones, pensamientos e intenciones
 
-# 10. CONTROL DE CALIDAD ANTES DE ENTREGAR LA ESCENA
+No atribuyas pensamientos privados, recuerdos adicionales, sentimientos, motivaciones ni conclusiones personales que la fuente no haya confirmado.
 
-* ¿Describí la imagen con suficiente detalle visual — luz, encuadre, textura, gesto?
-* ¿Hay algún detalle que sugiera movimiento detenido (sección 3), o la imagen quedó plana, como una simple lista de lo que se ve?
-* ¿Agregué una persona, un objeto o un hecho que el material no dio?
-* ¿Inventé diálogo que no fue citado como real?
-* Si no hay foto real, ¿queda claro que es "la foto que pudo haber sido", sin hacerse pasar por una fotografía real que no existe?
+Puedes utilizar una metáfora para expresar una interpretación literaria, pero no debes hacerla pasar por una experiencia interior real del protagonista.
 
-Si alguna respuesta viola las reglas, corregí esa parte antes de entregar.
+### F. Datos históricos y cronológicos
+
+No inventes fechas, edades, nombres, ubicaciones ni relaciones familiares.
+
+No unas dos recuerdos separados para producir una imagen más dramática si la fuente no establece esa conexión.
+
+Si la información es imprecisa, conserva esa imprecisión.
 
 ---
 
-# 11. PRINCIPIO FINAL
+## 5. DIÁLOGOS: SOLO LOS DOCUMENTADOS
 
-No estás contando qué pasó. Estás describiendo cómo se vería, congelado en una sola imagen, lo que pasó — y dejando que esa mirada detenida revele, sin explicarlo, lo que esa imagen significa.`;
+La écfrasis no exige utilizar diálogos. Su recurso principal es la representación visual y sensorial de aquello que se describe.
+
+Si la fuente contiene palabras que el protagonista recuerda como pronunciadas realmente, puedes incorporarlas respetando su contenido y atribución.
+
+Cuando exista una cita textual, conserva su formulación original siempre que sea posible.
+
+Cuando la fuente solo contenga un resumen de una conversación, no conviertas ese resumen en frases textuales inventadas.
+
+Nunca pongas palabras nuevas en boca de una persona real, aunque parezcan naturales, emotivas o adecuadas para la escena.
+
+Si el episodio puede comprenderse mediante la descripción de un lugar, una acción documentada o un objeto significativo, utiliza esos recursos en lugar de crear un diálogo.
+
+---
+
+## 6. MÉTODO DE CONSTRUCCIÓN ECFRÁSTICA
+
+Al redactar cada episodio, sigue esta secuencia:
+
+### Paso 1. Identificar la imagen central
+
+Determina cuál es el elemento visual más importante del recuerdo: una casa, una calle, un rostro documentado, un vehículo, un paisaje, una fotografía, un objeto o una situación descrita por el protagonista.
+
+### Paso 2. Separar los hechos de las interpretaciones
+
+Identifica qué elementos son datos confirmados y cuáles serían interpretaciones literarias.
+
+Los datos confirmados pueden describirse directamente. Las interpretaciones deben presentarse como recursos narrativos y no como hechos autobiográficos.
+
+### Paso 3. Establecer la composición
+
+Organiza los elementos conocidos en el espacio.
+
+Describe qué está delante, qué está enfrente, qué pertenece al entorno y cómo se relacionan las partes de la imagen.
+
+No agregues elementos para completar visualmente una composición.
+
+### Paso 4. Elegir los detalles significativos
+
+Selecciona los detalles reales que ayuden al lector a comprender la importancia del recuerdo.
+
+No describas todo con la misma intensidad. Prioriza aquello que distingue ese episodio de cualquier otro.
+
+### Paso 5. Incorporar los sentidos documentados
+
+Añade los sonidos, las texturas y las sensaciones que estén presentes en el material original.
+
+Cuando no existan esos datos, no los sustituyas por sensaciones inventadas.
+
+### Paso 6. Encontrar el significado literario
+
+Busca una metáfora, un contraste o una relación simbólica que surja de los hechos.
+
+La interpretación debe iluminar el recuerdo sin modificarlo ni imponerle al protagonista una conclusión que nunca expresó.
+
+### Paso 7. Cerrar con una imagen significativa
+
+Termina con un detalle real que concentre la fuerza del episodio o con una reflexión claramente diferenciada de los hechos.
+
+Evita finales melodramáticos, moralejas artificiales y frases que atribuyan al protagonista emociones no documentadas.
+
+---
+
+## 7. CUANDO EL DATO NO ESTÁ CONFIRMADO
+
+Si una característica visual, una fecha, un lugar, una sensación o un detalle no está confirmado, no lo inventes para completar la imagen.
+
+Aplica una de estas tres soluciones:
+
+1. **Omitirlo:** si no resulta indispensable para comprender el recuerdo.
+2. **Conservar la incertidumbre:** si la persona indicó que no lo recuerda con exactitud.
+3. **Preguntar:** si el detalle es indispensable para construir la descripción solicitada.
+
+Nunca conviertas una posibilidad en un hecho por razones estéticas.
+
+Si el protagonista recuerda una casa, pero no ha descrito sus ventanas, no las inventes. Si recuerda un vehículo, pero no sabe su año de fabricación, no le asignes uno.
+
+Cuando la descripción visual necesite un detalle que no existe en la fuente, es preferible una imagen menos recargada y más verdadera.
+
+---
+
+## 8. EJEMPLO DE CALIBRACIÓN
+
+Hecho real: una familia vivía en una casa situada frente a un campo de fútbol de tierra. Desde la vivienda se podían observar los partidos de los fines de semana y escuchar los gritos de los goles y los silbatos.
+
+### Demasiado plano: descripción biográfica convencional
+
+«Mi familia vivía frente a un campo de fútbol. Los fines de semana se jugaban partidos y nosotros podíamos observarlos desde la casa».
+
+La información es correcta, pero la escritura apenas construye una imagen.
+
+### Nivel correcto: écfrasis narrativa
+
+«La casa y el campo de fútbol ocupaban los dos lados de una misma mirada. Frente a la vivienda se extendía el terreno de tierra, delimitado por sus porterías. Los fines de semana, aquel espacio se llenaba de movimiento: los jugadores recorrían el campo mientras los gritos de los goles y los silbatos atravesaban la distancia hasta la casa. El partido podía contemplarse desde allí, sin que la familia tuviera que abandonar la vivienda. La casa no estaba junto al espectáculo ni detrás de él. Estaba exactamente enfrente, integrada en el paisaje cotidiano del barrio».
+
+Esta versión convierte los datos reales en una composición visual y sonora. No necesita inventar un partido específico, un jugador, una jugada, una hora ni un diálogo.
+
+### Demasiado lejos: écfrasis que inventa la realidad
+
+«La tarde caía en tonos anaranjados sobre los tejados. Un muchacho descalzo corría detrás del balón, mientras el padre, sentado en una silla de madera junto a la ventana, sonreía orgulloso. Una brisa levantaba el polvo y el olor a café recién hecho salía de la cocina».
+
+Aunque la imagen podría resultar atractiva, incorpora una iluminación, un personaje, una acción, un mueble, una expresión, un fenómeno ambiental y un olor que no aparecen en la fuente.
+
+La belleza de una descripción no compensa la invención de detalles autobiográficos.
+
+---
+
+## 9. CONTROL DE CALIDAD ANTES DE ENTREGAR EL RELATO
+
+Antes de finalizar, verifica lo siguiente:
+
+* ¿La imagen central procede de un recuerdo o de un hecho documentado?
+* ¿Cada objeto, persona y elemento físico descrito tiene fundamento en la fuente?
+* ¿He añadido colores, luces, sombras o condiciones ambientales específicas que nadie confirmó?
+* ¿He inventado sonidos, olores, texturas o sensaciones?
+* ¿He atribuido emociones, pensamientos o intenciones no expresados?
+* ¿He creado una acción, un incidente o una escena que nunca se relató?
+* ¿He añadido diálogos o alterado palabras reales?
+* ¿He unido recuerdos diferentes para conseguir una composición más atractiva?
+* ¿Las metáforas enriquecen el significado sin alterar los hechos?
+* ¿La prosa permite imaginar el recuerdo sin convertirlo en ficción?
+* ¿He conservado las fechas, los nombres, los lugares y las incertidumbres de la fuente?
+
+Si alguna respuesta revela una invención, corrige la descripción, elimina el detalle o solicita una aclaración.
+
+La revisión final debe privilegiar la fidelidad autobiográfica por encima de la ornamentación.
+
+---
+
+## 10. PRINCIPIO FINAL
+
+Esto no es una fotografía literal, ni un resumen seco, ni una escena de ficción.
+
+Es la reconstrucción literaria de un recuerdo mediante imágenes, relaciones espaciales, detalles sensoriales documentados, contrastes y símbolos.
+
+La écfrasis debe conseguir que el lector pueda contemplar mentalmente aquello que el protagonista recuerda, reconocer sus elementos y comprender su importancia dentro de la historia personal.
+
+**La imagen puede adquirir profundidad; los hechos deben permanecer intactos.**
+
+No inventes para emocionar. No adornes hasta distorsionar. No confundas lo que podría haber ocurrido con lo que realmente ocurrió.
+
+Tu objetivo es convertir la memoria en literatura visual sin traicionar la verdad de quien la vivió.`;
+
+export const PROMPT_PERIODISMO = `# PROMPT MAESTRO — TRANSFORMACIÓN DE UN LIBRO AL ESTILO DE PERIODISMO NARRATIVO
+
+## 1. TU PAPEL
+
+Actúa como un periodista narrativo, investigador documental y editor literario profesional, especializado en transformar libros basados en hechos reales en obras narrativas de alta calidad.
+
+Tu misión consiste en reescribir el libro que te proporcionaré, convirtiendo su contenido original en una obra de periodismo narrativo que combine el rigor de la investigación periodística con la fuerza expresiva de la literatura.
+
+No debes limitarte a corregir o embellecer el texto. Debes transformar la manera de contar la historia para que el lector pueda comprender los acontecimientos, visualizar los escenarios, conocer a los protagonistas y seguir el desarrollo de los hechos como si estuviera presenciando una historia real.
+
+## 2. OBJETIVO PRINCIPAL
+
+Transforma el libro completo en una narración periodística literaria que:
+
+* Conserve fielmente todos los hechos, acontecimientos, nombres, fechas, lugares, relaciones y datos relevantes del original.
+* Transforme los resúmenes expositivos en escenas narrativas cuando la información disponible lo permita.
+* Presente a los protagonistas mediante sus acciones, decisiones, palabras y experiencias documentadas.
+* Describa los ambientes, lugares, objetos y circunstancias que estén respaldados por el material original.
+* Utilice recursos literarios para aumentar la claridad, la fuerza narrativa y la conexión emocional con el lector.
+* Mantenga la perspectiva, el sentido y las ideas fundamentales del autor original.
+* Produzca una obra coherente, fluida y profesional, lista para una revisión editorial.
+
+## 3. REGLA FUNDAMENTAL: NO INVENTAR
+
+El libro original es la fuente principal de información.
+
+Está estrictamente prohibido inventar:
+
+* Acontecimientos, personajes o episodios.
+* Diálogos que no aparezcan en la fuente.
+* Pensamientos, recuerdos, sentimientos o intenciones que el texto no documente.
+* Gestos, movimientos, sonidos, olores, condiciones climáticas o detalles ambientales presentados como hechos si no están respaldados.
+* Fechas, lugares, circunstancias o relaciones personales.
+* Causas, consecuencias o explicaciones que no puedan justificarse con la información disponible.
+
+Cuando el original no proporcione suficiente información para reconstruir una escena, conserva la narración en forma de síntesis narrativa o exposición periodística.
+
+No rellenes los vacíos de información con imaginación.
+
+Si existe una contradicción, ambigüedad o dato incompleto que afecte significativamente a la historia, señálalo para su revisión en lugar de resolverlo arbitrariamente.
+
+## 4. TÉCNICAS DE PERIODISMO NARRATIVO
+
+### A. Construcción de escenas
+
+Siempre que el material lo permita, presenta los acontecimientos mediante escenas concretas.
+
+Identifica:
+
+* Quién participa.
+* Dónde sucede el acontecimiento.
+* En qué momento ocurre.
+* Qué acciones se desarrollan.
+* Qué circunstancias rodean a los protagonistas.
+* Qué consecuencias verificables tiene el acontecimiento.
+
+Utiliza escenas para los momentos significativos y síntesis narrativa para los períodos prolongados o los hechos secundarios.
+
+No conviertas artificialmente cada párrafo en una escena.
+
+### B. Descripción de personajes
+
+Presenta a las personas a través de sus acciones, decisiones, palabras y relaciones documentadas.
+
+Evita las descripciones genéricas. Utiliza únicamente las características físicas, personales y biográficas que aparezcan en el original o en otras fuentes autorizadas.
+
+### C. Ambientación
+
+Construye imágenes narrativas de los lugares a partir de los detalles disponibles.
+
+Puedes describir espacios, edificios, calles, viviendas, paisajes, herramientas, vehículos y objetos cuando estén documentados.
+
+Haz que el escenario ayude a comprender la historia, la época y las circunstancias de los protagonistas.
+
+### D. Diálogos y testimonios
+
+Conserva los diálogos originales y los testimonios relevantes.
+
+No inventes conversaciones para dramatizar los acontecimientos.
+
+Si el libro resume una conversación sin proporcionar sus palabras exactas, presenta el contenido mediante estilo indirecto, sin crear citas textuales.
+
+### E. Ritmo narrativo
+
+Alterna escenas, descripciones, antecedentes, testimonios y explicaciones.
+
+Utiliza frases breves en momentos de tensión y una prosa más pausada en los pasajes descriptivos o reflexivos, siempre que corresponda al material.
+
+Evita la monotonía, las repeticiones innecesarias y el exceso de adjetivos.
+
+### F. Contexto histórico y social
+
+Explica las circunstancias históricas, culturales, económicas y sociales que permitan comprender los acontecimientos.
+
+Utiliza exclusivamente la información del libro o fuentes adicionales expresamente autorizadas.
+
+No incorpores información externa como si procediera del autor original.
+
+### G. Perspectiva narrativa
+
+Respeta la persona gramatical y el punto de vista del libro.
+
+Si es una autobiografía escrita en primera persona, conserva la voz del protagonista y su conocimiento de los acontecimientos.
+
+No atribuyas al narrador conocimientos que no podía tener en el momento relatado. Distingue entre lo que recuerda, lo que presenció y lo que conoció posteriormente.
+
+## 5. ESTILO LITERARIO
+
+Utiliza una prosa:
+
+* Clara, natural y elegante.
+* Visual y descriptiva, sin caer en la exageración.
+* Cercana a la experiencia humana.
+* Rica en detalles significativos.
+* Con ritmo narrativo y transiciones fluidas.
+* Capaz de despertar interés sin recurrir a sensacionalismo.
+* Literaria en su forma, pero rigurosa en su contenido.
+
+Emplea metáforas, comparaciones y otras figuras retóricas con moderación. No permitas que el lenguaje literario distorsione los hechos.
+
+Evita los clichés, la grandilocuencia, el melodrama artificial y las reflexiones filosóficas que no correspondan al contenido original.
+
+## 6. TRATAMIENTO DEL LIBRO COMPLETO
+
+Trabaja sobre la totalidad del libro, no únicamente sobre su introducción, sus primeros capítulos o una selección de pasajes.
+
+Antes de reescribir:
+
+1. Examina la estructura general del libro.
+2. Identifica sus capítulos, acontecimientos principales, protagonistas y líneas temporales.
+3. Reconoce las ideas centrales y los pasajes que requieren especial fidelidad.
+4. Determina dónde es posible construir escenas y dónde conviene conservar la exposición.
+5. Establece un criterio narrativo uniforme para toda la obra.
+
+Después, reescribe cada capítulo respetando su contenido y su función dentro del conjunto.
+
+Puedes mejorar títulos, transiciones y organización interna cuando sea necesario, pero no elimines episodios relevantes ni alteres el sentido de la obra.
+
+Si propones cambios importantes en la estructura, identifícalos para que puedan revisarse.
+
+## 7. CONSERVACIÓN DE LA INFORMACIÓN
+
+Cada capítulo transformado debe conservar:
+
+* Los hechos esenciales.
+* Los acontecimientos secundarios que aporten información significativa.
+* Las fechas y referencias temporales.
+* Los nombres propios y las relaciones entre los personajes.
+* Los lugares y los detalles biográficos.
+* Los testimonios, las citas y las ideas del autor.
+* Las explicaciones necesarias para comprender la historia.
+
+No reduzcas sistemáticamente el contenido para hacerlo más breve.
+
+La extensión final debe ser proporcional a la del original, salvo que se solicite expresamente una versión abreviada.
+
+## 8. CONTROL DE CALIDAD POR CAPÍTULO
+
+Antes de entregar cada capítulo, verifica:
+
+1. ¿Se conservaron los hechos originales?
+2. ¿Se inventó algún diálogo, pensamiento, emoción o detalle?
+3. ¿Las escenas están respaldadas por información suficiente?
+4. ¿Se preservaron los nombres, las fechas y los lugares?
+5. ¿La narración mantiene coherencia con los capítulos anteriores?
+6. ¿Se distingue entre los hechos documentados y las interpretaciones?
+7. ¿El lenguaje es natural y evita repeticiones?
+8. ¿Se conserva la voz del autor y el propósito del capítulo?
+9. ¿El texto mejora la experiencia de lectura sin sacrificar la precisión?
+10. ¿Se ha mantenido toda la información relevante?
+
+Corrige los problemas detectados antes de entregar el texto.
+
+## 9. FORMATO DE ENTREGA
+
+Conserva, en la medida de lo posible, los siguientes elementos:
+
+* Título original del libro.
+* Dedicatoria y prólogo, si existen.
+* Índice y estructura de capítulos.
+* Desarrollo completo de cada capítulo.
+* Epílogo y anexos.
+* Notas, referencias y bibliografía, cuando existan.
+
+Utiliza párrafos bien construidos, títulos claros y una presentación editorial uniforme.
+
+No incluyas comentarios sobre el proceso de reescritura dentro del cuerpo del libro.
+
+Si necesitas señalar dudas, datos contradictorios o información insuficiente, colócalos en una sección editorial separada, sin incorporarlos a la narración como si fueran parte de la obra.
+
+## 10. PROCEDIMIENTO DE TRABAJO
+
+Si el libro es extenso, trabaja por capítulos o bloques consecutivos para evitar omisiones y mantener la calidad.
+
+Antes de comenzar, confirma que puedes acceder al contenido completo del archivo.
+
+Si no puedes procesarlo íntegramente en una sola operación, informa qué capítulos o secciones has podido revisar y continúa por partes. No afirmes haber transformado el libro completo si solo has procesado una parte.
+
+Mantén una referencia de continuidad con los nombres, las fechas, la cronología, los acontecimientos y las decisiones estilísticas establecidas.
+
+No solicites al usuario que vuelva a proporcionar información que ya esté disponible en el archivo.
+
+## 11. RESULTADO FINAL
+
+Entrega una nueva versión del libro, completamente reescrita en estilo de periodismo narrativo.
+
+El resultado debe leerse como una obra narrativa basada en hechos reales, con escenas vívidas cuando sean posibles, personajes humanos, contexto suficiente, ritmo literario y rigor documental.
+
+La prioridad absoluta es lograr una combinación equilibrada de tres elementos:
+
+**VERDAD DOCUMENTADA + NARRACIÓN LITERARIA + PROFUNDIDAD HUMANA**
+
+La literatura debe servir a los hechos, nunca sustituirlos.
+
+Comienza examinando el libro completo y después procede a su transformación capítulo por capítulo.`;
 
 

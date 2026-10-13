@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import BotonResponderHablando from './BotonResponderHablando';
 import { ETAPAS, claveResp } from '@/lib/etapasHistoria';
-import { PROMPT_MAESTRO, PROMPT_BORROSCOSO, PROMPT_MIMESIS, PROMPT_ECFRASIS } from '@/lib/prompts';
+import { PROMPT_MAESTRO, PROMPT_BORROSCOSO, PROMPT_MIMESIS, PROMPT_ECFRASIS, PROMPT_PERIODISMO } from '@/lib/prompts';
 // MemoriaApp.tsx importa ETAPAS y claveResp desde acá en vez de directo de
 // lib/etapasHistoria — se re-exportan para no tener que tocar ese archivo.
 export { ETAPAS, claveResp };
@@ -39,7 +39,7 @@ type Evento = {
   descripcion: string; importancia: string;
 };
 type Contradiccion = { id: string; nota: string };
-type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso' | 'promptMimesis' | 'promptEcfrasis' | 'capituloPreview';
+type Pantalla = 'home' | 'interview' | 'stageEnd' | 'people' | 'photos' | 'timeline' | 'review' | 'final' | 'prompt' | 'promptBorroscoso' | 'promptMimesis' | 'promptEcfrasis' | 'promptPeriodismo' | 'capituloPreview';
 
 type HistoriaData = {
   meta: { creado: string; actualizado: string };
@@ -412,7 +412,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
                 ['timeline', '🕐', 'Línea de vida'], ['review', '📋', 'Revisar'], ['final', '⬇️', 'Exportar'],
                 ...(esPrincipal ? [
-                  ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'], ['promptMimesis', '🎭', 'Prompt Mímesis'], ['promptEcfrasis', '🖼️', 'Prompt Écfrasis'],
+                  ['prompt', '📜', 'Prompt maestro'], ['promptBorroscoso', '🌬️', 'Prompt Borroscoso'], ['promptMimesis', '🎭', 'Prompt Mímesis'], ['promptEcfrasis', '🖼️', 'Prompt Écfrasis'], ['promptPeriodismo', '📰', 'Periodismo narrativo'],
                 ] as [Pantalla, string, string][] : []),
               ] as [Pantalla, string, string][]).map(([id, icon, label]) => (
                 <button key={id} className={'mh-tab' + (pantalla === id ? ' active' : '')} onClick={() => irA(id)}>{icon} <span>{label}</span></button>
@@ -489,6 +489,12 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
           <PromptScreen
             titulo="🖼️ Prompt Écfrasis" texto={PROMPT_ECFRASIS}
             hint="Cuenta cada momento como la descripción minuciosa de una fotografía —real, cuando hay una foto subida; 'la foto que pudo haber sido', cuando no la hay— sin inventar hechos ni personas. Pegalo junto con el material exportado ('Exportar para IA') al inicio de una conversación de IA."
+          />
+        )}
+        {pantalla === 'promptPeriodismo' && esPrincipal && (
+          <PromptScreen
+            titulo="📰 Periodismo narrativo" texto={PROMPT_PERIODISMO}
+            hint="No parte de las respuestas crudas, sino de un libro ya escrito: lo reescribe con técnicas de crónica periodística —escena cuando el material alcanza, contexto, ritmo— sin inventar nada nuevo. Pegalo en una conversación de IA junto con el libro completo que querés transformar."
           />
         )}
         {pantalla === 'review' && (
