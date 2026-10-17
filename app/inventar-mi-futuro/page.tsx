@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import InventarMiFuturoClient from '@/components/InventarMiFuturoClient';
 import { cuesInventarMiFuturo, duracionTotalSegundos } from '@/lib/inventarMiFuturoCues';
+import { imagenesInventarMiFuturo } from '@/lib/inventarMiFuturoImagenes';
 
 export const metadata: Metadata = {
   title: '📖 Inventar mi futuro — Armando Roque Godoy',
@@ -29,6 +30,7 @@ export default function InventarMiFuturoPage() {
       subtitulo="Memorias de quien rompió el molde"
       cues={cuesInventarMiFuturo}
       duracionTotal={duracionTotalSegundos}
+      imagenes={imagenesInventarMiFuturo}
     />
   );
 }

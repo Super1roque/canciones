@@ -1,7 +1,8 @@
 'use client';
-import { useRef, useState, useCallback } from 'react';
+import { Fragment, useRef, useState, useCallback } from 'react';
 import { Baloo_2, Literata } from 'next/font/google';
 import type { CuePárrafo } from '@/lib/inventarMiFuturoCues';
+import type { ImagenInline } from '@/lib/inventarMiFuturoImagenes';
 
 const baloo = Baloo_2({ weight: ['600', '700', '800'], subsets: ['latin'] });
 const literata = Literata({ weight: ['400', '600'], subsets: ['latin'] });
@@ -18,18 +19,25 @@ export default function InventarMiFuturoClient({
   subtitulo,
   cues,
   duracionTotal,
+  imagenes,
 }: {
   audioUrl: string;
   titulo: string;
   subtitulo: string;
   cues: CuePárrafo[];
   duracionTotal: number;
+  imagenes: ImagenInline[];
 }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const [reproduciendo, setReproduciendo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const parrafoRef = useRef<HTMLParagraphElement>(null);
   const cueIndexRef = useRef(0);
+
+  const imagenesPorCue = imagenes.reduce<Record<number, ImagenInline[]>>((acc, img) => {
+    (acc[img.afterCueIdx] ??= []).push(img);
+    return acc;
+  }, {});
 
   const alAvanzarTiempo = useCallback(() => {
     const t = audioRef.current?.currentTime ?? 0;
@@ -99,11 +107,13 @@ export default function InventarMiFuturoClient({
           {cues.map((c, i) => {
             const activo = i === indiceActual;
             const leido = i < indiceActual;
+            const fotosAqui = imagenesPorCue[i];
+
+            let cueEl;
             if (c.kind === 'heading') {
               const EsTitulo = i === 0;
-              return (
+              cueEl = (
                 <h2
-                  key={i}
                   ref={activo ? (parrafoRef as never) : null}
                   onClick={() => saltarA(c.start)}
                   className={baloo.className}
@@ -121,11 +131,9 @@ export default function InventarMiFuturoClient({
                   {c.text}
                 </h2>
               );
-            }
-            if (c.kind === 'dek') {
-              return (
+            } else if (c.kind === 'dek') {
+              cueEl = (
                 <p
-                  key={i}
                   ref={activo ? parrafoRef : null}
                   onClick={() => saltarA(c.start)}
                   style={{
@@ -137,27 +145,40 @@ export default function InventarMiFuturoClient({
                   {c.text}
                 </p>
               );
+            } else {
+              cueEl = (
+                <p
+                  ref={activo ? parrafoRef : null}
+                  onClick={() => saltarA(c.start)}
+                  className={activo ? 'parrafo-activo' : undefined}
+                  style={{
+                    cursor: 'pointer',
+                    color: activo ? '#fff6dd' : leido ? 'rgba(234,255,245,0.55)' : '#eafff5',
+                    background: activo ? 'rgba(247,207,74,0.1)' : 'transparent',
+                    borderRadius: 10,
+                    padding: '0.3rem 0.5rem',
+                    margin: '0 -0.5rem 1.1rem',
+                    lineHeight: 1.85,
+                    fontSize: '1.05rem',
+                    textAlign: 'justify',
+                  }}
+                >
+                  {c.text}
+                </p>
+              );
             }
+
             return (
-              <p
-                key={i}
-                ref={activo ? parrafoRef : null}
-                onClick={() => saltarA(c.start)}
-                className={activo ? 'parrafo-activo' : undefined}
-                style={{
-                  cursor: 'pointer',
-                  color: activo ? '#fff6dd' : leido ? 'rgba(234,255,245,0.55)' : '#eafff5',
-                  background: activo ? 'rgba(247,207,74,0.1)' : 'transparent',
-                  borderRadius: 10,
-                  padding: '0.3rem 0.5rem',
-                  margin: '0 -0.5rem 1.1rem',
-                  lineHeight: 1.85,
-                  fontSize: '1.05rem',
-                  textAlign: 'justify',
-                }}
-              >
-                {c.text}
-              </p>
+              <Fragment key={i}>
+                {cueEl}
+                {fotosAqui?.map((foto, fi) => (
+                  <figure key={fi} className="foto-inline">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={foto.src} alt={foto.alt} loading="lazy" />
+                    <figcaption>{foto.caption}</figcaption>
+                  </figure>
+                ))}
+              </Fragment>
             );
           })}
         </div>
@@ -203,6 +224,18 @@ export default function InventarMiFuturoClient({
 
         .texto-libro p, .texto-libro h2 { transition: background 0.25s, color 0.25s; }
         .texto-libro p:hover, .texto-libro h2:hover { background: rgba(255,255,255,0.06); }
+
+        .foto-inline { margin: 1.5rem 0; text-align: center; }
+        .foto-inline img {
+          max-width: 100%; max-height: 420px; border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.18);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+        }
+        .foto-inline figcaption {
+          font-family: ${baloo.style.fontFamily}, sans-serif;
+          font-size: 0.72rem; color: rgba(234,255,245,0.55);
+          margin-top: 0.6rem; line-height: 1.5; max-width: 420px; margin-left: auto; margin-right: auto;
+        }
 
         @keyframes pulsoLectura {
           0% { transform: scale(0.99); opacity: 0.7; }
