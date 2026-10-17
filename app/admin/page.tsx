@@ -910,6 +910,7 @@ export default function Home() {
             <a href="/admin/muestra-video" className="nav-btn nav-btn-heavy" title="Usa ffmpeg en el servidor — evitar desde corridos.online">🎬 Muestra Video</a>
             <a href="/admin/pixel" className="nav-btn">🎨 Pixel Art</a>
             <a href="/admin/mi-historia" className="nav-btn">📖 Mi Historia</a>
+            <a href="/inventar-mi-futuro" target="_blank" rel="noopener noreferrer" className="nav-btn" title="Página pública — audiolibro de Armando Roque">🎧 Inventar mi futuro — Armando Roque</a>
           </nav>
         </div>
       </header>
