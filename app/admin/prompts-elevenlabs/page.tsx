@@ -8,11 +8,21 @@ const TONOS_SUGERIDOS = [
   'neutral e informativo',
   'íntimo y emotivo',
   'tenso y dramático',
+  'urgente, de última hora',
+  'reflexivo y pausado',
+  'irónico pero contenido',
+  'inspirador y motivacional',
+  'documental / investigativo',
+  'conversacional y cercano',
+  'formal y autoritario',
+  'misterioso, de suspenso',
+  'melancólico',
+  'humorístico, ligero',
 ];
 
 export default function PromptsElevenLabsPage() {
   const [texto, setTexto] = useState('');
-  const [tono, setTono] = useState(TONOS_SUGERIDOS[0]);
+  const [tono, setTono] = useState('');
   const [cargando, setCargando] = useState(false);
   const [resultado, setResultado] = useState('');
   const [error, setError] = useState('');
