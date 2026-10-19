@@ -912,6 +912,7 @@ export default function Home() {
             <a href="/admin/mi-historia" className="nav-btn">📖 Mi Historia</a>
             <a href="/inventar-mi-futuro" target="_blank" rel="noopener noreferrer" className="nav-btn" title="Página pública — audiolibro de Armando Roque">🎧 Inventar mi futuro — Armando Roque</a>
             <a href="/admin/guia-libros" className="nav-btn" title="Referencia: cómo producir un libro de Mi Historia de principio a fin">📖 Guía: producir un libro</a>
+            <a href="/admin/prompts-elevenlabs" className="nav-btn" title="Convierte un texto a formato de audio tags para Eleven v3">🎙️ Prompts para ElevenLabs</a>
           </nav>
         </div>
       </header>
