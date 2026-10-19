@@ -20,11 +20,13 @@ const TONOS_SUGERIDOS = [
   'humorístico, ligero',
 ];
 
+type GuionGenerado = { titulo: string; vozSugerida: string; uso: string; guion: string; claves: string[] };
+
 export default function PromptsElevenLabsPage() {
   const [texto, setTexto] = useState('');
   const [tono, setTono] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [resultado, setResultado] = useState('');
+  const [resultado, setResultado] = useState<GuionGenerado | null>(null);
   const [error, setError] = useState('');
   const [copiado, setCopiado] = useState(false);
 
@@ -32,7 +34,7 @@ export default function PromptsElevenLabsPage() {
     if (!texto.trim()) return;
     setCargando(true);
     setError('');
-    setResultado('');
+    setResultado(null);
     setCopiado(false);
     try {
       const res = await fetch('/api/prompts-elevenlabs', {
@@ -42,7 +44,7 @@ export default function PromptsElevenLabsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error generando el prompt');
-      setResultado(data.resultado);
+      setResultado(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error desconocido');
     } finally {
@@ -51,8 +53,9 @@ export default function PromptsElevenLabsPage() {
   }
 
   async function copiar() {
+    if (!resultado) return;
     try {
-      await navigator.clipboard.writeText(resultado);
+      await navigator.clipboard.writeText(resultado.guion);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
@@ -137,8 +140,18 @@ export default function PromptsElevenLabsPage() {
 
         {resultado && (
           <div style={{ marginTop: '1.75rem' }}>
+            {resultado.titulo && (
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 0.3rem' }}>📝 {resultado.titulo}</h2>
+            )}
+            {(resultado.vozSugerida || resultado.uso) && (
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '1.25rem' }}>
+                {resultado.vozSugerida && <div><strong style={{ color: 'var(--text)' }}>Voz sugerida:</strong> {resultado.vozSugerida}</div>}
+                {resultado.uso && <div><strong style={{ color: 'var(--text)' }}>Uso:</strong> {resultado.uso}</div>}
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <p style={{ fontSize: '0.85rem', fontWeight: 600, margin: 0 }}>✅ Listo para ElevenLabs</p>
+              <p style={{ fontSize: '0.85rem', fontWeight: 600, margin: 0 }}>✅ Guion listo para ElevenLabs</p>
               <button
                 onClick={copiar}
                 style={{
@@ -156,8 +169,19 @@ export default function PromptsElevenLabsPage() {
                 border: '1px solid var(--border)', whiteSpace: 'pre-wrap', maxHeight: 420, overflowY: 'auto',
               }}
             >
-              {resultado}
+              {resultado.guion}
             </div>
+
+            {resultado.claves.length > 0 && (
+              <div style={{ marginTop: '1.25rem' }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>💡 Claves del guion</p>
+                <ul style={{ paddingLeft: '1.2rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {resultado.claves.map((c, i) => (
+                    <li key={i} style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
