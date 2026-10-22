@@ -47,3 +47,12 @@ export async function obtenerLinkPorToken(token: string): Promise<HistoriaLink |
   if (snap.empty) return null;
   return snap.docs[0].data() as HistoriaLink;
 }
+
+// Para admin/tenants: cruzar cada tenant por teléfono contra los links de
+// Mi Historia ya generados, sin una query por tenant — se trae todo el
+// (pequeño) catálogo de links una sola vez y el caller lo indexa.
+export async function listarTodosLosLinks(): Promise<HistoriaLink[]> {
+  const db = getDb();
+  const snap = await db.collection(COLLECTION).get();
+  return snap.docs.map(doc => doc.data() as HistoriaLink);
+}

@@ -10,7 +10,32 @@ type Tenant = {
   ultimaParodia?: { cancion_base: string; fecha: string };
   sesionActiva: boolean;
   plan?: 'freemium' | 'premium';
+  historiaLink?: { url: string; nombre: string; fecha: string } | null;
 };
+
+// Celda de la columna "Mi Historia" — copia el link en vez de navegar, es
+// lo que el admin hace en la práctica (pegarlo en un mensaje de WhatsApp).
+function CeldaLinkHistoria({ link }: { link: { url: string; nombre: string; fecha: string } }) {
+  const [copiado, setCopiado] = useState(false);
+
+  function copiar() {
+    navigator.clipboard.writeText(link.url).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <span className="badge" style={{ background: 'rgba(165,118,31,0.12)', borderColor: 'var(--gold, #a5761f)', color: 'var(--text)' }} title={link.nombre}>
+        📖 {link.nombre}
+      </span>
+      <button className="btn-icon-xs" title="Copiar link de Mi Historia" onClick={copiar}>
+        {copiado ? '✅' : '📋'}
+      </button>
+    </div>
+  );
+}
 
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -346,6 +371,7 @@ export default function AdminTenantsPage() {
   // a quién hay que reactivar.
   const [ordenActividad, setOrdenActividad] = useState<'asc' | 'desc' | null>(null);
   const [tenantABorrar, setTenantABorrar] = useState<string | null>(null);
+  const [soloConHistoria, setSoloConHistoria] = useState(false);
 
   const cargarTenants = useCallback(() => {
     return fetch('/api/admin/tenants')
@@ -371,6 +397,7 @@ export default function AdminTenantsPage() {
 
   const filtrados = tenants
     .filter(t => t.telefono.includes(busqueda.replace(/\D/g, '')))
+    .filter(t => !soloConHistoria || !!t.historiaLink)
     .sort((a, b) => {
       if (!ordenActividad) return 0;
       // Sin ultimaParodia = nunca la usaron — siempre va primero al ordenar
@@ -438,8 +465,13 @@ export default function AdminTenantsPage() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             className="input"
-            style={{ width: '100%', marginBottom: '1rem', boxSizing: 'border-box' }}
+            style={{ width: '100%', marginBottom: '0.6rem', boxSizing: 'border-box' }}
           />
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={soloConHistoria} onChange={e => setSoloConHistoria(e.target.checked)} />
+            📖 Solo con link de Mi Historia generado
+          </label>
 
           {cargando ? (
             <p className="loading-msg">Cargando…</p>
@@ -464,6 +496,7 @@ export default function AdminTenantsPage() {
                       {ordenActividad === 'desc' && ' ▼'}
                     </th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Sesión</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>Mi Historia</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}></th>
                   </tr>
@@ -510,6 +543,13 @@ export default function AdminTenantsPage() {
                           </div>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Libre</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.6rem 0.75rem' }}>
+                        {t.historiaLink ? (
+                          <CeldaLinkHistoria link={t.historiaLink} />
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>—</span>
                         )}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
