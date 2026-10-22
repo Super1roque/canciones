@@ -13,27 +13,90 @@ type Tenant = {
   historiaLink?: { url: string; nombre: string; fecha: string } | null;
 };
 
-// Celda de la columna "Mi Historia" — copia el link en vez de navegar, es
-// lo que el admin hace en la práctica (pegarlo en un mensaje de WhatsApp).
-function CeldaLinkHistoria({ link }: { link: { url: string; nombre: string; fecha: string } }) {
-  const [copiado, setCopiado] = useState(false);
+type LinkHistoria = { telefono: string; nombre: string; fecha: string; url: string };
 
-  function copiar() {
-    navigator.clipboard.writeText(link.url).then(() => {
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
+// Lista aparte (no una columna dentro de "Tenants registrados"): a muchas
+// de estas personas se les generó el link de Mi Historia sin que lleguen
+// a ser tenants de la app de corridos (ej. familiares), así que cruzarlas
+// contra la tabla de tenants las dejaba siempre afuera.
+function HistoriasGeneradas() {
+  const [links, setLinks] = useState<LinkHistoria[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  const [copiadoDe, setCopiadoDe] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/historia-links')
+      .then(res => res.json())
+      .then(data => setLinks(Array.isArray(data) ? data : []))
+      .finally(() => setCargando(false));
+  }, []);
+
+  function copiar(url: string, telefono: string) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiadoDe(telefono);
+      setTimeout(() => setCopiadoDe(null), 2000);
     });
   }
 
+  const q = busqueda.trim().toLowerCase();
+  const filtrados = links.filter(l =>
+    !q || l.nombre.toLowerCase().includes(q) || l.telefono.includes(q.replace(/\D/g, ''))
+  );
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-      <span className="badge" style={{ background: 'rgba(165,118,31,0.12)', borderColor: 'var(--gold, #a5761f)', color: 'var(--text)' }} title={link.nombre}>
-        📖 {link.nombre}
-      </span>
-      <button className="btn-icon-xs" title="Copiar link de Mi Historia" onClick={copiar}>
-        {copiado ? '✅' : '📋'}
-      </button>
-    </div>
+    <section className="panel" style={{ padding: '1.25rem' }}>
+      <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        📖 Historias generadas
+        {!cargando && <span className="badge">{links.length}</span>}
+      </h2>
+
+      <input
+        type="search"
+        placeholder="Buscar por nombre o teléfono…"
+        value={busqueda}
+        onChange={e => setBusqueda(e.target.value)}
+        className="input"
+        style={{ width: '100%', marginBottom: '1rem', boxSizing: 'border-box' }}
+      />
+
+      {cargando ? (
+        <p className="loading-msg">Cargando…</p>
+      ) : filtrados.length === 0 ? (
+        <p className="empty-msg">{links.length === 0 ? 'Todavía no se ha generado ninguna.' : 'No hay ninguna que coincida.'}</p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '0.5rem 0.75rem' }}>Nombre</th>
+                <th style={{ padding: '0.5rem 0.75rem' }}>Teléfono</th>
+                <th style={{ padding: '0.5rem 0.75rem' }}>Generado</th>
+                <th style={{ padding: '0.5rem 0.75rem' }}>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map(l => (
+                <tr key={l.telefono} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>{l.nombre}</td>
+                  <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{l.telefono}</td>
+                  <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{formatFecha(l.fecha)}</td>
+                  <td style={{ padding: '0.6rem 0.75rem' }}>
+                    <button
+                      className="btn-secondary"
+                      style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                      onClick={() => copiar(l.url, l.telefono)}
+                    >
+                      {copiadoDe === l.telefono ? '✅ Copiado' : '📋 Copiar link'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -371,7 +434,6 @@ export default function AdminTenantsPage() {
   // a quién hay que reactivar.
   const [ordenActividad, setOrdenActividad] = useState<'asc' | 'desc' | null>(null);
   const [tenantABorrar, setTenantABorrar] = useState<string | null>(null);
-  const [soloConHistoria, setSoloConHistoria] = useState(false);
 
   const cargarTenants = useCallback(() => {
     return fetch('/api/admin/tenants')
@@ -397,7 +459,6 @@ export default function AdminTenantsPage() {
 
   const filtrados = tenants
     .filter(t => t.telefono.includes(busqueda.replace(/\D/g, '')))
-    .filter(t => !soloConHistoria || !!t.historiaLink)
     .sort((a, b) => {
       if (!ordenActividad) return 0;
       // Sin ultimaParodia = nunca la usaron — siempre va primero al ordenar
@@ -453,6 +514,8 @@ export default function AdminTenantsPage() {
 
         <GenerarLinkHistoria />
 
+        <HistoriasGeneradas />
+
         <section className="panel" style={{ padding: '1.25rem' }}>
           <h2 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             Tenants registrados
@@ -465,13 +528,8 @@ export default function AdminTenantsPage() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             className="input"
-            style={{ width: '100%', marginBottom: '0.6rem', boxSizing: 'border-box' }}
+            style={{ width: '100%', marginBottom: '1rem', boxSizing: 'border-box' }}
           />
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem', cursor: 'pointer' }}>
-            <input type="checkbox" checked={soloConHistoria} onChange={e => setSoloConHistoria(e.target.checked)} />
-            📖 Solo con link de Mi Historia generado
-          </label>
 
           {cargando ? (
             <p className="loading-msg">Cargando…</p>
@@ -496,7 +554,6 @@ export default function AdminTenantsPage() {
                       {ordenActividad === 'desc' && ' ▼'}
                     </th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>Sesión</th>
-                    <th style={{ padding: '0.5rem 0.75rem' }}>Mi Historia</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}>WhatsApp</th>
                     <th style={{ padding: '0.5rem 0.75rem' }}></th>
                   </tr>
@@ -543,13 +600,6 @@ export default function AdminTenantsPage() {
                           </div>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Libre</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.6rem 0.75rem' }}>
-                        {t.historiaLink ? (
-                          <CeldaLinkHistoria link={t.historiaLink} />
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>—</span>
                         )}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>

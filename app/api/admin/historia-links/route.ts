@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { normalizarTelefono, conCodigoPais, telefonoValido, esCelularHondurasValido } from '@/lib/tenantService';
-import { obtenerOCrearLinkHistoria } from '@/lib/historiaLinksService';
+import { obtenerOCrearLinkHistoria, listarTodosLosLinks } from '@/lib/historiaLinksService';
+
+// Lista todas las historias generadas hasta ahora — no todas corresponden
+// a un tenant registrado en la app de corridos (ej. familiares que solo
+// usan Mi Historia), así que esto NO se cruza contra la tabla de tenants.
+export async function GET() {
+  const links = await listarTodosLosLinks();
+  return NextResponse.json(
+    links
+      .map(l => ({ telefono: l.telefono, nombre: l.nombre, fecha: l.fecha, url: `https://corridos.online/historia/${l.token}` }))
+      .sort((a, b) => b.fecha.localeCompare(a.fecha))
+  );
+}
 
 // Genera (o reusa, si ya existía) el link de "Mi Historia" para un tenant
 // puntual — se lo pasa el admin a mano, no aparece en el dashboard normal.
