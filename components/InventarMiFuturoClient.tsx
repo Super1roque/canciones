@@ -96,9 +96,12 @@ export default function InventarMiFuturoClient({
         fontFamily: literata.style.fontFamily,
       }}
     >
-      <div className="blob blob-a" />
-      <div className="blob blob-b" />
-      <div className="blob blob-c" />
+      {/* Las manchas se recortan aquí: si se salen, la página queda más ancha que el celular y la barra flotante se descuadra */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div className="blob blob-a" />
+        <div className="blob blob-b" />
+        <div className="blob blob-c" />
+      </div>
 
       <audio
         ref={audioRef}
@@ -151,16 +154,16 @@ export default function InventarMiFuturoClient({
 
         {!yaEmpezo && (
           <div className={`${baloo.className} aviso-play`} aria-hidden="true">
-            <svg viewBox="0 0 40 60" width="34" height="50">
-              <path d="M20 56 V10" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" fill="none" />
-              <path d="M8 22 L20 8 L32 22" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
             <span>Play para escuchar</span>
+            <svg viewBox="0 0 40 60" width="34" height="50">
+              <path d="M20 4 V50" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" fill="none" />
+              <path d="M8 38 L20 52 L32 38" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
           </div>
         )}
       </div>
 
-      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', padding: '7rem 1.5rem 5rem' }}>
+      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', padding: '1.25rem 1.5rem 9rem' }}>
         <div
           className={baloo.className}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 1.5rem', opacity: 0.65 }}
@@ -295,7 +298,7 @@ export default function InventarMiFuturoClient({
 
         .barra-audio {
           position: fixed; z-index: 50;
-          top: 10px; left: 50%; transform: translateX(-50%);
+          bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
           width: min(680px, calc(100% - 20px));
           display: flex; align-items: center; gap: 0.9rem;
           padding: 0.7rem 1.1rem 0.6rem 0.75rem;
@@ -344,23 +347,23 @@ export default function InventarMiFuturoClient({
           font-size: 0.66rem; color: rgba(234,255,245,0.5); font-variant-numeric: tabular-nums;
         }
 
-        /* Flecha que sube hacia el botón de play hasta que se reproduce por primera vez */
+        /* Flecha que baja hacia el botón de play hasta que se reproduce por primera vez */
         .aviso-play {
-          position: absolute; top: calc(100% + 6px); left: 0.75rem;
+          position: absolute; bottom: calc(100% + 4px); left: 0.75rem;
           width: 52px; display: flex; flex-direction: column; align-items: center;
           pointer-events: none;
           animation: subirFlecha 1.1s ease-in-out infinite;
         }
         .aviso-play span {
-          margin-top: 0.15rem; white-space: nowrap;
+          margin-bottom: 0.15rem; white-space: nowrap;
           font-size: 0.85rem; font-weight: 800; color: #2a1608;
           background: #f7cf4a; padding: 0.3rem 0.75rem; border-radius: 999px;
           box-shadow: 0 6px 18px rgba(0,0,0,0.35);
           transform: translateX(35%);
         }
         @keyframes subirFlecha {
-          0%, 100% { transform: translateY(8px); opacity: 0.85; }
-          50% { transform: translateY(-4px); opacity: 1; }
+          0%, 100% { transform: translateY(-8px); opacity: 0.85; }
+          50% { transform: translateY(4px); opacity: 1; }
         }
 
         .hint { text-align:center; font-family: ${baloo.style.fontFamily}, sans-serif; font-size: 0.75rem; color: rgba(234,255,245,0.45); margin: 0 0 1.25rem; }
