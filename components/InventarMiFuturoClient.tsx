@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useRef, useState, useCallback } from 'react';
+import { Fragment, useRef, useState, useCallback, useEffect } from 'react';
 import { Baloo_2, Literata } from 'next/font/google';
 import type { CuePárrafo } from '@/lib/inventarMiFuturoCues';
 import type { ImagenInline } from '@/lib/inventarMiFuturoImagenes';
@@ -45,7 +45,8 @@ export default function InventarMiFuturoClient({
   const [yaEmpezo, setYaEmpezo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const parrafoRef = useRef<HTMLParagraphElement>(null);
-  const cueIndexRef = useRef(0);
+  const cueIndexRef = useRef(-1);
+  const saltoPorClicRef = useRef(false);
 
   const imagenesPorCue = imagenes.reduce<Record<number, ImagenInline[]>>((acc, img) => {
     (acc[img.afterCueIdx] ??= []).push(img);
@@ -57,17 +58,37 @@ export default function InventarMiFuturoClient({
     setTiempo(t);
     if (cues.length === 0) return;
     let i = cueIndexRef.current;
-    while (i < cues.length - 1 && cues[i].end <= t) i++;
+    while (i < cues.length - 1 && cues[i + 1].start <= t) i++;
     while (i > 0 && cues[i].start > t) i--;
+    if (i < 0) i = 0;
     if (i !== cueIndexRef.current) {
       cueIndexRef.current = i;
       setIndiceActual(i);
-      parrafoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [cues]);
 
+  // El scroll va después del render: antes de eso parrafoRef todavía apunta al párrafo anterior,
+  // y al saltar con un clic la página se iba al párrafo viejo en vez del nuevo.
+  useEffect(() => {
+    if (indiceActual < 0) return;
+    if (saltoPorClicRef.current) {
+      // El lector ya está mirando el párrafo que tocó: no hace falta moverle la página.
+      saltoPorClicRef.current = false;
+      return;
+    }
+    parrafoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [indiceActual]);
+
   function saltarA(start: number) {
     if (!audioRef.current) return;
+    // Se ilumina el párrafo tocado de inmediato, sin esperar a que el audio termine de buscar.
+    // La marca de clic solo se pone si cambia de párrafo; si toca el mismo, no hay render que la consuma.
+    const idx = cues.findIndex((c) => c.start === start);
+    if (idx >= 0 && idx !== cueIndexRef.current) {
+      saltoPorClicRef.current = true;
+      cueIndexRef.current = idx;
+      setIndiceActual(idx);
+    }
     audioRef.current.currentTime = start + 0.02;
     audioRef.current.play();
   }
@@ -108,6 +129,7 @@ export default function InventarMiFuturoClient({
         preload="none"
         src={audioUrl}
         onTimeUpdate={alAvanzarTiempo}
+        onSeeked={alAvanzarTiempo}
         onPlay={() => { setReproduciendo(true); setYaEmpezo(true); }}
         onPause={() => setReproduciendo(false)}
         onWaiting={() => setCargando(true)}
