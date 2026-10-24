@@ -104,6 +104,14 @@ export default function InventarMiFuturoClient({
         <p className="hint">Toca cualquier párrafo para saltar el audio a ese punto.</p>
 
         <div className="glass texto-libro" style={{ padding: '1.75rem 1.5rem' }}>
+          {/* afterCueIdx -1 = antes del primer cue (la portada del libro) */}
+          {imagenesPorCue[-1]?.map((foto, fi) => (
+            <figure key={fi} className="foto-inline foto-portada">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={foto.src} alt={foto.alt} />
+              {foto.caption && <figcaption>{foto.caption}</figcaption>}
+            </figure>
+          ))}
           {cues.map((c, i) => {
             const activo = i === indiceActual;
             const leido = i < indiceActual;
@@ -231,6 +239,8 @@ export default function InventarMiFuturoClient({
           border: 1px solid rgba(255,255,255,0.18);
           box-shadow: 0 10px 28px rgba(0,0,0,0.35);
         }
+        .foto-portada { margin: 0 0 1.5rem; }
+        .foto-portada img { width: 100%; max-height: none; }
         .foto-inline figcaption {
           font-family: ${baloo.style.fontFamily}, sans-serif;
           font-size: 0.72rem; color: rgba(234,255,245,0.55);

@@ -291,6 +291,13 @@ Panel de arte por tapa = Trim width + square + turn-in (ancho) × Alto completo 
             de <Code>Accept-Ranges</Code>/<Code>206 Partial Content</Code>) y resaltado por párrafo, no por palabra.
           </Nota>
           <p>Configurar etiquetas Open Graph con la portada del libro, para que al compartir el link por WhatsApp aparezca la miniatura correcta.</p>
+          <Nota>
+            Regla fija: la portada va <strong>siempre al inicio</strong> de la página, arriba del título, y tiene
+            que ser <strong>la misma imagen</strong> que la miniatura de Open Graph. En los datos de fotos del
+            lector, la portada se marca con <Code>afterCueIdx: -1</Code> (se dibuja antes del primer párrafo),
+            y <Code>public/&lt;slug&gt;/portada.jpg</Code> es lo que apuntan <Code>openGraph.images</Code> y{' '}
+            <Code>twitter.images</Code>.
+          </Nota>
         </Seccion>
 
         <Seccion id="fase-9" titulo="9. Código QR">
