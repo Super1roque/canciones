@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import InventarMiFuturoClient from '@/components/InventarMiFuturoClient';
 import { cuesRamonVilledaMorales, duracionTotalSegundos } from '@/lib/ramonVilledaMoralesCues';
 import { imagenesRamonVilledaMorales } from '@/lib/ramonVilledaMoralesImagenes';
+import { ADMIN_WHATSAPP } from '@/lib/config';
+
+const MENSAJE_WHATSAPP = 'He escuchado la Biografía de Ramón Villeda Morales y quiero hacer la mía';
 
 // Mismo lector sincronizado que /inventar-mi-futuro — el componente recibe
 // todo por props, solo cambian el audio, los cues y las fotos.
@@ -36,6 +39,13 @@ export default function RamonVilledaMoralesPage() {
       cues={cuesRamonVilledaMorales}
       duracionTotal={duracionTotalSegundos}
       imagenes={imagenesRamonVilledaMorales}
+      etiqueta="Biografías"
+      invitacion="Escribe la tuya y crea tu propio libro"
+      remate="Fácilmente"
+      cta={{
+        texto: 'Contáctame para hacer tu libro',
+        href: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(MENSAJE_WHATSAPP)}`,
+      }}
     />
   );
 }

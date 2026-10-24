@@ -20,6 +20,10 @@ export default function InventarMiFuturoClient({
   cues,
   duracionTotal,
   imagenes,
+  etiqueta = 'corridos.online · Mi Historia',
+  invitacion = 'Escribí la tuya y creá tu propio libro',
+  remate = 'GRATIS',
+  cta = { texto: '🎤 Conocer corridos.online', href: 'https://corridos.online' },
 }: {
   audioUrl: string;
   titulo: string;
@@ -27,6 +31,11 @@ export default function InventarMiFuturoClient({
   cues: CuePárrafo[];
   duracionTotal: number;
   imagenes: ImagenInline[];
+  // Opcionales: cada página de audiolibro puede cambiar la etiqueta de arriba y el llamado del final.
+  etiqueta?: string;
+  invitacion?: string;
+  remate?: string;
+  cta?: { texto: string; href: string };
 }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const [reproduciendo, setReproduciendo] = useState(false);
@@ -98,7 +107,7 @@ export default function InventarMiFuturoClient({
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 1.5rem', opacity: 0.65 }}
         >
           <span style={{ fontSize: '1.1rem' }}>📖</span>
-          <span style={{ fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>corridos.online · Mi Historia</span>
+          <span style={{ fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{etiqueta}</span>
         </div>
 
         <p className="hint">Toca cualquier párrafo para saltar el audio a ese punto.</p>
@@ -197,10 +206,14 @@ export default function InventarMiFuturoClient({
             ✨ Esta historia se escribió con Mi Historia
           </p>
           <p style={{ fontSize: '0.9rem', color: 'rgba(234,255,245,0.75)', marginBottom: '1.75rem' }}>
-            Escribí la tuya y creá tu propio libro — <strong style={{ color: '#eafff5' }}>GRATIS</strong>.
+            {invitacion} — <strong style={{ color: '#eafff5' }}>{remate}</strong>.
           </p>
-          <a href="https://corridos.online" className={`${baloo.className} cta-boton`}>
-            🎤 Conocer corridos.online
+          <a
+            href={cta.href}
+            {...(cta.href.startsWith('https://wa.me/') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            className={`${baloo.className} cta-boton`}
+          >
+            {cta.texto}
           </a>
         </div>
       </div>
