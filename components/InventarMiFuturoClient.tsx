@@ -39,6 +39,10 @@ export default function InventarMiFuturoClient({
 }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const [reproduciendo, setReproduciendo] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [tiempo, setTiempo] = useState(0);
+  // La flecha "Play para escuchar" se muestra hasta la primera reproducción.
+  const [yaEmpezo, setYaEmpezo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const parrafoRef = useRef<HTMLParagraphElement>(null);
   const cueIndexRef = useRef(0);
@@ -50,6 +54,7 @@ export default function InventarMiFuturoClient({
 
   const alAvanzarTiempo = useCallback(() => {
     const t = audioRef.current?.currentTime ?? 0;
+    setTiempo(t);
     if (cues.length === 0) return;
     let i = cueIndexRef.current;
     while (i < cues.length - 1 && cues[i].end <= t) i++;
@@ -67,6 +72,20 @@ export default function InventarMiFuturoClient({
     audioRef.current.play();
   }
 
+  // Pausar no mueve el scroll: el lector queda donde está y al reanudar sigue desde el mismo punto.
+  function alternarReproduccion() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) a.play();
+    else a.pause();
+  }
+
+  function buscar(segundos: number) {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = segundos;
+    setTiempo(segundos);
+  }
+
   return (
     <div
       style={{
@@ -81,27 +100,67 @@ export default function InventarMiFuturoClient({
       <div className="blob blob-b" />
       <div className="blob blob-c" />
 
-      {/* Barra de audio fija arriba — siempre visible mientras se lee/escucha */}
-      <div className="barra-audio glass">
-        <div className={baloo.className} style={{ fontSize: '0.78rem', color: '#6ee7b7', letterSpacing: '0.03em', marginBottom: '0.5rem' }}>
-          🎧 {reproduciendo ? 'Reproduciendo' : 'Audiolibro'} · {titulo}
+      <audio
+        ref={audioRef}
+        preload="none"
+        src={audioUrl}
+        onTimeUpdate={alAvanzarTiempo}
+        onPlay={() => { setReproduciendo(true); setYaEmpezo(true); }}
+        onPause={() => setReproduciendo(false)}
+        onWaiting={() => setCargando(true)}
+        onPlaying={() => setCargando(false)}
+        onCanPlay={() => setCargando(false)}
+      />
+
+      {/* Reproductor flotante — siempre a mano para pausar/reanudar sin perder el punto de lectura */}
+      <div className="barra-audio">
+        <button
+          type="button"
+          onClick={alternarReproduccion}
+          className="boton-play"
+          aria-label={reproduciendo ? 'Pausar' : 'Reproducir'}
+        >
+          {cargando && reproduciendo ? (
+            <span className="spinner" />
+          ) : reproduciendo ? (
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" /><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" /></svg>
+          )}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={`${baloo.className} barra-titulo`}>
+            🎧 {reproduciendo ? 'Reproduciendo' : tiempo > 0 ? 'En pausa' : 'Audiolibro'} · {titulo}
+          </div>
+          <input
+            type="range"
+            className="barra-progreso"
+            min={0}
+            max={duracionTotal}
+            step={1}
+            value={Math.min(tiempo, duracionTotal)}
+            onChange={(e) => buscar(Number(e.target.value))}
+            aria-label="Posición del audio"
+            style={{ ['--progreso' as string]: `${(Math.min(tiempo, duracionTotal) / duracionTotal) * 100}%` }}
+          />
+          <div className="barra-tiempos">
+            <span>{formatearTiempo(tiempo)}</span>
+            <span>{formatearTiempo(duracionTotal)}</span>
+          </div>
         </div>
-        <audio
-          ref={audioRef}
-          controls
-          preload="none"
-          src={audioUrl}
-          onTimeUpdate={alAvanzarTiempo}
-          onPlay={() => setReproduciendo(true)}
-          onPause={() => setReproduciendo(false)}
-          style={{ width: '100%', display: 'block', height: 36 }}
-        />
-        <div style={{ fontSize: '0.68rem', color: 'rgba(234,255,245,0.45)', marginTop: '0.3rem', textAlign: 'right' }}>
-          {formatearTiempo(duracionTotal)} en total
-        </div>
+
+        {!yaEmpezo && (
+          <div className={`${baloo.className} aviso-play`} aria-hidden="true">
+            <svg viewBox="0 0 40 60" width="34" height="50">
+              <path d="M20 56 V10" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" fill="none" />
+              <path d="M8 22 L20 8 L32 22" stroke="#f7cf4a" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+            <span>Play para escuchar</span>
+          </div>
+        )}
       </div>
 
-      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', padding: '1.25rem 1.5rem 5rem' }}>
+      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', padding: '7rem 1.5rem 5rem' }}>
         <div
           className={baloo.className}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 1.5rem', opacity: 0.65 }}
@@ -235,10 +294,73 @@ export default function InventarMiFuturoClient({
         }
 
         .barra-audio {
-          position: sticky; top: 0; z-index: 10;
-          margin: 0 0 0.5rem; padding: 0.85rem 1.2rem;
-          border-radius: 0 0 16px 16px;
-          max-width: 680px; margin-left: auto; margin-right: auto;
+          position: fixed; z-index: 50;
+          top: 10px; left: 50%; transform: translateX(-50%);
+          width: min(680px, calc(100% - 20px));
+          display: flex; align-items: center; gap: 0.9rem;
+          padding: 0.7rem 1.1rem 0.6rem 0.75rem;
+          border-radius: 999px;
+          background: rgba(5,32,25,0.82);
+          border: 1px solid rgba(110,231,183,0.28);
+          box-shadow: 0 12px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
+          backdrop-filter: blur(18px) saturate(150%);
+          -webkit-backdrop-filter: blur(18px) saturate(150%);
+        }
+        .boton-play {
+          flex: none; width: 52px; height: 52px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          border: none; cursor: pointer; color: #2a1608;
+          background: linear-gradient(135deg, #ffd84d, #f2b705 55%, #e08a1b);
+          box-shadow: 0 6px 18px rgba(242,183,5,0.4);
+          transition: transform 0.15s ease;
+        }
+        .boton-play:hover { transform: scale(1.06); }
+        .boton-play:active { transform: scale(0.94); }
+        .spinner {
+          width: 20px; height: 20px; border-radius: 50%;
+          border: 3px solid rgba(42,22,8,0.25); border-top-color: #2a1608;
+          animation: girar 0.8s linear infinite;
+        }
+        @keyframes girar { to { transform: rotate(360deg); } }
+        .barra-titulo {
+          font-size: 0.76rem; color: #6ee7b7; letter-spacing: 0.03em;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .barra-progreso {
+          -webkit-appearance: none; appearance: none;
+          width: 100%; height: 6px; margin: 0.4rem 0 0.25rem; border-radius: 999px; cursor: pointer;
+          background: linear-gradient(90deg, #f7cf4a var(--progreso), rgba(255,255,255,0.18) var(--progreso));
+        }
+        .barra-progreso::-webkit-slider-thumb {
+          -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+          background: #fff6dd; border: none; box-shadow: 0 0 0 3px rgba(247,207,74,0.35);
+        }
+        .barra-progreso::-moz-range-thumb {
+          width: 14px; height: 14px; border-radius: 50%;
+          background: #fff6dd; border: none; box-shadow: 0 0 0 3px rgba(247,207,74,0.35);
+        }
+        .barra-tiempos {
+          display: flex; justify-content: space-between;
+          font-size: 0.66rem; color: rgba(234,255,245,0.5); font-variant-numeric: tabular-nums;
+        }
+
+        /* Flecha que sube hacia el botón de play hasta que se reproduce por primera vez */
+        .aviso-play {
+          position: absolute; top: calc(100% + 6px); left: 0.75rem;
+          width: 52px; display: flex; flex-direction: column; align-items: center;
+          pointer-events: none;
+          animation: subirFlecha 1.1s ease-in-out infinite;
+        }
+        .aviso-play span {
+          margin-top: 0.15rem; white-space: nowrap;
+          font-size: 0.85rem; font-weight: 800; color: #2a1608;
+          background: #f7cf4a; padding: 0.3rem 0.75rem; border-radius: 999px;
+          box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+          transform: translateX(35%);
+        }
+        @keyframes subirFlecha {
+          0%, 100% { transform: translateY(8px); opacity: 0.85; }
+          50% { transform: translateY(-4px); opacity: 1; }
         }
 
         .hint { text-align:center; font-family: ${baloo.style.fontFamily}, sans-serif; font-size: 0.75rem; color: rgba(234,255,245,0.45); margin: 0 0 1.25rem; }
@@ -284,12 +406,13 @@ export default function InventarMiFuturoClient({
         .cta-boton:active { transform: scale(0.97); }
 
         @media (max-width: 480px) {
-          .barra-audio { padding: 0.65rem 0.9rem; border-radius: 0; }
+          .barra-audio { padding: 0.55rem 0.9rem 0.5rem 0.55rem; gap: 0.7rem; }
+          .aviso-play { left: 0.55rem; }
           .texto-libro { padding: 1.1rem 1rem !important; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .parrafo-activo { animation: none; }
+          .parrafo-activo, .aviso-play { animation: none; }
         }
       `}</style>
     </div>
