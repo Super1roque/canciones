@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext, type ReactNode } from 'react';
 import BotonResponderHablando from './BotonResponderHablando';
 import { ETAPAS, claveResp, type Etapa } from '@/lib/etapasHistoria';
-import { etapasDe, contextoHomenaje, promptCuento, type Plantilla } from '@/lib/plantillasHistoria';
+import { etapasDe, contextoHomenaje, contextoEmpresa, promptCuento, type Plantilla } from '@/lib/plantillasHistoria';
 import { PROMPT_MAESTRO, PROMPT_BORROSCOSO, PROMPT_MIMESIS, PROMPT_ECFRASIS, PROMPT_PERIODISMO } from '@/lib/prompts';
 // MemoriaApp.tsx importa ETAPAS y claveResp desde acá en vez de directo de
 // lib/etapasHistoria — se re-exportan para no tener que tocar ese archivo.
@@ -60,20 +60,34 @@ function historiaVacia(): HistoriaData {
 
 function totalPreguntas(etapas: Etapa[]) { return etapas.reduce((acc, e) => acc + e.preguntas.length, 0); }
 
-// Las etapas dependen de la plantilla del link (autobiografía, homenaje o cuento, ver
+// Las etapas dependen de la plantilla del link (autobiografía, homenaje, cuento o empresa, ver
 // lib/plantillasHistoria.ts) — se comparten por contexto para no pasarlas
 // como prop a cada pantalla.
 const EtapasCtx = createContext<Etapa[]>(ETAPAS);
 function useEtapas() { return useContext(EtapasCtx); }
 
-// Los pocos textos de la UI que cambian en un homenaje o un cuento (quien
-// escribe no es el protagonista). El resto de la app es igual para todas.
-// sujeto: el homenajeado, o el niño o niña para quien es el cuento.
+// Los pocos textos de la UI que cambian en un homenaje, un cuento o una
+// historia de empresa (quien escribe no es el protagonista). El resto de la
+// app es igual para todas. sujeto: el homenajeado, el niño o niña para quien
+// es el cuento, o la empresa o institución.
 type Textos = {
   marca: string; saludo: (nombre: string) => string; titulo: ReactNode; intro: string;
   comenzar: string; continuar: string; deLaHistoria: string; etapasDesc: string; personasTitulo: string; lineaTitulo: string; finalTitulo: string;
 };
 function textosDe(plantilla: Plantilla, sujeto: string): Textos {
+  if (plantilla === 'empresa') {
+    const e = sujeto || 'la empresa';
+    return {
+      marca: 'Historia de empresa',
+      saludo: nombre => `Hola, ${nombre} 👋 — acá vamos a contar la historia de ${e}.`,
+      titulo: <>Cuenta la historia de {e}.<br />Nosotros la convertimos en libro.</>,
+      intro: `Te vamos a llevar, poco a poco, por la historia de ${e}: cómo nació, quiénes la fundaron, las crisis que superó, su gente y lo que sueña para el futuro. No hace falta escribir perfecto — contalo como lo recordés. También podés preguntarle a fundadores, colaboradores o clientes y anotar lo que ellos recuerden. Podés parar cuando quieras y seguir otro día.`,
+      comenzar: '✨ Comenzar la historia', continuar: '▶ Continuar la historia', deLaHistoria: 'de la historia de ' + e,
+      etapasDesc: 'De la idea original hasta el próximo capítulo.',
+      personasTitulo: `Personas en la historia de ${e}`, lineaTitulo: `La línea de tiempo de ${e}`,
+      finalTitulo: `¡La historia de ${e} está acá!`,
+    };
+  }
   if (plantilla === 'cuento') {
     const n = sujeto || 'ese niño o niña';
     return {
@@ -143,7 +157,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
       const h: HistoriaData = Object.assign(historiaVacia(), resto);
       setHistoria(h);
       setNombre(nombreRecibido || '');
-      if (plantillaRecibida === 'homenaje' || plantillaRecibida === 'cuento') { setPlantilla(plantillaRecibida); setSujeto(sujetoRecibido || ''); }
+      if (plantillaRecibida === 'homenaje' || plantillaRecibida === 'cuento' || plantillaRecibida === 'empresa') { setPlantilla(plantillaRecibida); setSujeto(sujetoRecibido || ''); }
       if (h.progreso) { setEtapaActual(h.progreso.etapaActual); setPreguntaActual(h.progreso.preguntaActual); }
       setCargando(false);
     }).catch(() => { setHistoria(historiaVacia()); setCargando(false); });
@@ -387,12 +401,17 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
       if (plantilla === 'cuento') out += promptCuento(sujeto, nombre) + '\n\n';
       else out += PROMPT_MAESTRO + '\n\n';
       if (plantilla === 'homenaje') out += contextoHomenaje(sujeto, nombre) + '\n\n';
+      if (plantilla === 'empresa') out += contextoEmpresa(sujeto, nombre) + '\n\n';
       out += '================================================\n';
-      out += plantilla === 'cuento' ? 'A PARTIR DE ACÁ: LAS RESPUESTAS DEL AUTOR SOBRE EL CUENTO\n' : 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
+      out += plantilla === 'cuento' ? 'A PARTIR DE ACÁ: LAS RESPUESTAS DEL AUTOR SOBRE EL CUENTO\n'
+        : plantilla === 'empresa' ? 'A PARTIR DE ACÁ: EL MATERIAL REAL SOBRE LA EMPRESA O INSTITUCIÓN\n'
+        : 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
       out += '(fuente primaria — todo lo de arriba son solo las reglas)\n';
       out += '================================================\n\n';
     }
-    out += plantilla === 'cuento' ? 'CUENTO INFANTIL PARA ' + sujeto.toUpperCase() + '\n=========\n\n' : 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
+    out += plantilla === 'cuento' ? 'CUENTO INFANTIL PARA ' + sujeto.toUpperCase() + '\n=========\n\n'
+      : plantilla === 'empresa' ? 'HISTORIA DE ' + sujeto.toUpperCase() + '\n=========\n\n'
+      : 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
     out += 'Generado: ' + new Date(historia.meta.creado).toLocaleString('es') + '\nÚltima actualización: ' + new Date(historia.meta.actualizado).toLocaleString('es') + '\n\n';
     etapas.forEach((etapa, ei) => {
       out += 'ETAPA ' + (ei + 1) + ' — ' + etapa.titulo.toUpperCase() + '\n' + '-'.repeat(20) + '\n';

@@ -7,23 +7,28 @@ import { ETAPAS, type Etapa } from './etapasHistoria';
 // - 'homenaje': la persona cuenta la vida de OTRO (un padre, una abuela).
 // - 'cuento': la persona crea un cuento infantil para un niño o niña. Es la
 //   única plantilla de ficción: acá sí se puede inventar.
-export type Plantilla = 'vida' | 'homenaje' | 'cuento';
+// - 'empresa': un fundador o encargado cuenta la historia de una empresa o
+//   institución (un negocio, una iglesia, un club, una escuela).
+export type Plantilla = 'vida' | 'homenaje' | 'cuento' | 'empresa';
 
 export const PLANTILLAS: { id: Plantilla; nombre: string; descripcion: string }[] = [
   { id: 'vida', nombre: 'Mi Historia (autobiografía)', descripcion: 'La persona cuenta su propia vida.' },
   { id: 'homenaje', nombre: 'Homenaje a un ser querido', descripcion: 'La persona cuenta la vida de otra (un padre, una abuela, alguien que ya partió).' },
   { id: 'cuento', nombre: 'Cuento infantil', descripcion: 'La persona crea un cuento para un niño o niña (un nieto, un hijo).' },
+  { id: 'empresa', nombre: 'Historia de empresa o institución', descripcion: 'Un fundador o encargado cuenta la historia de un negocio, una iglesia, un club o una escuela.' },
 ];
 
 export function esPlantilla(v: unknown): v is Plantilla {
-  return v === 'vida' || v === 'homenaje' || v === 'cuento';
+  return v === 'vida' || v === 'homenaje' || v === 'cuento' || v === 'empresa';
 }
 
 // De quién se habla en las preguntas: el homenajeado en un homenaje, el niño
-// o niña para quien es el cuento en un cuento. Vacío en una autobiografía.
-export function sujetoDe(link: { plantilla?: Plantilla; homenajeado?: string; paraQuien?: string } | null | undefined): string {
+// o niña para quien es el cuento en un cuento, la empresa o institución en
+// una historia de empresa. Vacío en una autobiografía.
+export function sujetoDe(link: { plantilla?: Plantilla; homenajeado?: string; paraQuien?: string; empresa?: string } | null | undefined): string {
   if (link?.plantilla === 'homenaje') return link.homenajeado || '';
   if (link?.plantilla === 'cuento') return link.paraQuien || '';
+  if (link?.plantilla === 'empresa') return link.empresa || '';
   return '';
 }
 
@@ -131,6 +136,64 @@ const ETAPAS_CUENTO: Etapa[] = [
   ]},
 ];
 
+// {H} acá es la empresa o institución. Las preguntas sirven igual para un
+// negocio que para una iglesia, un club o una escuela — por eso hablan de
+// "clientes o miembros", "colaboradores", etc.
+const ETAPAS_EMPRESA: Etapa[] = [
+  { titulo: 'Qué es {H}', preguntas: [
+    '¿Cuál es el nombre completo de {H}? ¿Siempre se llamó así?', '¿A qué se dedica {H}?', '¿Dónde está y en qué año se fundó?',
+    '¿Cuál es tu papel en {H} y desde cuándo?', '¿Por qué quieren escribir este libro? ¿Hay un aniversario o una ocasión especial?',
+    'Si tuvieras que definir a {H} en una sola frase, ¿qué dirías?',
+  ]},
+  { titulo: 'Cómo empezó todo', preguntas: [
+    '¿De dónde salió la idea de crear {H}?', '¿Cómo fue el primer día? ¿Dónde funcionó al principio?',
+    '¿Con qué recursos empezaron: capital, préstamo, ahorros, ayuda de alguien?', '¿Cuál fue el primer producto, servicio o actividad?',
+    '¿Quién fue el primer cliente, miembro o alumno? ¿Lo recuerdan?', '¿Quién creyó en el proyecto cuando nadie más creía?',
+    '¿Cuáles fueron las primeras dificultades?',
+  ]},
+  { titulo: 'Los fundadores', preguntas: [
+    '¿Quiénes fundaron {H}?', '¿De dónde venían y a qué se dedicaban antes?', '¿Qué los motivó a emprender?',
+    '¿Cómo era su carácter y su forma de trabajar?', '¿Qué frase o consejo de los fundadores se sigue repitiendo?',
+    '¿Hay alguna anécdota de los fundadores que siempre se cuente?',
+  ]},
+  { titulo: 'Los primeros años', preguntas: [
+    '¿Cómo se ganaron a los primeros clientes o miembros?', '¿Quién fue la primera persona que contrataron o que se sumó?',
+    '¿Hubo un momento en que casi cierran o casi se rinden? ¿Qué pasó?', '¿Cuándo sintieron que {H} ya iba a salir adelante?',
+    '¿Cómo era un día normal en esos primeros años?',
+  ]},
+  { titulo: 'El crecimiento', preguntas: [
+    '¿Cuáles fueron los grandes momentos o hitos de {H}?', '¿Cuándo abrieron un nuevo local, sede o programa?',
+    '¿Qué decisión importante cambió el rumbo de {H}?', '¿Hubo alianzas, socios o apoyos clave?',
+    '¿Cómo cambió {H} con los años: tamaño, número de personas, lo que ofrece?',
+  ]},
+  { titulo: 'Las crisis', preguntas: [
+    '¿Cuál fue el momento más difícil en la historia de {H}?', '¿Qué ocurrió? (una crisis económica, un desastre natural, una pérdida, un conflicto)',
+    '¿Cómo lo enfrentaron? ¿Quién dio la cara?', '¿Qué tuvieron que sacrificar?', '¿Qué aprendieron de esa crisis?',
+  ]},
+  { titulo: 'La gente', preguntas: [
+    '¿Quiénes son las personas más antiguas o emblemáticas de {H}?', '¿Hay algún colaborador cuya historia merezca contarse?',
+    '¿Cómo es el ambiente de trabajo o de convivencia?', '¿Qué tradiciones o costumbres internas tienen (celebraciones, rituales, apodos)?',
+    '¿Cuál es la anécdota más divertida que recuerdan?',
+  ]},
+  { titulo: 'Clientes y comunidad', preguntas: [
+    '¿Quién es el cliente o miembro más fiel? ¿Cuál es su historia?', '¿Hay alguna historia de alguien a quien {H} le cambió la vida?',
+    '¿Qué significa {H} para su barrio, su ciudad o su comunidad?', '¿Qué han hecho por la comunidad más allá de su actividad?',
+  ]},
+  { titulo: 'Valores y forma de ser', preguntas: [
+    '¿Cuáles son los valores de {H}?', '¿Qué es lo que los distingue de otros?', '¿Qué es lo que nunca harían, aunque les conviniera?',
+    '¿Hay algún lema, oración o frase que los represente?',
+  ]},
+  { titulo: 'Otras voces', intro: 'Esta etapa es para lo que otros cuentan de {H}. Si puedes, pregúntale a colaboradores, clientes, miembros o fundadores y escribe aquí lo que te digan, diciendo quién lo contó.', grandes: true, preguntas: [
+    '¿Qué recuerdan los colaboradores más antiguos?', '¿Qué dicen los clientes o miembros de {H}?',
+    '¿Qué cuentan los fundadores o sus familias?', '¿Quiénes son las personas que más aportaron a {H} y por qué?',
+  ]},
+  { titulo: 'Hoy y mañana', preguntas: [
+    '¿Cómo está {H} hoy?', '¿De qué logro se sienten más orgullosos?', '¿Cuál es el próximo capítulo? ¿Qué sueñan para los próximos años?',
+    '¿Qué mensaje quieren dejarle a las nuevas generaciones de {H}?', '¿Qué título le pondrías a este libro?',
+    '¿Qué te gustaría que sintiera quien termine de leerlo?',
+  ]},
+];
+
 function reemplazarH(texto: string, sujeto: string): string {
   return texto.replace(/\{H\}/g, sujeto);
 }
@@ -139,9 +202,10 @@ function reemplazarH(texto: string, sujeto: string): string {
 // sujeto (ver sujetoDe). Si falta el nombre (no debería pasar: el admin lo
 // pide al generar el link), se usa un genérico para que la pregunta se lea bien.
 export function etapasDe(plantilla: Plantilla | undefined, sujeto?: string): Etapa[] {
-  if (plantilla !== 'homenaje' && plantilla !== 'cuento') return ETAPAS;
-  const base = plantilla === 'homenaje' ? ETAPAS_HOMENAJE : ETAPAS_CUENTO;
-  const h = (sujeto || '').trim() || (plantilla === 'homenaje' ? 'esta persona' : 'el niño o la niña');
+  if (plantilla !== 'homenaje' && plantilla !== 'cuento' && plantilla !== 'empresa') return ETAPAS;
+  const base = plantilla === 'homenaje' ? ETAPAS_HOMENAJE : plantilla === 'cuento' ? ETAPAS_CUENTO : ETAPAS_EMPRESA;
+  const generico = plantilla === 'homenaje' ? 'esta persona' : plantilla === 'cuento' ? 'el niño o la niña' : 'la empresa';
+  const h = (sujeto || '').trim() || generico;
   return base.map(e => ({
     ...e,
     titulo: reemplazarH(e.titulo, h),
@@ -161,6 +225,17 @@ Este material NO es autobiográfico. Quien respondió el cuestionario es ${narra
 - Escribe en tercera persona, o desde la voz de quien lo recuerda ("mi padre…") cuando el material sea un recuerdo personal. Nunca en primera persona del homenajeado: no se le pueden poner palabras en la boca.
 - Las reglas de veracidad se mantienen: no inventes hechos, fechas, diálogos ni personas. Si algo lo contó un tercero, puede atribuirse ("según cuenta su hermana…").
 - El tono es de homenaje: cálido y agradecido, pero honesto. Sin idealizar ni ocultar lo que el material cuenta.`;
+}
+
+// Igual que contextoHomenaje, para la historia de una empresa o institución:
+// el protagonista es la organización, no quien responde.
+export function contextoEmpresa(empresa: string, narrador: string): string {
+  return `CONTEXTO IMPORTANTE — HISTORIA DE EMPRESA O INSTITUCIÓN
+Este material NO es autobiográfico. Quien respondió el cuestionario es ${narrador || 'un fundador o encargado'}, y lo que cuenta es la historia de ${empresa || 'una empresa o institución'}, la protagonista del libro.
+- La protagonista es ${empresa || 'la organización'}: sus orígenes, su gente, sus crisis y su presente. Quien responde es una fuente (y puede ser un personaje), no el protagonista.
+- Escribe como crónica en tercera persona. Las frases de fundadores, colaboradores o clientes van entre comillas y atribuidas, solo si aparecen en el material.
+- Las reglas de veracidad se mantienen: no inventes hechos, fechas, cifras, nombres ni logros. Sin lenguaje publicitario ni frases de folleto: el libro cuenta una historia, no vende un producto.
+- Las crisis y los errores se cuentan con honestidad, tal como aparecen en el material: son parte de lo que hace creíble la historia.`;
 }
 
 // Reemplaza al Prompt Maestro en los cuentos: el Maestro prohíbe inventar

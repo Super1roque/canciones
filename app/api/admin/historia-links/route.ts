@@ -19,7 +19,7 @@ export async function GET() {
 // puntual — se lo pasa el admin a mano, no aparece en el dashboard normal.
 export async function POST(request: Request) {
   try {
-    // sujeto: el homenajeado (homenaje) o el niño o niña (cuento).
+    // sujeto: el homenajeado (homenaje), el niño o niña (cuento) o la empresa (empresa).
     const { telefono: rawTelefono, nombre: rawNombre, plantilla: rawPlantilla, sujeto: rawSujeto } = await request.json();
     const telefono = normalizarTelefono(conCodigoPais(rawTelefono || ''));
     const nombre = (rawNombre || '').trim();
@@ -34,6 +34,9 @@ export async function POST(request: Request) {
     }
     if (plantilla === 'cuento' && !sujeto) {
       return NextResponse.json({ error: 'Falta el nombre del niño o niña para quien es el cuento' }, { status: 400 });
+    }
+    if (plantilla === 'empresa' && !sujeto) {
+      return NextResponse.json({ error: 'Falta el nombre de la empresa o institución' }, { status: 400 });
     }
     if (!telefonoValido(telefono)) {
       return NextResponse.json({ error: 'Ese número no parece válido' }, { status: 400 });

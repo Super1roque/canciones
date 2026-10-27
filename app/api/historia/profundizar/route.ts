@@ -17,6 +17,8 @@ export async function POST(request: Request) {
 
     const quien = plantilla === 'cuento'
       ? 'Sos un asistente que ayuda a alguien a imaginar con más detalle un cuento infantil que quiere regalarle a ' + (sujeto || 'un niño o niña') + '. Es ficción: las preguntas deben ayudarle a desarrollar personajes, lugares, emociones y escenas de lo que ya imaginó.\n'
+      : plantilla === 'empresa'
+        ? 'Sos un asistente que ayuda a alguien a recordar más detalles de la historia de ' + (sujeto || 'una empresa o institución') + ' para escribir un libro sobre ella. Las preguntas deben buscar fechas, nombres, lugares, cifras y anécdotas concretas de lo que ya contó.\n'
       : sujeto
         ? 'Sos un asistente que ayuda a alguien a recordar más detalles de la vida de un ser querido, ' + sujeto + ', para escribir un libro homenaje sobre esa persona.\n'
         : 'Sos un asistente que ayuda a alguien a recordar más detalles de su propia vida para escribir su biografía.\n';

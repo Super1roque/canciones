@@ -13,8 +13,9 @@ type Tenant = {
   historiaLink?: { url: string; nombre: string; fecha: string } | null;
 };
 
-type Plantilla = 'vida' | 'homenaje' | 'cuento';
-// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento.
+type Plantilla = 'vida' | 'homenaje' | 'cuento' | 'empresa';
+// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento, la
+// empresa o institución en una historia de empresa.
 type LinkHistoria = { telefono: string; nombre: string; fecha: string; url: string; plantilla?: Plantilla; sujeto?: string };
 
 // Lista aparte (no una columna dentro de "Tenants registrados"): a muchas
@@ -84,6 +85,7 @@ function HistoriasGeneradas() {
                     {l.nombre}
                     {l.plantilla === 'homenaje' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🕯️ Homenaje a {l.sujeto}</div>}
                     {l.plantilla === 'cuento' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🧸 Cuento para {l.sujeto}</div>}
+                    {l.plantilla === 'empresa' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🏢 Historia de {l.sujeto}</div>}
                   </td>
                   <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{l.telefono}</td>
                   <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{formatFecha(l.fecha)}</td>
@@ -269,7 +271,7 @@ function GenerarLinkHistoria() {
       <h2 style={{ margin: '0 0 0.5rem' }}>📖 Link de Mi Historia</h2>
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.75rem' }}>
         Le da acceso a un tenant puntual a la herramienta de "Mi Historia" (la misma que usás vos) sin que aparezca en su dashboard — solo con este link, sin login.
-        En un <strong>homenaje</strong>, la persona cuenta la vida de un ser querido (un padre, una abuela…) en vez de la suya. En un <strong>cuento infantil</strong>, imagina un cuento para regalarle a un niño o niña.
+        En un <strong>homenaje</strong>, la persona cuenta la vida de un ser querido (un padre, una abuela…) en vez de la suya. En un <strong>cuento infantil</strong>, imagina un cuento para regalarle a un niño o niña. En una <strong>historia de empresa</strong>, cuenta la de un negocio, una iglesia, un club o una escuela.
       </p>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <select
@@ -281,6 +283,7 @@ function GenerarLinkHistoria() {
           <option value="vida">📖 Su propia historia (autobiografía)</option>
           <option value="homenaje">🕯️ Homenaje a un ser querido</option>
           <option value="cuento">🧸 Cuento infantil</option>
+          <option value="empresa">🏢 Historia de empresa o institución</option>
         </select>
         <input
           type="text"
@@ -303,7 +306,7 @@ function GenerarLinkHistoria() {
         {plantilla !== 'vida' && (
           <input
             type="text"
-            placeholder={plantilla === 'homenaje' ? 'A quién se le hace el homenaje (ej. Don Emigdio Sevilla)…' : 'Para quién es el cuento (ej. Sofía)…'}
+            placeholder={plantilla === 'homenaje' ? 'A quién se le hace el homenaje (ej. Don Emigdio Sevilla)…' : plantilla === 'cuento' ? 'Para quién es el cuento (ej. Sofía)…' : 'Nombre de la empresa o institución (ej. Ferretería El Martillo)…'}
             value={sujeto}
             onChange={e => setSujeto(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') generar(); }}
@@ -323,7 +326,7 @@ function GenerarLinkHistoria() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
         }}>
           <span style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>
-            ✅ Link para <strong>{resultado.nombre}</strong> ({resultado.telefono}){resultado.plantilla === 'homenaje' && <> — homenaje a <strong>{resultado.sujeto}</strong></>}{resultado.plantilla === 'cuento' && <> — cuento para <strong>{resultado.sujeto}</strong></>}: {resultado.url}
+            ✅ Link para <strong>{resultado.nombre}</strong> ({resultado.telefono}){resultado.plantilla === 'homenaje' && <> — homenaje a <strong>{resultado.sujeto}</strong></>}{resultado.plantilla === 'cuento' && <> — cuento para <strong>{resultado.sujeto}</strong></>}{resultado.plantilla === 'empresa' && <> — historia de <strong>{resultado.sujeto}</strong></>}: {resultado.url}
           </span>
           <button className="btn-primary" onClick={copiar} style={{ whiteSpace: 'nowrap' }}>
             {copiado ? '✅ Copiado' : '📋 Copiar'}

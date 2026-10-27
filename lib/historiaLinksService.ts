@@ -16,6 +16,9 @@ export interface HistoriaLink {
   // Solo en cuentos: el niño o niña para quien es el cuento. `nombre` es
   // quien lo imagina (el dueño del teléfono).
   paraQuien?: string;
+  // Solo en historias de empresa: la empresa o institución. `nombre` es
+  // quien la cuenta (el dueño del teléfono).
+  empresa?: string;
 }
 
 // El link de 'vida' sigue indexado solo por teléfono (así no cambia el id de
@@ -39,7 +42,8 @@ function generarToken(): string {
 // pierde el progreso que ya haya guardado ahí) — pero el nombre sí se
 // actualiza, por si el admin lo vuelve a generar para corregir un error
 // de tipeo.
-// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento.
+// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento, la
+// empresa o institución en una historia de empresa.
 export async function obtenerOCrearLinkHistoria(telefono: string, nombre: string, plantilla: Plantilla = 'vida', sujeto = ''): Promise<HistoriaLink> {
   const db = getDb();
   const ref = db.collection(COLLECTION).doc(idDocumento(telefono, plantilla, sujeto));
@@ -56,6 +60,7 @@ export async function obtenerOCrearLinkHistoria(telefono: string, nombre: string
   const nuevo: HistoriaLink = { telefono, token: generarToken(), fecha: new Date().toISOString(), nombre };
   if (plantilla === 'homenaje') { nuevo.plantilla = 'homenaje'; nuevo.homenajeado = sujeto; }
   if (plantilla === 'cuento') { nuevo.plantilla = 'cuento'; nuevo.paraQuien = sujeto; }
+  if (plantilla === 'empresa') { nuevo.plantilla = 'empresa'; nuevo.empresa = sujeto; }
   await ref.set(nuevo);
   return nuevo;
 }

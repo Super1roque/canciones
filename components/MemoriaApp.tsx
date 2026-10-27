@@ -97,6 +97,7 @@ export default function MemoriaApp({ clave }: { clave: string }) {
 
   const esHomenaje = data.plantilla === 'homenaje';
   const esCuento = data.plantilla === 'cuento';
+  const esEmpresa = data.plantilla === 'empresa';
   const capitulos = etapasDe(data.plantilla, data.sujeto)
     .map((etapa, ei) => {
       const preguntas = etapa.preguntas
@@ -115,8 +116,13 @@ export default function MemoriaApp({ clave }: { clave: string }) {
       <style>{ESTILOS}</style>
 
       <header className="mm-hero">
-        <div className="mm-eyebrow">{esCuento ? 'Cuento infantil · Memoria' : esHomenaje ? 'Homenaje · Memoria' : 'Mi Historia · Memoria'}</div>
-        {esCuento ? (
+        <div className="mm-eyebrow">{esEmpresa ? 'Historia de empresa · Memoria' : esCuento ? 'Cuento infantil · Memoria' : esHomenaje ? 'Homenaje · Memoria' : 'Mi Historia · Memoria'}</div>
+        {esEmpresa ? (
+          <>
+            <h1>{data.sujeto ? `La historia de ${data.sujeto}` : 'Esta historia'}</h1>
+            <p className="mm-hint">Contada por {data.nombre || 'su gente'} — y, donde se grabó, en su propia voz.</p>
+          </>
+        ) : esCuento ? (
           <>
             <h1>{data.sujeto ? `Un cuento para ${data.sujeto}` : 'Un cuento'}</h1>
             <p className="mm-hint">Imaginado por {data.nombre || 'alguien que lo quiere mucho'} — y, donde se grabó, en su propia voz.</p>
