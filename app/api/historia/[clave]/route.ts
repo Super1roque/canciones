@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { obtenerHistoria, guardarHistoria, CLAVE_ADMIN, type HistoriaData } from '@/lib/miHistoriaService';
 import { obtenerLinkPorToken } from '@/lib/historiaLinksService';
+import { sujetoDe } from '@/lib/plantillasHistoria';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
     const link = clave === CLAVE_ADMIN ? null : await obtenerLinkPorToken(clave);
     return NextResponse.json({
       ...data, nombre: link?.nombre || '',
-      plantilla: link?.plantilla || 'vida', homenajeado: link?.homenajeado || '',
+      plantilla: link?.plantilla || 'vida', sujeto: sujetoDe(link),
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

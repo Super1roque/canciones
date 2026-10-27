@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext, type ReactNode } from 'react';
 import BotonResponderHablando from './BotonResponderHablando';
 import { ETAPAS, claveResp, type Etapa } from '@/lib/etapasHistoria';
-import { etapasDe, contextoHomenaje, type Plantilla } from '@/lib/plantillasHistoria';
+import { etapasDe, contextoHomenaje, promptCuento, type Plantilla } from '@/lib/plantillasHistoria';
 import { PROMPT_MAESTRO, PROMPT_BORROSCOSO, PROMPT_MIMESIS, PROMPT_ECFRASIS, PROMPT_PERIODISMO } from '@/lib/prompts';
 // MemoriaApp.tsx importa ETAPAS y claveResp desde acá en vez de directo de
 // lib/etapasHistoria — se re-exportan para no tener que tocar ese archivo.
@@ -60,21 +60,35 @@ function historiaVacia(): HistoriaData {
 
 function totalPreguntas(etapas: Etapa[]) { return etapas.reduce((acc, e) => acc + e.preguntas.length, 0); }
 
-// Las etapas dependen de la plantilla del link (autobiografía u homenaje, ver
+// Las etapas dependen de la plantilla del link (autobiografía, homenaje o cuento, ver
 // lib/plantillasHistoria.ts) — se comparten por contexto para no pasarlas
 // como prop a cada pantalla.
 const EtapasCtx = createContext<Etapa[]>(ETAPAS);
 function useEtapas() { return useContext(EtapasCtx); }
 
-// Los pocos textos de la UI que cambian en un homenaje (quien escribe no es
-// el protagonista). El resto de la app es igual para las dos plantillas.
+// Los pocos textos de la UI que cambian en un homenaje o un cuento (quien
+// escribe no es el protagonista). El resto de la app es igual para todas.
+// sujeto: el homenajeado, o el niño o niña para quien es el cuento.
 type Textos = {
   marca: string; saludo: (nombre: string) => string; titulo: ReactNode; intro: string;
   comenzar: string; continuar: string; deLaHistoria: string; etapasDesc: string; personasTitulo: string; lineaTitulo: string; finalTitulo: string;
 };
-function textosDe(plantilla: Plantilla, homenajeado: string): Textos {
+function textosDe(plantilla: Plantilla, sujeto: string): Textos {
+  if (plantilla === 'cuento') {
+    const n = sujeto || 'ese niño o niña';
+    return {
+      marca: 'Cuento infantil',
+      saludo: nombre => `Hola, ${nombre} 👋 — acá vamos a crear el cuento para ${n}.`,
+      titulo: <>Imagina un cuento para {n}.<br />Nosotros lo convertimos en libro.</>,
+      intro: `Te vamos a hacer preguntas sencillas sobre ${n} y sobre el cuento que querés regalarle: quién es el protagonista, dónde ocurre, qué aventura vive y cómo termina. No hace falta ser escritor — contalo como se lo contarías a ${n} antes de dormir. Podés parar cuando quieras y seguir otro día.`,
+      comenzar: '✨ Comenzar el cuento', continuar: '▶ Continuar el cuento', deLaHistoria: 'del cuento',
+      etapasDesc: 'De la idea hasta el final feliz.',
+      personasTitulo: 'Personajes del cuento', lineaTitulo: 'El orden de lo que pasa en el cuento',
+      finalTitulo: `¡El cuento para ${n} está acá!`,
+    };
+  }
   if (plantilla === 'homenaje') {
-    const h = homenajeado || 'tu ser querido';
+    const h = sujeto || 'tu ser querido';
     return {
       marca: 'Homenaje',
       saludo: n => `Hola, ${n} 👋 — esta es la página del homenaje a ${h}.`,
@@ -112,7 +126,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   const [historiaState, setHistoria] = useState<HistoriaData | null>(null);
   const [nombre, setNombre] = useState('');
   const [plantilla, setPlantilla] = useState<Plantilla>('vida');
-  const [homenajeado, setHomenajeado] = useState('');
+  const [sujeto, setSujeto] = useState('');
   const [cargando, setCargando] = useState(true);
   const [pantalla, setPantalla] = useState<Pantalla>('home');
   const [etapaActual, setEtapaActual] = useState(0);
@@ -125,11 +139,11 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
   useEffect(() => {
     fetch('/api/historia/' + clave).then(r => r.json()).then(data => {
-      const { nombre: nombreRecibido, plantilla: plantillaRecibida, homenajeado: homenajeadoRecibido, ...resto } = data;
+      const { nombre: nombreRecibido, plantilla: plantillaRecibida, sujeto: sujetoRecibido, ...resto } = data;
       const h: HistoriaData = Object.assign(historiaVacia(), resto);
       setHistoria(h);
       setNombre(nombreRecibido || '');
-      if (plantillaRecibida === 'homenaje') { setPlantilla('homenaje'); setHomenajeado(homenajeadoRecibido || ''); }
+      if (plantillaRecibida === 'homenaje' || plantillaRecibida === 'cuento') { setPlantilla(plantillaRecibida); setSujeto(sujetoRecibido || ''); }
       if (h.progreso) { setEtapaActual(h.progreso.etapaActual); setPreguntaActual(h.progreso.preguntaActual); }
       setCargando(false);
     }).catch(() => { setHistoria(historiaVacia()); setCargando(false); });
@@ -164,8 +178,8 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     });
   }
 
-  const etapas = useMemo(() => etapasDe(plantilla, homenajeado), [plantilla, homenajeado]);
-  const textos = useMemo(() => textosDe(plantilla, homenajeado), [plantilla, homenajeado]);
+  const etapas = useMemo(() => etapasDe(plantilla, sujeto), [plantilla, sujeto]);
+  const textos = useMemo(() => textosDe(plantilla, sujeto), [plantilla, sujeto]);
 
   function getResp(h: HistoriaData, e: number, p: number): Respuesta {
     const k = claveResp(e, p);
@@ -258,7 +272,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     try {
       const res = await fetch('/api/historia/profundizar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pregunta, respuesta: resp.texto, homenajeado: plantilla === 'homenaje' ? homenajeado : undefined }),
+        body: JSON.stringify({ pregunta, respuesta: resp.texto, plantilla, sujeto: plantilla === 'vida' ? undefined : sujeto }),
       });
       const data = await res.json();
       if (!res.ok) { mostrarToast(data.error || 'No se pudieron generar preguntas'); return; }
@@ -369,14 +383,16 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   function construirTexto(paraIA: boolean) {
     let out = '';
     if (paraIA) {
-      out += PROMPT_MAESTRO + '\n\n';
-      if (plantilla === 'homenaje') out += contextoHomenaje(homenajeado, nombre) + '\n\n';
+      // El cuento es ficción: lleva su propio prompt en vez del Maestro.
+      if (plantilla === 'cuento') out += promptCuento(sujeto, nombre) + '\n\n';
+      else out += PROMPT_MAESTRO + '\n\n';
+      if (plantilla === 'homenaje') out += contextoHomenaje(sujeto, nombre) + '\n\n';
       out += '================================================\n';
-      out += 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
+      out += plantilla === 'cuento' ? 'A PARTIR DE ACÁ: LAS RESPUESTAS DEL AUTOR SOBRE EL CUENTO\n' : 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
       out += '(fuente primaria — todo lo de arriba son solo las reglas)\n';
       out += '================================================\n\n';
     }
-    out += 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
+    out += plantilla === 'cuento' ? 'CUENTO INFANTIL PARA ' + sujeto.toUpperCase() + '\n=========\n\n' : 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
     out += 'Generado: ' + new Date(historia.meta.creado).toLocaleString('es') + '\nÚltima actualización: ' + new Date(historia.meta.actualizado).toLocaleString('es') + '\n\n';
     etapas.forEach((etapa, ei) => {
       out += 'ETAPA ' + (ei + 1) + ' — ' + etapa.titulo.toUpperCase() + '\n' + '-'.repeat(20) + '\n';

@@ -13,7 +13,9 @@ type Tenant = {
   historiaLink?: { url: string; nombre: string; fecha: string } | null;
 };
 
-type LinkHistoria = { telefono: string; nombre: string; fecha: string; url: string; plantilla?: 'vida' | 'homenaje'; homenajeado?: string };
+type Plantilla = 'vida' | 'homenaje' | 'cuento';
+// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento.
+type LinkHistoria = { telefono: string; nombre: string; fecha: string; url: string; plantilla?: Plantilla; sujeto?: string };
 
 // Lista aparte (no una columna dentro de "Tenants registrados"): a muchas
 // de estas personas se les generó el link de Mi Historia sin que lleguen
@@ -41,7 +43,7 @@ function HistoriasGeneradas() {
 
   const q = busqueda.trim().toLowerCase();
   const filtrados = links.filter(l =>
-    !q || l.nombre.toLowerCase().includes(q) || (l.homenajeado || '').toLowerCase().includes(q) || l.telefono.includes(q.replace(/\D/g, ''))
+    !q || l.nombre.toLowerCase().includes(q) || (l.sujeto || '').toLowerCase().includes(q) || l.telefono.includes(q.replace(/\D/g, ''))
   );
 
   return (
@@ -80,7 +82,8 @@ function HistoriasGeneradas() {
                 <tr key={l.url} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>
                     {l.nombre}
-                    {l.plantilla === 'homenaje' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🕯️ Homenaje a {l.homenajeado}</div>}
+                    {l.plantilla === 'homenaje' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🕯️ Homenaje a {l.sujeto}</div>}
+                    {l.plantilla === 'cuento' && <div style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>🧸 Cuento para {l.sujeto}</div>}
                   </td>
                   <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{l.telefono}</td>
                   <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>{formatFecha(l.fecha)}</td>
@@ -224,16 +227,16 @@ function CeldaSaldo({ telefono, saldo, onActualizado }: { telefono: string; sald
 function GenerarLinkHistoria() {
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [plantilla, setPlantilla] = useState<'vida' | 'homenaje'>('vida');
-  const [homenajeado, setHomenajeado] = useState('');
+  const [plantilla, setPlantilla] = useState<Plantilla>('vida');
+  const [sujeto, setSujeto] = useState('');
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState('');
-  const [resultado, setResultado] = useState<{ telefono: string; nombre: string; url: string; plantilla?: string; homenajeado?: string } | null>(null);
-  const faltaHomenajeado = plantilla === 'homenaje' && !homenajeado.trim();
+  const [resultado, setResultado] = useState<{ telefono: string; nombre: string; url: string; plantilla?: Plantilla; sujeto?: string } | null>(null);
+  const faltaSujeto = plantilla !== 'vida' && !sujeto.trim();
   const [copiado, setCopiado] = useState(false);
 
   async function generar() {
-    if (!nombre.trim() || !telefono.trim() || faltaHomenajeado) return;
+    if (!nombre.trim() || !telefono.trim() || faltaSujeto) return;
     setGenerando(true);
     setError('');
     setResultado(null);
@@ -241,7 +244,7 @@ function GenerarLinkHistoria() {
       const res = await fetch('/api/admin/historia-links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: telefono.trim(), nombre: nombre.trim(), plantilla, homenajeado: homenajeado.trim() }),
+        body: JSON.stringify({ telefono: telefono.trim(), nombre: nombre.trim(), plantilla, sujeto: sujeto.trim() }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'No se pudo generar el link'); return; }
@@ -266,21 +269,22 @@ function GenerarLinkHistoria() {
       <h2 style={{ margin: '0 0 0.5rem' }}>📖 Link de Mi Historia</h2>
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.75rem' }}>
         Le da acceso a un tenant puntual a la herramienta de "Mi Historia" (la misma que usás vos) sin que aparezca en su dashboard — solo con este link, sin login.
-        En un <strong>homenaje</strong>, la persona cuenta la vida de un ser querido (un padre, una abuela…) en vez de la suya.
+        En un <strong>homenaje</strong>, la persona cuenta la vida de un ser querido (un padre, una abuela…) en vez de la suya. En un <strong>cuento infantil</strong>, imagina un cuento para regalarle a un niño o niña.
       </p>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <select
           value={plantilla}
-          onChange={e => setPlantilla(e.target.value as 'vida' | 'homenaje')}
+          onChange={e => setPlantilla(e.target.value as Plantilla)}
           className="input"
           style={{ flex: '1 1 100%', boxSizing: 'border-box' }}
         >
           <option value="vida">📖 Su propia historia (autobiografía)</option>
           <option value="homenaje">🕯️ Homenaje a un ser querido</option>
+          <option value="cuento">🧸 Cuento infantil</option>
         </select>
         <input
           type="text"
-          placeholder={plantilla === 'homenaje' ? 'Quién escribe (dueño del teléfono)…' : 'Nombre de la persona…'}
+          placeholder={plantilla === 'vida' ? 'Nombre de la persona…' : 'Quién escribe (dueño del teléfono)…'}
           value={nombre}
           onChange={e => setNombre(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') generar(); }}
@@ -296,18 +300,18 @@ function GenerarLinkHistoria() {
           className="input"
           style={{ flex: '1 1 180px', boxSizing: 'border-box' }}
         />
-        {plantilla === 'homenaje' && (
+        {plantilla !== 'vida' && (
           <input
             type="text"
-            placeholder="A quién se le hace el homenaje (ej. Don Emigdio Sevilla)…"
-            value={homenajeado}
-            onChange={e => setHomenajeado(e.target.value)}
+            placeholder={plantilla === 'homenaje' ? 'A quién se le hace el homenaje (ej. Don Emigdio Sevilla)…' : 'Para quién es el cuento (ej. Sofía)…'}
+            value={sujeto}
+            onChange={e => setSujeto(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') generar(); }}
             className="input"
             style={{ flex: '1 1 100%', boxSizing: 'border-box' }}
           />
         )}
-        <button className="btn-primary" disabled={generando || !nombre.trim() || !telefono.trim() || faltaHomenajeado} onClick={generar}>
+        <button className="btn-primary" disabled={generando || !nombre.trim() || !telefono.trim() || faltaSujeto} onClick={generar}>
           {generando ? '⏳ Generando...' : '📖 Generar link'}
         </button>
       </div>
@@ -319,7 +323,7 @@ function GenerarLinkHistoria() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
         }}>
           <span style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>
-            ✅ Link para <strong>{resultado.nombre}</strong> ({resultado.telefono}){resultado.plantilla === 'homenaje' && <> — homenaje a <strong>{resultado.homenajeado}</strong></>}: {resultado.url}
+            ✅ Link para <strong>{resultado.nombre}</strong> ({resultado.telefono}){resultado.plantilla === 'homenaje' && <> — homenaje a <strong>{resultado.sujeto}</strong></>}{resultado.plantilla === 'cuento' && <> — cuento para <strong>{resultado.sujeto}</strong></>}: {resultado.url}
           </span>
           <button className="btn-primary" onClick={copiar} style={{ whiteSpace: 'nowrap' }}>
             {copiado ? '✅ Copiado' : '📋 Copiar'}

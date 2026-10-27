@@ -247,10 +247,10 @@ export async function generarGalimatias(palabras: string[]): Promise<string[]> {
 // respuestas (Prompt Mímesis) para sentir que lo que está contando se está
 // convirtiendo en algo real — motivación para seguir respondiendo con más
 // apertura. Es solo UNA escena breve, no un capítulo ni el libro completo.
-// contexto: solo en homenajes (ver lib/plantillasHistoria.ts) — avisa que
-// quien respondió no es el protagonista, para que la escena no quede en
-// primera persona del homenajeado.
-export async function generarVistaPreviaHistoria(materialRespondido: string, contexto?: string): Promise<string> {
+// contexto: solo en homenajes y cuentos (ver lib/plantillasHistoria.ts) —
+// avisa que el material no es autobiográfico. sistema: reemplaza al Prompt
+// Mímesis en los cuentos, que son ficción.
+export async function generarVistaPreviaHistoria(materialRespondido: string, contexto?: string, sistema?: string): Promise<string> {
   const userPrompt = `${contexto ? contexto + '\n\n' : ''}A partir del siguiente material autobiográfico real, elegí UN solo momento o recuerdo que te parezca especialmente vívido y escribí UNA escena corta (entre 120 y 220 palabras) siguiendo al pie de la letra las reglas del prompt de arriba.
 
 Esto es una VISTA PREVIA para motivar a la persona a seguir respondiendo el cuestionario — no es el libro ni un capítulo completo. Elegí el momento más concreto y con más detalle disponible (no el más abstracto), para que la escena tenga con qué trabajar.
@@ -263,7 +263,7 @@ ${materialRespondido}`;
   const response = await client.messages.create({
     model: 'claude-opus-4-6',
     max_tokens: 900,
-    system: PROMPT_MIMESIS,
+    system: sistema || PROMPT_MIMESIS,
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -289,13 +289,19 @@ IMPORTANTE: Respondé ÚNICAMENTE con el prompt final, en inglés, listo para pe
 // etapa puntual de la biografía, pensado para cuando no hay foto real de
 // ese momento — evita rostros reconocibles porque la IA no sabe cómo es
 // físicamente la persona real.
-export async function generarPromptFotoEtapa(tituloEtapa: string, material: string): Promise<string> {
+export async function generarPromptFotoEtapa(tituloEtapa: string, material: string, esCuento = false): Promise<string> {
+  // En un cuento no se ilustra una vida real sino una escena inventada: la
+  // imagen va en estilo de libro infantil, y los personajes del cuento sí
+  // pueden verse (siguen sin rostros de personas reales reconocibles).
+  const nota = esCuento
+    ? '\n\nOJO: esto es un CUENTO INFANTIL, no una biografía. El prompt debe describir una ilustración de libro infantil (acuarela suave o ilustración digital cálida, colores alegres), no una fotografía. Los personajes inventados del cuento (animales, criaturas, niños dibujados) sí pueden aparecer de frente, siempre como ilustración y nunca como retrato realista de una persona real.'
+    : '';
   const userPrompt = `Etapa de la biografía: "${tituloEtapa}"
 
 Material real de esa etapa:
 ${material}
 
-Escribí el prompt de imagen para esta etapa, siguiendo las reglas del system prompt.`;
+Escribí el prompt de imagen para esta etapa, siguiendo las reglas del system prompt.${nota}`;
 
   const response = await client.messages.create({
     model: 'claude-opus-4-6',

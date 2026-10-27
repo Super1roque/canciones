@@ -7,16 +7,19 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request) {
   try {
-    const { pregunta, respuesta, homenajeado } = await request.json();
+    // plantilla + sujeto: ver lib/plantillasHistoria.ts. homenajeado es el
+    // nombre viejo del campo (antes de los cuentos), se sigue aceptando.
+    const { pregunta, respuesta, plantilla, sujeto: rawSujeto, homenajeado } = await request.json();
+    const sujeto = typeof rawSujeto === 'string' ? rawSujeto.trim() : typeof homenajeado === 'string' ? homenajeado.trim() : '';
     if (!pregunta || !respuesta || !respuesta.trim()) {
       return NextResponse.json({ error: 'Falta la pregunta o la respuesta' }, { status: 400 });
     }
 
-    // homenajeado: solo viene en homenajes — la persona no cuenta su vida,
-    // sino la de un ser querido, y las preguntas tienen que ir sobre él.
-    const quien = typeof homenajeado === 'string' && homenajeado.trim()
-      ? 'Sos un asistente que ayuda a alguien a recordar más detalles de la vida de un ser querido, ' + homenajeado.trim() + ', para escribir un libro homenaje sobre esa persona.\n'
-      : 'Sos un asistente que ayuda a alguien a recordar más detalles de su propia vida para escribir su biografía.\n';
+    const quien = plantilla === 'cuento'
+      ? 'Sos un asistente que ayuda a alguien a imaginar con más detalle un cuento infantil que quiere regalarle a ' + (sujeto || 'un niño o niña') + '. Es ficción: las preguntas deben ayudarle a desarrollar personajes, lugares, emociones y escenas de lo que ya imaginó.\n'
+      : sujeto
+        ? 'Sos un asistente que ayuda a alguien a recordar más detalles de la vida de un ser querido, ' + sujeto + ', para escribir un libro homenaje sobre esa persona.\n'
+        : 'Sos un asistente que ayuda a alguien a recordar más detalles de su propia vida para escribir su biografía.\n';
     const prompt = quien +
       'Pregunta original: "' + pregunta + '"\n' +
       'Su respuesta: "' + respuesta + '"\n\n' +

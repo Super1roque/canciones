@@ -3,7 +3,7 @@ import { obtenerHistoria } from '@/lib/miHistoriaService';
 import { construirMaterialRespondido, contarPreguntasRespondidas } from '@/lib/etapasHistoria';
 import { generarVistaPreviaHistoria } from '@/lib/claudeService';
 import { obtenerLinkPorToken } from '@/lib/historiaLinksService';
-import { etapasDe, contextoHomenaje } from '@/lib/plantillasHistoria';
+import { etapasDe, sujetoDe, contextoHomenaje, contextoCuento, promptCuento } from '@/lib/plantillasHistoria';
 
 export const runtime = 'nodejs';
 
@@ -30,9 +30,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
     }
 
     const link = await obtenerLinkPorToken(clave);
-    const material = construirMaterialRespondido(historia, etapasDe(link?.plantilla, link?.homenajeado));
-    const contexto = link?.plantilla === 'homenaje' ? contextoHomenaje(link.homenajeado || '', link.nombre) : undefined;
-    const texto = await generarVistaPreviaHistoria(material, contexto);
+    const material = construirMaterialRespondido(historia, etapasDe(link?.plantilla, sujetoDe(link)));
+    const contexto = link?.plantilla === 'homenaje' ? contextoHomenaje(sujetoDe(link), link.nombre)
+      : link?.plantilla === 'cuento' ? contextoCuento(sujetoDe(link), link.nombre) : undefined;
+    // El cuento es ficción: no puede usar el Prompt Mímesis (que prohíbe inventar).
+    const sistema = link?.plantilla === 'cuento' ? promptCuento(sujetoDe(link), link.nombre) : undefined;
+    const texto = await generarVistaPreviaHistoria(material, contexto, sistema);
     return NextResponse.json({ texto });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

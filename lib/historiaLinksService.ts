@@ -13,16 +13,19 @@ export interface HistoriaLink {
   // Solo en homenajes: de quién es la vida que se cuenta. `nombre` sigue
   // siendo quien responde (el dueño del teléfono).
   homenajeado?: string;
+  // Solo en cuentos: el niño o niña para quien es el cuento. `nombre` es
+  // quien lo imagina (el dueño del teléfono).
+  paraQuien?: string;
 }
 
 // El link de 'vida' sigue indexado solo por teléfono (así no cambia el id de
-// ningún link ya entregado). Un homenaje va en otro documento, uno por
-// homenajeado — la misma persona puede hacer su propia historia y además el
-// homenaje a su papá y a su mamá, cada uno con su link.
-function idDocumento(telefono: string, plantilla: Plantilla, homenajeado: string): string {
-  if (plantilla !== 'homenaje') return telefono;
-  const slug = homenajeado.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return telefono + '__homenaje__' + (slug || 'sin-nombre');
+// ningún link ya entregado). Un homenaje o un cuento va en otro documento,
+// uno por sujeto — la misma persona puede hacer su propia historia, el
+// homenaje a su papá y un cuento para cada nieto, cada uno con su link.
+function idDocumento(telefono: string, plantilla: Plantilla, sujeto: string): string {
+  if (plantilla === 'vida') return telefono;
+  const slug = sujeto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return telefono + '__' + plantilla + '__' + (slug || 'sin-nombre');
 }
 
 // Token largo y random (122 bits) — no hace falta más: es el único
@@ -36,9 +39,10 @@ function generarToken(): string {
 // pierde el progreso que ya haya guardado ahí) — pero el nombre sí se
 // actualiza, por si el admin lo vuelve a generar para corregir un error
 // de tipeo.
-export async function obtenerOCrearLinkHistoria(telefono: string, nombre: string, plantilla: Plantilla = 'vida', homenajeado = ''): Promise<HistoriaLink> {
+// sujeto: el homenajeado en un homenaje, el niño o niña en un cuento.
+export async function obtenerOCrearLinkHistoria(telefono: string, nombre: string, plantilla: Plantilla = 'vida', sujeto = ''): Promise<HistoriaLink> {
   const db = getDb();
-  const ref = db.collection(COLLECTION).doc(idDocumento(telefono, plantilla, homenajeado));
+  const ref = db.collection(COLLECTION).doc(idDocumento(telefono, plantilla, sujeto));
   const doc = await ref.get();
   if (doc.exists) {
     const existente = doc.data() as HistoriaLink;
@@ -50,7 +54,8 @@ export async function obtenerOCrearLinkHistoria(telefono: string, nombre: string
   }
 
   const nuevo: HistoriaLink = { telefono, token: generarToken(), fecha: new Date().toISOString(), nombre };
-  if (plantilla === 'homenaje') { nuevo.plantilla = 'homenaje'; nuevo.homenajeado = homenajeado; }
+  if (plantilla === 'homenaje') { nuevo.plantilla = 'homenaje'; nuevo.homenajeado = sujeto; }
+  if (plantilla === 'cuento') { nuevo.plantilla = 'cuento'; nuevo.paraQuien = sujeto; }
   await ref.set(nuevo);
   return nuevo;
 }

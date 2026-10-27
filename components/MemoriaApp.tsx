@@ -18,7 +18,7 @@ interface HistoriaData {
   fotografias: Foto[];
   nombre?: string;
   plantilla?: Plantilla;
-  homenajeado?: string;
+  sujeto?: string;
 }
 
 // Reproductor de una respuesta puntual: si hay voz real grabada, la sirve
@@ -96,7 +96,8 @@ export default function MemoriaApp({ clave }: { clave: string }) {
   }
 
   const esHomenaje = data.plantilla === 'homenaje';
-  const capitulos = etapasDe(data.plantilla, data.homenajeado)
+  const esCuento = data.plantilla === 'cuento';
+  const capitulos = etapasDe(data.plantilla, data.sujeto)
     .map((etapa, ei) => {
       const preguntas = etapa.preguntas
         .map((preg, pi) => ({ preg, pi, r: data.respuestas[claveResp(ei, pi)] }))
@@ -114,10 +115,15 @@ export default function MemoriaApp({ clave }: { clave: string }) {
       <style>{ESTILOS}</style>
 
       <header className="mm-hero">
-        <div className="mm-eyebrow">{esHomenaje ? 'Homenaje · Memoria' : 'Mi Historia · Memoria'}</div>
-        {esHomenaje ? (
+        <div className="mm-eyebrow">{esCuento ? 'Cuento infantil · Memoria' : esHomenaje ? 'Homenaje · Memoria' : 'Mi Historia · Memoria'}</div>
+        {esCuento ? (
           <>
-            <h1>{data.homenajeado ? `La vida de ${data.homenajeado}` : 'Un homenaje'}</h1>
+            <h1>{data.sujeto ? `Un cuento para ${data.sujeto}` : 'Un cuento'}</h1>
+            <p className="mm-hint">Imaginado por {data.nombre || 'alguien que lo quiere mucho'} — y, donde se grabó, en su propia voz.</p>
+          </>
+        ) : esHomenaje ? (
+          <>
+            <h1>{data.sujeto ? `La vida de ${data.sujeto}` : 'Un homenaje'}</h1>
             <p className="mm-hint">Contada por {data.nombre || 'quien lo recuerda'} — y, donde se grabó, en su propia voz.</p>
           </>
         ) : (
