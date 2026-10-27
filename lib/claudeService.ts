@@ -247,8 +247,11 @@ export async function generarGalimatias(palabras: string[]): Promise<string[]> {
 // respuestas (Prompt Mímesis) para sentir que lo que está contando se está
 // convirtiendo en algo real — motivación para seguir respondiendo con más
 // apertura. Es solo UNA escena breve, no un capítulo ni el libro completo.
-export async function generarVistaPreviaHistoria(materialRespondido: string): Promise<string> {
-  const userPrompt = `A partir del siguiente material autobiográfico real, elegí UN solo momento o recuerdo que te parezca especialmente vívido y escribí UNA escena corta (entre 120 y 220 palabras) siguiendo al pie de la letra las reglas del prompt de arriba.
+// contexto: solo en homenajes (ver lib/plantillasHistoria.ts) — avisa que
+// quien respondió no es el protagonista, para que la escena no quede en
+// primera persona del homenajeado.
+export async function generarVistaPreviaHistoria(materialRespondido: string, contexto?: string): Promise<string> {
+  const userPrompt = `${contexto ? contexto + '\n\n' : ''}A partir del siguiente material autobiográfico real, elegí UN solo momento o recuerdo que te parezca especialmente vívido y escribí UNA escena corta (entre 120 y 220 palabras) siguiendo al pie de la letra las reglas del prompt de arriba.
 
 Esto es una VISTA PREVIA para motivar a la persona a seguir respondiendo el cuestionario — no es el libro ni un capítulo completo. Elegí el momento más concreto y con más detalle disponible (no el más abstracto), para que la escena tenga con qué trabajar.
 

@@ -4,7 +4,9 @@ import { listarTodosLosLinks } from '@/lib/historiaLinksService';
 
 export async function GET() {
   const [tenants, links] = await Promise.all([listarTodosTenants(), listarTodosLosLinks()]);
-  const linkPorTelefono = new Map(links.map(l => [l.telefono, l]));
+  // Solo el link de su propia historia: los homenajes que haga un tenant
+  // comparten su teléfono y pisarían a este en el Map.
+  const linkPorTelefono = new Map(links.filter(l => (l.plantilla || 'vida') === 'vida').map(l => [l.telefono, l]));
 
   // No se manda sesionId tal cual al navegador (es un token interno) — el
   // admin solo necesita saber si hay una sesión activa o no, para decidir

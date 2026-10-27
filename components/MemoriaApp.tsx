@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ETAPAS, claveResp } from './MiHistoriaApp';
+import { claveResp } from './MiHistoriaApp';
+import { etapasDe, type Plantilla } from '@/lib/plantillasHistoria';
 
 const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Karla:wght@400;500;600;700;800&display=swap';
 
@@ -16,6 +17,8 @@ interface HistoriaData {
   respuestas: Record<string, Respuesta>;
   fotografias: Foto[];
   nombre?: string;
+  plantilla?: Plantilla;
+  homenajeado?: string;
 }
 
 // Reproductor de una respuesta puntual: si hay voz real grabada, la sirve
@@ -92,7 +95,8 @@ export default function MemoriaApp({ clave }: { clave: string }) {
     return <div className="mm-root mm-loading"><style>{ESTILOS}</style>{error || 'No se encontró esta historia.'}</div>;
   }
 
-  const capitulos = ETAPAS
+  const esHomenaje = data.plantilla === 'homenaje';
+  const capitulos = etapasDe(data.plantilla, data.homenajeado)
     .map((etapa, ei) => {
       const preguntas = etapa.preguntas
         .map((preg, pi) => ({ preg, pi, r: data.respuestas[claveResp(ei, pi)] }))
@@ -110,9 +114,18 @@ export default function MemoriaApp({ clave }: { clave: string }) {
       <style>{ESTILOS}</style>
 
       <header className="mm-hero">
-        <div className="mm-eyebrow">Mi Historia · Memoria</div>
-        <h1>{data.nombre ? `La historia de ${data.nombre}` : 'Esta historia'}</h1>
-        <p className="mm-hint">Contada en sus propias palabras — y, donde se grabó, en su propia voz.</p>
+        <div className="mm-eyebrow">{esHomenaje ? 'Homenaje · Memoria' : 'Mi Historia · Memoria'}</div>
+        {esHomenaje ? (
+          <>
+            <h1>{data.homenajeado ? `La vida de ${data.homenajeado}` : 'Un homenaje'}</h1>
+            <p className="mm-hint">Contada por {data.nombre || 'quien lo recuerda'} — y, donde se grabó, en su propia voz.</p>
+          </>
+        ) : (
+          <>
+            <h1>{data.nombre ? `La historia de ${data.nombre}` : 'Esta historia'}</h1>
+            <p className="mm-hint">Contada en sus propias palabras — y, donde se grabó, en su propia voz.</p>
+          </>
+        )}
       </header>
 
       {capitulos.length === 0 ? (

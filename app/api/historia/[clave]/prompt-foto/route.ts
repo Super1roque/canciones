@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { obtenerHistoria } from '@/lib/miHistoriaService';
-import { construirMaterialEtapa, ETAPAS } from '@/lib/etapasHistoria';
+import { construirMaterialEtapa } from '@/lib/etapasHistoria';
 import { generarPromptFotoEtapa } from '@/lib/claudeService';
+import { obtenerLinkPorToken } from '@/lib/historiaLinksService';
+import { etapasDe } from '@/lib/plantillasHistoria';
 
 export const runtime = 'nodejs';
 
@@ -14,12 +16,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     const { clave } = await params;
     const { etapaIndex } = (await request.json()) as { etapaIndex: number };
 
-    if (typeof etapaIndex !== 'number' || !ETAPAS[etapaIndex]) {
+    const link = await obtenerLinkPorToken(clave);
+    const etapas = etapasDe(link?.plantilla, link?.homenajeado);
+    if (typeof etapaIndex !== 'number' || !etapas[etapaIndex]) {
       return NextResponse.json({ error: 'Etapa inválida' }, { status: 400 });
     }
 
     const historia = await obtenerHistoria(clave);
-    const material = construirMaterialEtapa(historia, etapaIndex);
+    const material = construirMaterialEtapa(historia, etapaIndex, etapas);
 
     if (!material) {
       return NextResponse.json({
@@ -28,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
       });
     }
 
-    const prompt = await generarPromptFotoEtapa(ETAPAS[etapaIndex].titulo, material);
+    const prompt = await generarPromptFotoEtapa(etapas[etapaIndex].titulo, material);
     return NextResponse.json({ prompt });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

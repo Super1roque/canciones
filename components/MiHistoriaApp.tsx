@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext, type ReactNode } from 'react';
 import BotonResponderHablando from './BotonResponderHablando';
-import { ETAPAS, claveResp } from '@/lib/etapasHistoria';
+import { ETAPAS, claveResp, type Etapa } from '@/lib/etapasHistoria';
+import { etapasDe, contextoHomenaje, type Plantilla } from '@/lib/plantillasHistoria';
 import { PROMPT_MAESTRO, PROMPT_BORROSCOSO, PROMPT_MIMESIS, PROMPT_ECFRASIS, PROMPT_PERIODISMO } from '@/lib/prompts';
 // MemoriaApp.tsx importa ETAPAS y claveResp desde acá en vez de directo de
 // lib/etapasHistoria — se re-exportan para no tener que tocar ese archivo.
@@ -57,7 +58,46 @@ function historiaVacia(): HistoriaData {
   return { meta: { creado: ahora, actualizado: ahora }, respuestas: {}, notasLibres: [], personas: [], fotografias: [], lineaDeTiempo: [], contradicciones: [] };
 }
 
-function totalPreguntas() { return ETAPAS.reduce((acc, e) => acc + e.preguntas.length, 0); }
+function totalPreguntas(etapas: Etapa[]) { return etapas.reduce((acc, e) => acc + e.preguntas.length, 0); }
+
+// Las etapas dependen de la plantilla del link (autobiografía u homenaje, ver
+// lib/plantillasHistoria.ts) — se comparten por contexto para no pasarlas
+// como prop a cada pantalla.
+const EtapasCtx = createContext<Etapa[]>(ETAPAS);
+function useEtapas() { return useContext(EtapasCtx); }
+
+// Los pocos textos de la UI que cambian en un homenaje (quien escribe no es
+// el protagonista). El resto de la app es igual para las dos plantillas.
+type Textos = {
+  marca: string; saludo: (nombre: string) => string; titulo: ReactNode; intro: string;
+  comenzar: string; continuar: string; deLaHistoria: string; etapasDesc: string; personasTitulo: string; lineaTitulo: string; finalTitulo: string;
+};
+function textosDe(plantilla: Plantilla, homenajeado: string): Textos {
+  if (plantilla === 'homenaje') {
+    const h = homenajeado || 'tu ser querido';
+    return {
+      marca: 'Homenaje',
+      saludo: n => `Hola, ${n} 👋 — esta es la página del homenaje a ${h}.`,
+      titulo: <>Cuenta la vida de {h}.<br />Nosotros la convertimos en libro.</>,
+      intro: `Te vamos a llevar, poco a poco, por la vida de ${h}: de dónde venía, cómo era, lo que vivieron juntos y lo que les dejó. No hace falta escribir perfecto — contalo como lo recordés. También podés preguntarle a otros familiares y anotar lo que ellos recuerden. Podés parar cuando quieras y seguir otro día.`,
+      comenzar: '✨ Comenzar el homenaje', continuar: '▶ Continuar el homenaje', deLaHistoria: 'del homenaje',
+      etapasDesc: `De sus orígenes hasta el legado que dejó ${h}.`,
+      personasTitulo: `Personas en la vida de ${h}`, lineaTitulo: `La línea de vida de ${h}`,
+      finalTitulo: `¡El homenaje a ${h} está acá!`,
+    };
+  }
+  return {
+    marca: 'Mi Historia',
+    saludo: n => `Hola, ${n} 👋 — esta es tu página, solo tuya.`,
+    titulo: <>Cuenta tu vida.<br />Nosotros la convertimos en historia.</>,
+    intro: 'Este proyecto te va a llevar, poco a poco, por los momentos, personas, decisiones, alegrías, dificultades y recuerdos que han formado tu vida. No hace falta escribir perfecto — contalo como lo recordés. Podés parar cuando quieras y seguir otro día.',
+    comenzar: '✨ Comenzar mi historia', continuar: '▶ Continuar mi historia', deLaHistoria: 'de tu historia',
+    etapasDesc: 'De tu nacimiento hasta el legado que querés dejar.',
+    personasTitulo: 'Personas de mi historia', lineaTitulo: 'Mi línea de vida', finalTitulo: '¡Tu historia está acá!',
+  };
+}
+const TextosCtx = createContext<Textos>(textosDe('vida', ''));
+function useTextos() { return useContext(TextosCtx); }
 
 // clave identifica DE QUIÉN es esta historia en Firestore/Storage — 'principal'
 // para el admin (ver app/admin/mi-historia/page.tsx), o el token del link
@@ -71,6 +111,8 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   const esPrincipal = clave === 'principal';
   const [historiaState, setHistoria] = useState<HistoriaData | null>(null);
   const [nombre, setNombre] = useState('');
+  const [plantilla, setPlantilla] = useState<Plantilla>('vida');
+  const [homenajeado, setHomenajeado] = useState('');
   const [cargando, setCargando] = useState(true);
   const [pantalla, setPantalla] = useState<Pantalla>('home');
   const [etapaActual, setEtapaActual] = useState(0);
@@ -83,10 +125,11 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
   useEffect(() => {
     fetch('/api/historia/' + clave).then(r => r.json()).then(data => {
-      const { nombre: nombreRecibido, ...resto } = data;
+      const { nombre: nombreRecibido, plantilla: plantillaRecibida, homenajeado: homenajeadoRecibido, ...resto } = data;
       const h: HistoriaData = Object.assign(historiaVacia(), resto);
       setHistoria(h);
       setNombre(nombreRecibido || '');
+      if (plantillaRecibida === 'homenaje') { setPlantilla('homenaje'); setHomenajeado(homenajeadoRecibido || ''); }
       if (h.progreso) { setEtapaActual(h.progreso.etapaActual); setPreguntaActual(h.progreso.preguntaActual); }
       setCargando(false);
     }).catch(() => { setHistoria(historiaVacia()); setCargando(false); });
@@ -121,6 +164,9 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     });
   }
 
+  const etapas = useMemo(() => etapasDe(plantilla, homenajeado), [plantilla, homenajeado]);
+  const textos = useMemo(() => textosDe(plantilla, homenajeado), [plantilla, homenajeado]);
+
   function getResp(h: HistoriaData, e: number, p: number): Respuesta {
     const k = claveResp(e, p);
     return h.respuestas[k] || { texto: '', estado: 'sin_responder', volverDespues: false, profundizaciones: [] };
@@ -139,7 +185,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     return n;
   }
   function etapaCompleta(h: HistoriaData, idx: number) {
-    for (let p = 0; p < ETAPAS[idx].preguntas.length; p++) if (getResp(h, idx, p).estado === 'sin_responder') return false;
+    for (let p = 0; p < etapas[idx].preguntas.length; p++) if (getResp(h, idx, p).estado === 'sin_responder') return false;
     return true;
   }
 
@@ -207,12 +253,12 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   }
   async function pedirProfundizacion() {
     const resp = getResp(historia, etapaActual, preguntaActual);
-    const pregunta = ETAPAS[etapaActual].preguntas[preguntaActual];
+    const pregunta = etapas[etapaActual].preguntas[preguntaActual];
     setPidiendoProfundizacion(true);
     try {
       const res = await fetch('/api/historia/profundizar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pregunta, respuesta: resp.texto }),
+        body: JSON.stringify({ pregunta, respuesta: resp.texto, homenajeado: plantilla === 'homenaje' ? homenajeado : undefined }),
       });
       const data = await res.json();
       if (!res.ok) { mostrarToast(data.error || 'No se pudieron generar preguntas'); return; }
@@ -230,10 +276,10 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   }
   function irAnterior() {
     if (preguntaActual > 0) setPreguntaActual(preguntaActual - 1);
-    else if (etapaActual > 0) { setEtapaActual(etapaActual - 1); setPreguntaActual(ETAPAS[etapaActual - 1].preguntas.length - 1); }
+    else if (etapaActual > 0) { setEtapaActual(etapaActual - 1); setPreguntaActual(etapas[etapaActual - 1].preguntas.length - 1); }
   }
   function irSiguiente() {
-    const etapa = ETAPAS[etapaActual];
+    const etapa = etapas[etapaActual];
     if (preguntaActual < etapa.preguntas.length - 1) setPreguntaActual(preguntaActual + 1);
     else irA('stageEnd');
   }
@@ -324,6 +370,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     let out = '';
     if (paraIA) {
       out += PROMPT_MAESTRO + '\n\n';
+      if (plantilla === 'homenaje') out += contextoHomenaje(homenajeado, nombre) + '\n\n';
       out += '================================================\n';
       out += 'A PARTIR DE ACÁ: EL MATERIAL AUTOBIOGRÁFICO REAL\n';
       out += '(fuente primaria — todo lo de arriba son solo las reglas)\n';
@@ -331,7 +378,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
     }
     out += 'BIOGRAFÍA\n=========\n\nDATOS DEL PROTAGONISTA\n-----------------------\n';
     out += 'Generado: ' + new Date(historia.meta.creado).toLocaleString('es') + '\nÚltima actualización: ' + new Date(historia.meta.actualizado).toLocaleString('es') + '\n\n';
-    ETAPAS.forEach((etapa, ei) => {
+    etapas.forEach((etapa, ei) => {
       out += 'ETAPA ' + (ei + 1) + ' — ' + etapa.titulo.toUpperCase() + '\n' + '-'.repeat(20) + '\n';
       etapa.preguntas.forEach((preg, pi) => {
         const r = getResp(historia, ei, pi);
@@ -364,7 +411,7 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   }
   function construirMarkdown() {
     let out = '# Biografía — material recopilado\n\n*Generado: ' + new Date(historia.meta.creado).toLocaleString('es') + '*\n\n';
-    ETAPAS.forEach((etapa, ei) => {
+    etapas.forEach((etapa, ei) => {
       out += '## Etapa ' + (ei + 1) + ' — ' + etapa.titulo + '\n\n';
       etapa.preguntas.forEach((preg, pi) => {
         const r = getResp(historia, ei, pi);
@@ -400,13 +447,15 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
   const hayProgreso = contarRespondidas(historia) > 0 || historia.personas.length > 0 || historia.fotografias.length > 0;
 
   return (
+    <EtapasCtx.Provider value={etapas}>
+    <TextosCtx.Provider value={textos}>
     <div className="mh-root">
       <link rel="stylesheet" href={GOOGLE_FONTS_URL} />
       <style>{ESTILOS}</style>
       {pantalla !== 'home' && pantalla !== 'capituloPreview' && (
         <div className="mh-topbar">
           <div className="mh-topbar-inner">
-            <div className="mh-brand" onClick={() => irA('home')}>📖 <span>Mi Historia</span></div>
+            <div className="mh-brand" onClick={() => irA('home')}>📖 <span>{textos.marca}</span></div>
             <div className="mh-tabs">
               {([
                 ['interview', '📖', 'Entrevista'], ['people', '👥', 'Personas'], ['photos', '📷', 'Fotos'],
@@ -459,8 +508,8 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
             etapaActual={etapaActual}
             onVolver={() => irA('interview')}
             onGuardarNota={guardarNotaLibre}
-            onSiguienteEtapa={etapaActual === ETAPAS.length - 1 ? () => irA('final') : siguienteEtapa}
-            esUltima={etapaActual === ETAPAS.length - 1}
+            onSiguienteEtapa={etapaActual === etapas.length - 1 ? () => irA('final') : siguienteEtapa}
+            esUltima={etapaActual === etapas.length - 1}
           />
         )}
 
@@ -515,6 +564,8 @@ export default function MiHistoriaApp({ clave }: { clave: string }) {
 
       {toast && <div className="mh-toast show">{toast}</div>}
     </div>
+    </TextosCtx.Provider>
+    </EtapasCtx.Provider>
   );
 }
 
@@ -553,25 +604,27 @@ function AutoTextarea({ value, onChange, onAudioGrabado, placeholder, className,
 }
 
 function HomeScreen({ hayProgreso, nombre, onContinuar, onEmpezar }: { hayProgreso: boolean; nombre: string; onContinuar: () => void; onEmpezar: () => void }) {
+  const etapas = useEtapas();
+  const textos = useTextos();
   return (
     <>
       <div className="mh-hero">
-        <div className="mh-eyebrow" style={{ textAlign: 'center' }}>Mi Historia</div>
+        <div className="mh-eyebrow" style={{ textAlign: 'center' }}>{textos.marca}</div>
         {nombre && (
           <p style={{ textAlign: 'center', fontWeight: 600, fontSize: '1.05rem', margin: '0 0 0.75rem' }}>
-            Hola, {nombre} 👋 — esta es tu página, solo tuya.
+            {textos.saludo(nombre)}
           </p>
         )}
-        <h1>Cuenta tu vida.<br />Nosotros la convertimos en historia.</h1>
-        <p>Este proyecto te va a llevar, poco a poco, por los momentos, personas, decisiones, alegrías, dificultades y recuerdos que han formado tu vida. No hace falta escribir perfecto — contalo como lo recordés. Podés parar cuando quieras y seguir otro día.</p>
+        <h1>{textos.titulo}</h1>
+        <p>{textos.intro}</p>
         <div className="mh-row" style={{ justifyContent: 'center' }}>
           {hayProgreso
-            ? <button className="mh-btn mh-btn-primary" onClick={onContinuar}>▶ Continuar mi historia</button>
-            : <button className="mh-btn mh-btn-primary" onClick={onEmpezar}>✨ Comenzar mi historia</button>}
+            ? <button className="mh-btn mh-btn-primary" onClick={onContinuar}>{textos.continuar}</button>
+            : <button className="mh-btn mh-btn-primary" onClick={onEmpezar}>{textos.comenzar}</button>}
         </div>
       </div>
       {[
-        ['🗂️', '20 etapas', 'De tu nacimiento hasta el legado que querés dejar.'],
+        ['🗂️', etapas.length + ' etapas', textos.etapasDesc],
         ['💾', 'Se guarda solo, en cualquier dispositivo', 'Entrá desde el celular, la compu de tu casa o del trabajo — vas a ver el mismo progreso.'],
         ['🔒', 'Tus respuestas son tuyas', 'Nada se comparte hasta que vos decidas exportarlo.'],
       ].map(([icon, title, desc]) => (
@@ -593,16 +646,17 @@ function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoPro
   onGuardarYSalir: () => void; onSiguiente: () => void; getRespDe: (e: number, p: number) => Respuesta;
   onCapituloListo: (titulo: string, texto: string) => void;
 }) {
-  const etapa = ETAPAS[etapaActual];
+  const etapas = useEtapas();
+  const etapa = etapas[etapaActual];
   const pregunta = etapa.preguntas[preguntaActual];
-  const pctGlobal = Math.round(((etapaActual + (preguntaActual + 1) / etapa.preguntas.length) / ETAPAS.length) * 100);
+  const pctGlobal = Math.round(((etapaActual + (preguntaActual + 1) / etapa.preguntas.length) / etapas.length) * 100);
   const esUltima = preguntaActual === etapa.preguntas.length - 1;
   const disabledEdit = resp.estado === 'no_responder' || resp.estado === 'no_recuerdo';
 
   return (
     <>
       <div className="mh-progress-shell">
-        <div className="mh-progress-label"><span>Etapa {etapaActual + 1} de {ETAPAS.length} — {etapa.titulo}</span><span>{pctGlobal}% completado</span></div>
+        <div className="mh-progress-label"><span>Etapa {etapaActual + 1} de {etapas.length} — {etapa.titulo}</span><span>{pctGlobal}% completado</span></div>
         <div className="mh-progress-track"><div className="mh-progress-fill" style={{ width: pctGlobal + '%' }} /></div>
         <div className="mh-subprogress">
           {etapa.preguntas.map((_, i) => {
@@ -672,6 +726,7 @@ function InterviewScreen({ clave, etapaActual, preguntaActual, resp, pidiendoPro
 // página de capítulo aparte — este componente solo maneja el botón y los
 // estados de espera/insuficiente/error.
 function VistaPreviaHistoria({ clave, onListo }: { clave: string; onListo: (titulo: string, texto: string) => void }) {
+  const { deLaHistoria } = useTextos();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'insuficiente' | 'error'>('inicial');
   const [mensaje, setMensaje] = useState('');
 
@@ -695,10 +750,10 @@ function VistaPreviaHistoria({ clave, onListo }: { clave: string; onListo: (titu
   return (
     <div className="mh-card">
       <div className="mh-eyebrow">✨ Adelanto</div>
-      <h3 style={{ marginTop: 0 }}>Ver un adelanto de tu historia</h3>
-      <p className="mh-hint" style={{ marginTop: 0 }}>Con lo que ya contaste, podemos mostrarte cómo se va a leer un capítulo de tu historia.</p>
+      <h3 style={{ marginTop: 0 }}>Ver un adelanto {deLaHistoria}</h3>
+      <p className="mh-hint" style={{ marginTop: 0 }}>Con lo que ya contaste, podemos mostrarte cómo se va a leer un capítulo {deLaHistoria}.</p>
       <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
-        {estado === 'cargando' ? '⏳ Escribiendo tu adelanto...' : '✨ Ver un adelanto de tu historia'}
+        {estado === 'cargando' ? '⏳ Escribiendo tu adelanto...' : '✨ Ver un adelanto ' + deLaHistoria}
       </button>
       {estado === 'insuficiente' && <p className="mh-hint" style={{ marginTop: '0.6rem' }}>✍️ {mensaje}</p>}
       {estado === 'error' && <p style={{ color: '#a13a2f', fontSize: '0.85rem', marginTop: '0.6rem' }}>{mensaje}</p>}
@@ -710,12 +765,13 @@ function VistaPreviaHistoria({ clave, onListo }: { clave: string; onListo: (titu
 // como una página de libro real (tipografía serif, letra capital, título de
 // capítulo) en vez de texto plano en una tarjeta de la app.
 function CapituloPreviewScreen({ titulo, texto, onVolver }: { titulo: string; texto: string; onVolver: () => void }) {
+  const { deLaHistoria } = useTextos();
   const parrafos = texto.split(/\n+/).filter(p => p.trim());
   return (
     <div className="mh-capitulo">
       <button className="mh-btn mh-btn-ghost mh-capitulo-volver" onClick={onVolver}>← Volver a mi historia</button>
-      <div className="mh-capitulo-kicker">Adelanto de tu historia</div>
-      <h1 className="mh-capitulo-titulo">{titulo || 'Un adelanto de tu historia'}</h1>
+      <div className="mh-capitulo-kicker">Adelanto {deLaHistoria}</div>
+      <h1 className="mh-capitulo-titulo">{titulo || 'Un adelanto ' + deLaHistoria}</h1>
       <div className="mh-capitulo-divider" />
       {parrafos.map((p, i) => <p key={i} className={'mh-capitulo-p' + (i === 0 ? ' mh-capitulo-p-first' : '')}>{p}</p>)}
       <p className="mh-capitulo-nota">Esto es solo un adelanto, armado con lo que ya contaste — a medida que respondas más preguntas, tu historia real va a ir creciendo mucho más allá de esta escena.</p>
@@ -727,13 +783,14 @@ function CapituloPreviewScreen({ titulo, texto, onVolver }: { titulo: string; te
 function StageEndScreen({ etapaActual, onVolver, onGuardarNota, onSiguienteEtapa, esUltima }: {
   etapaActual: number; onVolver: () => void; onGuardarNota: (t: string) => void; onSiguienteEtapa: () => void; esUltima: boolean;
 }) {
+  const etapas = useEtapas();
   const [nota, setNota] = useState('');
   return (
     <>
       <div className="mh-card" style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '2.2rem' }}>✅</div>
         <h2 style={{ margin: '0.5rem 0' }}>¡Etapa completada!</h2>
-        <p className="mh-hint">Terminaste &quot;{ETAPAS[etapaActual].titulo}&quot; — etapa {etapaActual + 1} de {ETAPAS.length}.</p>
+        <p className="mh-hint">Terminaste &quot;{etapas[etapaActual].titulo}&quot; — etapa {etapaActual + 1} de {etapas.length}.</p>
       </div>
       <div className="mh-card">
         <div className="mh-eyebrow">¿Recordaste algo más?</div>
@@ -752,13 +809,14 @@ function StageEndScreen({ etapaActual, onVolver, onGuardarNota, onSiguienteEtapa
 }
 
 function PeopleScreen({ personas, onAgregar, onBorrar }: { personas: Persona[]; onAgregar: (p: Omit<Persona, 'id'>) => void; onBorrar: (i: number) => void }) {
+  const textos = useTextos();
   const [f, setF] = useState({ nombre: '', apodo: '', relacion: '', nacimiento: '', fallecimiento: '', comoConoci: '', significado: '', aprendi: '', recuerdos: '', diria: '' });
   function campo(k: keyof typeof f) { return f[k]; }
   function set(k: keyof typeof f) { return (v: string) => setF(prev => ({ ...prev, [k]: v })); }
   return (
     <>
       <div className="mh-eyebrow">Módulo</div>
-      <h2 style={{ marginTop: 0 }}>Personas de mi historia</h2>
+      <h2 style={{ marginTop: 0 }}>{textos.personasTitulo}</h2>
       <p className="mh-hint" style={{ marginTop: 0 }}>Agregá tantas personas como sea necesario — familia, amigos, mentores, amores.</p>
       <div className="mh-card">
         <h3 style={{ marginTop: 0 }}>Agregar persona</h3>
@@ -796,6 +854,7 @@ type FotoMeta = Omit<Foto, 'id'>;
 const FOTO_META_VACIA: FotoMeta = { descripcion: '', año: '', lugar: '', personas: '', queOcurria: '', porQueImportante: '', etapaRelacionada: '' };
 
 function FotoCampos({ f, set }: { f: FotoMeta; set: (k: keyof FotoMeta) => (v: string) => void }) {
+  const etapas = useEtapas();
   return (
     <>
       <div className="mh-field" style={{ marginTop: '0.75rem' }}><label className="mh-field-label">Descripción</label><AutoTextarea value={f.descripcion} onChange={set('descripcion')} minHeight={70} /></div>
@@ -810,7 +869,7 @@ function FotoCampos({ f, set }: { f: FotoMeta; set: (k: keyof FotoMeta) => (v: s
         <label className="mh-field-label">Etapa relacionada</label>
         <select className="mh-text-input" value={f.etapaRelacionada} onChange={e => set('etapaRelacionada')(e.target.value)}>
           <option value="">— sin especificar —</option>
-          {ETAPAS.map((e, i) => <option key={i} value={i}>{e.titulo}</option>)}
+          {etapas.map((e, i) => <option key={i} value={i}>{e.titulo}</option>)}
         </select>
       </div>
     </>
@@ -824,6 +883,7 @@ function FotoCampos({ f, set }: { f: FotoMeta; set: (k: keyof FotoMeta) => (v: s
 // de frente, porque la IA de imágenes no sabe cómo es físicamente la
 // persona real.
 function GenerarPromptFoto({ clave }: { clave: string }) {
+  const etapas = useEtapas();
   const [etapaIndex, setEtapaIndex] = useState(0);
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'lista' | 'insuficiente' | 'error'>('inicial');
   const [prompt, setPrompt] = useState('');
@@ -866,7 +926,7 @@ function GenerarPromptFoto({ clave }: { clave: string }) {
       <div className="mh-field">
         <label className="mh-field-label">Etapa</label>
         <select className="mh-text-input" value={etapaIndex} onChange={e => { setEtapaIndex(Number(e.target.value)); setEstado('inicial'); }}>
-          {ETAPAS.map((e, i) => <option key={i} value={i}>{i + 1}. {e.titulo}</option>)}
+          {etapas.map((e, i) => <option key={i} value={i}>{i + 1}. {e.titulo}</option>)}
         </select>
       </div>
       <button className="mh-btn mh-btn-primary mh-btn-sm" onClick={generar} disabled={estado === 'cargando'}>
@@ -952,13 +1012,14 @@ function PhotosScreen({ clave, esPrincipal, fotos, onAgregar, onBorrar, onEditar
 }
 
 function TimelineScreen({ eventos, onAgregar, onBorrar }: { eventos: Evento[]; onAgregar: (e: Omit<Evento, 'id'>) => void; onBorrar: (i: number) => void }) {
+  const textos = useTextos();
   const [f, setF] = useState({ fecha: '', edad: '', acontecimiento: '', lugar: '', personas: '', descripcion: '', importancia: '' });
   function set(k: keyof typeof f) { return (v: string) => setF(prev => ({ ...prev, [k]: v })); }
   const ordenado = eventos.map((e, i) => ({ e, i })).sort((a, b) => (a.e.fecha || '').localeCompare(b.e.fecha || ''));
   return (
     <>
       <div className="mh-eyebrow">Módulo</div>
-      <h2 style={{ marginTop: 0 }}>Mi línea de vida</h2>
+      <h2 style={{ marginTop: 0 }}>{textos.lineaTitulo}</h2>
       <p className="mh-hint" style={{ marginTop: 0 }}>Los acontecimientos se muestran ordenados cronológicamente — esto ayuda después a detectar si dos fechas no coinciden.</p>
       <div className="mh-card">
         <h3 style={{ marginTop: 0 }}>Agregar acontecimiento</h3>
@@ -994,12 +1055,13 @@ function ReviewScreen({ getRespDe, notasLibres, contradicciones, onIr, onAgregar
   getRespDe: (e: number, p: number) => Respuesta; notasLibres: HistoriaData['notasLibres']; contradicciones: Contradiccion[];
   onIr: (e: number, p: number) => void; onAgregarContradiccion: () => void; onBorrarContradiccion: (i: number) => void;
 }) {
+  const etapas = useEtapas();
   return (
     <>
       <div className="mh-eyebrow">Revisión</div>
       <h2 style={{ marginTop: 0 }}>Revisar mis respuestas</h2>
       <p className="mh-hint" style={{ marginTop: 0 }}>Tocá cualquier pregunta para volver a editarla.</p>
-      {ETAPAS.map((etapa, ei) => {
+      {etapas.map((etapa, ei) => {
         const hechas = etapa.preguntas.filter((_, pi) => getRespDe(ei, pi).estado !== 'sin_responder').length;
         return (
           <div className="mh-card mh-tight" key={ei}>
@@ -1077,18 +1139,20 @@ function FinalScreen({ clave, historia, etapaCompleta, contarRespondidas, onExpo
   clave: string; historia: HistoriaData; etapaCompleta: (i: number) => boolean; contarRespondidas: () => number;
   onExportar: (f: 'txt' | 'md' | 'json' | 'ia') => void; onIrEntrevista: () => void; onIrRevisar: () => void;
 }) {
-  const etapasCompletas = ETAPAS.filter((_, i) => etapaCompleta(i)).length;
+  const etapas = useEtapas();
+  const textos = useTextos();
+  const etapasCompletas = etapas.filter((_, i) => etapaCompleta(i)).length;
   return (
     <>
       <div className="mh-card" style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '2.4rem' }}>📖</div>
-        <h1 style={{ margin: '0.5rem 0' }}>¡Tu historia está acá!</h1>
+        <h1 style={{ margin: '0.5rem 0' }}>{textos.finalTitulo}</h1>
         <p className="mh-hint">Reuniste los recuerdos, personas y momentos que forman tu historia.</p>
       </div>
       <div className="mh-stat-grid">
         {[
-          [etapasCompletas + '/' + ETAPAS.length, 'Etapas completas'],
-          [contarRespondidas() + '/' + totalPreguntas(), 'Preguntas respondidas'],
+          [etapasCompletas + '/' + etapas.length, 'Etapas completas'],
+          [contarRespondidas() + '/' + totalPreguntas(etapas), 'Preguntas respondidas'],
           [String(historia.notasLibres.length), 'Recuerdos extra'],
           [String(historia.personas.length), 'Personas'],
           [String(historia.fotografias.length), 'Fotografías'],

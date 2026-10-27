@@ -4,7 +4,9 @@ import type { HistoriaData } from './miHistoriaService';
 // components/MiHistoriaApp.tsx, que es 'use client') para que tanto la UI
 // como rutas de servidor (ej. la vista previa con IA) puedan usarla sin
 // arrastrar código de cliente al bundle del servidor.
-export const ETAPAS: { titulo: string; intro?: string; grandes?: boolean; preguntas: string[] }[] = [
+export type Etapa = { titulo: string; intro?: string; grandes?: boolean; preguntas: string[] };
+
+export const ETAPAS: Etapa[] = [
   { titulo: 'Datos básicos', preguntas: [
     '¿Cuál es tu nombre completo?', '¿Cómo te llaman normalmente tus familiares y amigos?', '¿Cuándo y dónde naciste?',
     '¿Dónde vives actualmente?', '¿Cómo te describirías brevemente a alguien que nunca te ha conocido?',
@@ -122,8 +124,8 @@ export function contarPreguntasRespondidas(historia: HistoriaData): number {
 // Igual que construirMaterialRespondido, pero acotado a UNA sola etapa —
 // pensado para pedirle a la IA un prompt de imagen puntual para esa etapa,
 // en vez de mandarle la historia completa.
-export function construirMaterialEtapa(historia: HistoriaData, etapaIndex: number): string {
-  const etapa = ETAPAS[etapaIndex];
+export function construirMaterialEtapa(historia: HistoriaData, etapaIndex: number, etapas: Etapa[] = ETAPAS): string {
+  const etapa = etapas[etapaIndex];
   if (!etapa) return '';
   let out = '';
   const preguntasRespondidas = etapa.preguntas
@@ -143,9 +145,9 @@ export function construirMaterialEtapa(historia: HistoriaData, etapaIndex: numbe
 // con respuesta real (sin encabezados de etapas vacías) y sin el resto del
 // material (fotos, personas, línea de tiempo), pensado para pedidos cortos
 // como la vista previa con IA, no para la exportación completa.
-export function construirMaterialRespondido(historia: HistoriaData): string {
+export function construirMaterialRespondido(historia: HistoriaData, etapas: Etapa[] = ETAPAS): string {
   let out = '';
-  ETAPAS.forEach((etapa, ei) => {
+  etapas.forEach((etapa, ei) => {
     const preguntasRespondidas = etapa.preguntas
       .map((preg, pi) => ({ preg, r: historia.respuestas[claveResp(ei, pi)] }))
       .filter(({ r }) => r && r.texto && r.texto.trim());

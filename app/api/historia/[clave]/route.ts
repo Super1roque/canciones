@@ -16,8 +16,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
     // El nombre no vive en mi_historia (eso es el contenido), sino en el
     // link que lo generó — así la página puede saludar a la persona y
     // confirmarle que es SU página, sin pedírselo de nuevo.
-    const nombre = clave === CLAVE_ADMIN ? '' : (await obtenerLinkPorToken(clave))?.nombre || '';
-    return NextResponse.json({ ...data, nombre });
+    const link = clave === CLAVE_ADMIN ? null : await obtenerLinkPorToken(clave);
+    return NextResponse.json({
+      ...data, nombre: link?.nombre || '',
+      plantilla: link?.plantilla || 'vida', homenajeado: link?.homenajeado || '',
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json({ error: msg }, { status: 500 });

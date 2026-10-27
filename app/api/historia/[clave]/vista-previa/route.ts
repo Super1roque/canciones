@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { obtenerHistoria } from '@/lib/miHistoriaService';
 import { construirMaterialRespondido, contarPreguntasRespondidas } from '@/lib/etapasHistoria';
 import { generarVistaPreviaHistoria } from '@/lib/claudeService';
+import { obtenerLinkPorToken } from '@/lib/historiaLinksService';
+import { etapasDe, contextoHomenaje } from '@/lib/plantillasHistoria';
 
 export const runtime = 'nodejs';
 
@@ -27,8 +29,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
       });
     }
 
-    const material = construirMaterialRespondido(historia);
-    const texto = await generarVistaPreviaHistoria(material);
+    const link = await obtenerLinkPorToken(clave);
+    const material = construirMaterialRespondido(historia, etapasDe(link?.plantilla, link?.homenajeado));
+    const contexto = link?.plantilla === 'homenaje' ? contextoHomenaje(link.homenajeado || '', link.nombre) : undefined;
+    const texto = await generarVistaPreviaHistoria(material, contexto);
     return NextResponse.json({ texto });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
