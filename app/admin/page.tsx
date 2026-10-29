@@ -913,6 +913,7 @@ export default function Home() {
             <a href="/inventar-mi-futuro" target="_blank" rel="noopener noreferrer" className="nav-btn" title="Página pública — audiolibro de Armando Roque">🎧 Inventar mi futuro — Armando Roque</a>
             <a href="/ramon-villeda-morales" target="_blank" rel="noopener noreferrer" className="nav-btn" title="Página pública — audiolibro de prueba de Ramón Villeda Morales">🎧 Siempre adelante — Ramón Villeda Morales</a>
             <a href="/admin/guia-libros" className="nav-btn" title="Referencia: cómo producir un libro de Mi Historia de principio a fin">📖 Guía: producir un libro</a>
+            <a href="/admin/guia-audiolibros" className="nav-btn" title="Del ePub y el MP3 de ElevenLabs al audiolibro publicado con música, ambientes y Foley">🎧 Guía: audiolibros</a>
             <a href="/admin/prompts-elevenlabs" className="nav-btn" title="Convierte un texto a formato de audio tags para Eleven v3">🎙️ Prompts para ElevenLabs</a>
           </nav>
         </div>
