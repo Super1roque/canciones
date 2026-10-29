@@ -33,7 +33,9 @@ export const metadata: Metadata = {
 export default function RamonVilledaMoralesPage() {
   return (
     <InventarMiFuturoClient
-      audioUrl="/api/ramon-villeda-morales/audio"
+      // ?v= cambia cada vez que se reemplaza el audio en Storage: la ruta se sirve como
+      // immutable por un año, y sin esto los navegadores seguirían con la versión vieja.
+      audioUrl="/api/ramon-villeda-morales/audio?v=efectos"
       titulo="Siempre adelante, ni un paso atrás"
       subtitulo="Ramón Villeda Morales"
       cues={cuesRamonVilledaMorales}
