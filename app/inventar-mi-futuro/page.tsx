@@ -25,7 +25,9 @@ export const metadata: Metadata = {
 export default function InventarMiFuturoPage() {
   return (
     <InventarMiFuturoClient
-      audioUrl="/api/inventar-mi-futuro/audio"
+      // ?v= cambia cada vez que se reemplaza el audio en Storage: la ruta se sirve como
+      // immutable por un año, y sin esto los navegadores seguirían con la versión vieja.
+      audioUrl="/api/inventar-mi-futuro/audio?v=efectos"
       titulo="Inventar mi futuro"
       subtitulo="Memorias de quien rompió el molde"
       cues={cuesInventarMiFuturo}
