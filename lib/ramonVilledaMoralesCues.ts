@@ -275,12 +275,12 @@ export const cuesRamonVilledaMorales: CuePárrafo[] = [
   },
   {
     "start": 444.28,
-    "end": 453.54,
+    "end": 461.9,
     "text": "En mayo de 1953 presenté a la Convención del Partido Liberal dos documentos: el nuevo Estatuto y el Programa Ideológico renovado. Empezamos a movilizar a las masas. Al final de cada discurso, la gente escuchaba la misma frase:",
     "kind": "p"
   },
   {
-    "start": 453.54,
+    "start": 461.9,
     "end": 462.8,
     "text": "\"¡Siempre adelante, ni un paso atrás!\"",
     "kind": "p"
