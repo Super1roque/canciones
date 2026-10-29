@@ -29,7 +29,7 @@ export default function JorgeCaballeroPage() {
     <JorgeCaballeroClient
       // ?v= cambia cada vez que se reemplaza el audio en Storage: la ruta se sirve como
       // immutable por un año, y sin esto los navegadores seguirían con la versión vieja.
-      audioUrl="/api/jorge-caballero/audio?v=efectos"
+      audioUrl="/api/jorge-caballero/audio?v=foley"
       cues={cuesJorgeCaballero}
       duracionTotal={duracionTotalSegundos}
     />
