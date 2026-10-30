@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useRef, useState, useCallback, useEffect } from 'react';
+import { Fragment, useRef, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { Baloo_2, Literata } from 'next/font/google';
 import type { CuePárrafo } from '@/lib/inventarMiFuturoCues';
 import type { ImagenInline } from '@/lib/inventarMiFuturoImagenes';
@@ -24,6 +24,7 @@ export default function InventarMiFuturoClient({
   invitacion = 'Escribí la tuya y creá tu propio libro',
   remate = 'GRATIS',
   cta = { texto: '🎤 Conocer corridos.online', href: 'https://corridos.online' },
+  pie,
 }: {
   audioUrl: string;
   titulo: string;
@@ -36,6 +37,8 @@ export default function InventarMiFuturoClient({
   invitacion?: string;
   remate?: string;
   cta?: { texto: string; href: string };
+  // Bloque extra debajo del llamado final (en /morazan: el acceso para quien ya compró).
+  pie?: ReactNode;
 }) {
   const [indiceActual, setIndiceActual] = useState(-1);
   const [reproduciendo, setReproduciendo] = useState(false);
@@ -299,6 +302,7 @@ export default function InventarMiFuturoClient({
           >
             {cta.texto}
           </a>
+          {pie}
         </div>
       </div>
 

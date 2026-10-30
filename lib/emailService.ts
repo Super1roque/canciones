@@ -38,6 +38,34 @@ export async function avisarNuevoPedido(telefono: string, cancionBase: string): 
   }
 }
 
+export async function avisarVentaAudiolibro(
+  producto: string,
+  comprador: string,
+  precio?: number,
+  moneda?: string,
+): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  try {
+    const { error } = await resend.emails.send({
+      from: 'Canciones <onboarding@resend.dev>',
+      to: ADMIN_EMAIL,
+      subject: `🎧 Nueva venta en Hotmart — ${producto}`,
+      html: `
+        <p>Se vendió el audiolibro <strong>${producto}</strong>.</p>
+        <ul>
+          <li><strong>Comprador:</strong> ${comprador}</li>
+          ${precio ? `<li><strong>Precio:</strong> ${precio} ${moneda || ''}</li>` : ''}
+        </ul>
+        <p>El acceso ya quedó activo: el comprador lo abre en corridos.online/${producto} con su correo.</p>
+      `,
+    });
+    if (error) console.error('Resend devolvió un error al avisar de la venta:', error);
+  } catch (e) {
+    console.error('avisarVentaAudiolibro falló:', e);
+  }
+}
+
 export async function avisarNuevaVerificacion(telefono: string): Promise<void> {
   const resend = getResend();
   if (!resend) return;
