@@ -1,5 +1,6 @@
 // Generado por scripts/audiolibros/alinear-cues.py: texto del ePub alineado contra el audio
 // (faster-whisper + difflib). No editar a mano salvo errores puntuales.
+// Desde el cue 145 en adelante: el podcast «más allá del mito», transcrito con Whisper medium y corregido a mano.
 import type { CuePárrafo } from './inventarMiFuturoCues';
 
 export const cuesMorazan: CuePárrafo[] = [
@@ -872,7 +873,289 @@ export const cuesMorazan: CuePárrafo[] = [
     "end": 2167.51,
     "text": "Armando Roque Godoy",
     "kind": "p"
+  },
+  {
+    "start": 2174.83,
+    "end": 2180.525306,
+    "text": "Podcast sobre Francisco Morazán más allá del mito",
+    "kind": "heading"
+  },
+  {
+    "start": 2180.83,
+    "end": 2209.83,
+    "text": "Fíjate que existe un mito extremadamente popular en los patios de las escuelas hondureñas. ¿Ah, sí? ¿Sobre qué exactamente? Sobre los antiguos billetes de cinco lempiras. Quienes alguna vez tuvieron uno de esos en las manos, recordarán que el rostro del general Francisco Morazán siempre aparecía de riguroso perfil. Ah, claro. El famoso perfil inamovible de Morazán. Exacto. Y la leyenda urbana, esa que pasa de boca en boca, aseguraba que lo retrataban así simplemente porque en la vida real le faltaba una oreja.",
+    "kind": "p"
+  },
+  {
+    "start": 2209.83,
+    "end": 2242.83,
+    "text": "Wow. Es increíble cómo funciona eso. Es un mecanismo muy peculiar de la memoria popular, ¿sabes? ¿En qué sentido? O sea, frente a figuras que parecen inalcanzables o de bronce, la sociedad busca un detalle visual. Un defecto menor para, digamos, hacerlos más terrenales, olvidando en el proceso todo el peso real de sus acciones. Totalmente. Pero, a ver, pongamos esa imagen casi cómica del billete en perspectiva. Contrastémosla con una escena que es infinitamente más cruda. Un salto directo al 15 de septiembre de 1842.",
+    "kind": "p"
+  },
+  {
+    "start": 2242.83,
+    "end": 2278.83,
+    "text": "Sí. Imaginen a este mismo hombre, ya no impreso en papel moneda, sino de pie frente a un pelotón de fusilamiento. En la Plaza Central de San José. Exactamente. En Costa Rica. Le quedan horas o quizás minutos de vida. Y a su lado está su hijo, llorando de una manera tan desgarradora que sus manos tiemblan. Que es físicamente incapaz de sostener la pluma para escribir el testamento de su padre. Qué imagen tan fuerte. Y ante esa parálisis, este hombre condenado a muerte, pues, le quita la pluma y con pulso firme, termina de redactar su propio testamento, a mano alzada.",
+    "kind": "p"
+  },
+  {
+    "start": 2278.83,
+    "end": 2307.83,
+    "text": "Esa es la realidad visceral que ninguna estatua ecuestre te va a contar jamás. El contraste es brutal, la verdad. Pasamos de un chiste escolar sobre una oreja perdida a uno de los momentos más dramáticos y fundacionales de toda la historia política centroamericana. Un hombre redactando su legado literalmente a la sombra de los fusiles. Y precisamente por eso estamos aquí hoy en este análisis profundo. Vamos a diseccionar un material verdaderamente revelador.",
+    "kind": "p"
+  },
+  {
+    "start": 2307.83,
+    "end": 2346.83,
+    "text": "El libro Morazán. Entre la unión y la derrota. Del autor Armando Roque Godoy. Porque la lectura de este texto nos plantea una interrogante ineludible. ¿Cómo es que un hombre pasa de ser un burócrata silencioso a convertirse en el comandante que intentó unificar cinco países? Para terminar frente a ese pelotón que mencionabas. Exacto. Pero antes de meternos de lleno, creo que es importante hacer una aclaración para quienes nos escuchan, ¿verdad? Sí, importantísimo. A ver, como vamos a explorar guerras civiles, los roces políticos entre liberales y conservadores y los choques con la iglesia, que detalla el libro, quiero aclarar que nuestro análisis será estrictamente neutral.",
+    "kind": "p"
+  },
+  {
+    "start": 2346.83,
+    "end": 2375.83,
+    "text": "Claro, sin tomar partido. Exactamente. Vamos a reportar las posturas históricas tal cual vienen en el texto. Entendiendo que ambas partes, tanto los aliados de Morazán como sus detractores, reflejaban los conflictos sociales muy reales de esa época. Yo, como historiadora, veo vital mantener esa imparcialidad. Me parece perfecto. Y volviendo al libro, para descubrir al ser humano detrás del mito, la investigación de Roque Godoy toma una decisión que me encantó. No inventa fábulas infantiles.",
+    "kind": "p"
+  },
+  {
+    "start": 2375.83,
+    "end": 2408.83,
+    "text": "No, para nada. Nos ubica directamente en 1792 en la villa de Tegucigalpa, en el seno de una familia criolla. Y ese punto de partida geográfico es el cimiento de todo, fíjate. Tegucigalpa, a finales del siglo XVIII, era, digamos, un satélite del imperio español que vivía casi exclusivamente de la minería. O sea, un lugar con oportunidades muy limitadas para la mayoría. Abismales, diría yo. Hablamos de un territorio donde los caminos eran lodazales intransitables. La imprenta era una rareza absoluta y la corona, junto con la iglesia católica, dictaban cada aspecto de la existencia.",
+    "kind": "p"
+  },
+  {
+    "start": 2408.83,
+    "end": 2436.83,
+    "text": "Y ahí es donde Morazán nace con un privilegio enorme. Los recursos de su familia le permiten acceder al lujo supremo de la época. Aprender a leer y escribir. Exacto, aprender a leer y escribir en un mar de analfabetismo. Pero hay un detalle que me llamó muchísimo la atención en el texto. ¿Cuál? Morazán nunca pisó una academia militar. Tampoco fue a la universidad. Su verdadera escuela fue una escribanía. Específicamente la de León Vázquez. Así es, fue su verdadera formación.",
+    "kind": "p"
+  },
+  {
+    "start": 2436.83,
+    "end": 2465.83,
+    "text": "Bueno, analicemos esto por un segundo. Me parece que trabajar en una escribanía, digamos, en 1810 o 1815, era el equivalente moderno a hacer una pasantía intensiva en el corazón de la administración pública. Esa es una gran analogía. Es que él no nació con una espada en la mano gritando consignas. Primero se sentó a redactar testamentos, litigios de tierras, contratos comerciales. Vio las entrañas burocráticas del poder. Y lo fascinante aquí es cómo esta base administrativa choca y a la vez complementa su futuro militar.",
+    "kind": "p"
+  },
+  {
+    "start": 2465.83,
+    "end": 2493.83,
+    "text": "En esa escribanía, el joven Morazán está observando el armazón legal de un imperio que ya muestra grietas por todos lados. Está viendo cómo funciona la ley de primera mano. Claro. Entiende a través de pilas de papel y tinta que el poder no solo se ejerce con la fuerza, se ejerce con la ley. Además, ese entorno lo conecta con mentes brillantes como Dionisio de Herrera. Que tenía una biblioteca clandestina, ¿no? Exacto. Una biblioteca con textos de la ilustración francesa.",
+    "kind": "p"
+  },
+  {
+    "start": 2493.83,
+    "end": 2525.83,
+    "text": "Así que cuando llega el colapso del Imperio Español en 1821 y Morazán se opone enérgicamente a que Centroamérica sea anexada al Imperio Mexicano de Iturbide, su postura no es un capricho. No es rebeldía adolescente. Para nada. Es la conclusión lógica de un hombre de leyes que entiende cómo debe estructurarse una república moderna. Pero, a ver, espera. Aquí hay un salto narrativo que me parece casi imposible. Tenemos este joven intelectual rodeado de libros franceses y documentos legales que, de repente, se convierte en el estratega militar más letal de Centroamérica.",
+    "kind": "p"
+  },
+  {
+    "start": 2525.83,
+    "end": 2553.83,
+    "text": "Un giro dramático. Totalmente. ¿Cómo pasamos de la pluma al cañón? Porque para 1827, Morazán está liderando tropas en la famosa Batalla de la Trinidad. ¿Qué mecanismo lo obliga a tomar las armas contra el mismísimo gobierno federal que se suponía que debía defender? Pues, si conectamos esto con el panorama general, la respuesta está en el colapso institucional. Para 1827, la recién creada República Federal de Centroamérica era un caos absoluto.",
+    "kind": "p"
+  },
+  {
+    "start": 2553.83,
+    "end": 2582.83,
+    "text": "Un desorden total. Sí. El presidente federal, Manuel José Arce, que estaba radicado en Guatemala, decide que la única forma de gobernar es someter militarmente a los estados que cuestionan su autoridad. Y ahí es donde entra Honduras. Exacto. Honduras, bajo el liderazgo de Dionisio de Herrera, se niega a acatar ciertas órdenes. En represalia, Arce envía un ejército federal comandado por José Justo Milla. ¿Que sitia Comayagua y derroca el gobierno, verdad? Y arroja a Herrera a un calabozo.",
+    "kind": "p"
+  },
+  {
+    "start": 2582.83,
+    "end": 2613.83,
+    "text": "Imagínate. Frente a ese vacío de poder y con las instituciones destrozadas, el burócrata ya no tiene otra opción. Morazán tiene que huir al exilio, conseguir financiamiento y armar una resistencia desde cero. Y forma esta fuerza miliciana que, y esto es muy revelador, la bautiza como el Ejército Aliado Protector de la Ley. Fíjate en el nombre. Protector de la ley. Exacto. El nombre mismo subraya que no se veía como un caudillo revolucionario cualquiera, sino como un guardián jurídico pero armado.",
+    "kind": "p"
+  },
+  {
+    "start": 2613.83,
+    "end": 2643.83,
+    "text": "Y en la Trinidad, el 11 de noviembre del 27, logra vencer a las tropas profesionales de Milla. Una hazaña militar impresionante. El libro detalla que no fue un choque frontal básico. Morazán dividió a sus hombres. Utilizó los barrancos, la geografía del terreno, para ejecutar un ataque simultáneo desde varios flancos. Milla quedó completamente desorientado. Fue una maniobra de tenaza brillante. Y más para alguien sin entrenamiento formal en tácticas de guerra. Utilizó el factor sorpresa, la movilidad extrema.",
+    "kind": "p"
+  },
+  {
+    "start": 2643.83,
+    "end": 2675.83,
+    "text": "Esa victoria lo catapultó de ser un líder regional a convertirse en el salvador del ideal federalista. Sin embargo, aquí hay una contradicción monumental que el texto nos obliga a mirar de frente. A ver, ¿cuál? Es que Morazán inicia su leyenda militar atacando al ejército de la Federación para salvar la autonomía de Honduras. Pero años después, cuando él mismo ocupa la presidencia de la República Federal, se ve obligado a hacer exactamente lo mismo que Arce. Usar la fuerza. Sí, usar sus ejércitos para obligar a los estados centroamericanos a mantenerse unidos, a punta de bayoneta.",
+    "kind": "p"
+  },
+  {
+    "start": 2675.83,
+    "end": 2709.83,
+    "text": "Es una paradoja tremenda. ¿No te parece que el gran libertador termina convertido casi en el carcelero de la Unión? Es una paradoja trágica, tienes toda la razón. Pero de nuevo, si vemos el panorama general, la geografía y la economía conspiraban contra cualquier ideal político. O sea, la realidad superaba a la teoría. Totalmente. Morazán asume la presidencia de un gigante que, siendo honestos, solo existía en el papel. Intentó mantener unida una región sin caminos pavimentados, donde un decreto emitido en Guatemala tardaba semanas en llegar a Costa Rica.",
+    "kind": "p"
+  },
+  {
+    "start": 2709.83,
+    "end": 2738.83,
+    "text": "Incomunicados casi por completo. Exacto. No había un mercado interno fuerte, los estados no querían pagar impuestos a la capital federal y los celos regionalistas eran feroces. Ningún general, por más batallas que ganara con su brillantez táctica, podía sostener con tropas lo que la falta de presupuesto destruía a diario. Y eso nos lleva inevitablemente al gran quiebre. Si la logística estaba resquebrajando a la Federación, el golpe de gracia vino de un lugar muy distinto.",
+    "kind": "p"
+  },
+  {
+    "start": 2738.83,
+    "end": 2767.83,
+    "text": "Y aquí necesito hacer de abogado del diablo un momento. Adelante, dime. A ver, Morazán y los liberales estaban trayendo la modernidad, ¿no? Códigos penales inspirados en Estados Unidos, libertad de culto, educación laica… Eran ideas súper progresistas. De vanguardia para la época. Claro. Pero en marzo de 1840, Morazán sufre una derrota aplastante en Guatemala a manos de Rafael Carrera. Y lo más impactante del texto es que Carrera lideraba un ejército compuesto masivamente por indígenas y campesinos.",
+    "kind": "p"
+  },
+  {
+    "start": 2767.83,
+    "end": 2800.83,
+    "text": "Así es, la gran base popular. Entonces la pregunta es, ¿por qué las poblaciones más vulnerables, los más pobres, se armaron hasta los dientes para destruir el proyecto liberal de Morazán? Eso suena totalmente contraintuitivo. Es una excelente observación. Y aquí es donde la neutralidad que prometimos al inicio es vital. Es imperativo abandonar cualquier sesgo del siglo XXI. Es muy fácil mirar al pasado y etiquetar a Morazán como el héroe progresista y a Carrera como el villano retrógrado, ¿verdad?",
+    "kind": "p"
+  },
+  {
+    "start": 2800.83,
+    "end": 2833.83,
+    "text": "Es la narrativa típica de los libros de texto escolares. Exacto. Pero el libro de Roque Godoy nos exige entender los mecanismos sociales reales. Rafael Carrera no era un monstruo de caricatura. Era la canalización de un pánico social genuino de las masas. ¿Pero pánico a quién exactamente? A las leyes. Pánico a perder su forma de vida entera. Las reformas de Morazán, como los famosos códigos de Livingston, intentaban imponer un sistema judicial anglosajón, con juicios por jurado que los campesinos simplemente no entendían.",
+    "kind": "p"
+  },
+  {
+    "start": 2833.83,
+    "end": 2863.83,
+    "text": "Claro, un choque cultural inmenso. Además, se intentó cobrar nuevos impuestos sobre las tierras para financiar este nuevo estado moderno. Y el punto de quiebre fue la religión. Al decretar la libertad de culto y expropiar ciertos bienes eclesiásticos, los liberales tocaron la fibra más íntima de la población rural. Imagino que la iglesia era todo para ellos. Para una comunidad indígena en las montañas de Guatemala, el cura párroco era la única red de apoyo social.",
+    "kind": "p"
+  },
+  {
+    "start": 2863.83,
+    "end": 2891.83,
+    "text": "Era el médico, el maestro, el consejero. Cuando el gobierno de Morazán atacó esos pilares en nombre de una modernidad abstracta, Carrera se levantó como el defensor de las tradiciones. Defendiendo la religión y la tierra comunal. Exactamente. Esa derrota en 1840 no fue solo militar. Fue el rechazo popular a un proyecto que se sintió impuesto desde una élite urbana completamente desconectada de la realidad rural centroamericana. Wow.",
+    "kind": "p"
+  },
+  {
+    "start": 2891.83,
+    "end": 2923.83,
+    "text": "Y ese choque frontal con la religión generó cicatrices profundas. De hecho, en Honduras eso se materializó en su famosa enemistad con el padre José Trinidad Reyes. Ah, el padre Reyes. Una mente cultural brillantísima. Sí. Y de esta fricción nace este otro gran mito. El de «Chico Ganzúa». Supuestamente el padre Reyes le dedicó unos versos satíricos llamándolo así, insinuando que Morazán era un ladrón que usaba ganzúas para saquear los tesoros de la iglesia.",
+    "kind": "p"
+  },
+  {
+    "start": 2923.83,
+    "end": 2953.83,
+    "text": "Es una historia súper repetida. Y la leyenda urbana va más allá. Dice que cuando Reyes se enteró del fusilamiento de Morazán mandó a repicar todas las campanas de las iglesias de Tegucigalpa en señal de fiesta. Pues te cuento que es una leyenda que el libro se encarga de desmontar con un rigor histórico impecable. ¿No pasó lo de las campanas? Para nada. El autor es categórico. No existe ni un solo documento, carta, diario o crónica de la época que valide la historia del repique de campanas.",
+    "kind": "p"
+  },
+  {
+    "start": 2953.83,
+    "end": 2984.83,
+    "text": "Es una construcción muy posterior para exagerar esa polarización política. O sea, puro drama añadido con los años. Exacto. Y fíjate, la mejor prueba de la complejidad humana de estos personajes es que Morazán, este supuesto enemigo acérrimo del clero, dicta en sus últimos momentos un testamento donde invoca explícitamente a Dios. Es cierto. En el texto cita al autor del universo en cuya religión muero. Exactamente. Esto plantea una reflexión importante. La historia escolar a veces simplifica demasiado a figuras tan complejas.",
+    "kind": "p"
+  },
+  {
+    "start": 2984.83,
+    "end": 3013.83,
+    "text": "Morazán no encaja en la caja del santo inmaculado que no cometió errores, pero tampoco el padre Reyes cabe en la del clérigo vengativo. Eran hombres brillantes atrapados en una guerra ideológica inmensa. Definitivamente. Pero, a ver, volvamos a ese colapso en 1840. Morazán es aplastado por Carrera. Se queda sin ejército, sin gobierno y sin el apoyo de las masas. La Federación se desintegra. Lo pierde absolutamente todo. Y aquí es donde se pone realmente interesante la resiliencia del tipo.",
+    "kind": "p"
+  },
+  {
+    "start": 3013.83,
+    "end": 3041.83,
+    "text": "Cualquier líder normal habría tomado un barco a Europa y desaparecido. Pero él se va al exilio. Primero a El Salvador, luego a Panamá, a la ciudad de David, donde redacta el famoso Manifiesto de David. Un documento súper visceral. No pide disculpas en absoluto, al contrario. Acusa a la aristocracia conservadora de manipular la religión para destruir el sueño de una patria grande. Y luego baja hasta Perú. Pero en 1842 hace algo impensable.",
+    "kind": "p"
+  },
+  {
+    "start": 3041.83,
+    "end": 3075.83,
+    "text": "Con cero recursos, decide que el proyecto no ha muerto. Imagina a Morazán como el fundador de una startup visionaria. A ver, explícame esa analogía. O sea, él hizo un esfuerzo masivo intentando conectar a cinco países bajo un mismo software corporativo que sería la Constitución Federal. Pero no tenía los servidores, que en esa época eran los caminos y los puertos. Claro, la infraestructura falló. Y la empresa quiebra. Pero en lugar de rendirse, el recurre al capital de los inversores ángeles, que en este caso fue la inmensa fortuna de su influyente esposa, María Josefa Lastiri.",
+    "kind": "p"
+  },
+  {
+    "start": 3075.83,
+    "end": 3109.83,
+    "text": "Él quema todo ese patrimonio familiar, compra armas en Sudamérica, navega de regreso e invade Costa Rica, derrocando al dictador Braulio Carrillo. Fue una jugada de ajedrez desesperada. El último gran pivote de su vida, como dirías en términos de startup. Una apuesta enorme. Pero fue una apuesta casi suicida. Costa Rica ya estaba estructurando su propio estado soberano. No tenían ningún interés en ser el trampolín para resucitar una Federación muerta. Y la élite costarricense, viéndolo como una amenaza, orquesta un levantamiento rápido que lo captura en septiembre de ese mismo año.",
+    "kind": "p"
+  },
+  {
+    "start": 3109.83,
+    "end": 3139.83,
+    "text": "Y aunque llevó a su familia la ruina financiera absoluta por revivir ese ideal político, el análisis resalta una lección de civismo implacable. ¿En qué sentido? En que Morazán no desvió fondos del tesoro público a cuentas secretas en el extranjero. No construyó mansiones para su retiro. ¿Sabes? Murió literalmente endeudado hasta el cuello por sostener un ideal. Lo perdió todo por su causa. Y ese es un estándar ético que, francamente, resuena muchísimo hoy en día.",
+    "kind": "p"
+  },
+  {
+    "start": 3139.83,
+    "end": 3173.83,
+    "text": "Especialmente cuando la política suele verse solo como un vehículo para el enriquecimiento ilícito. Esa ruina patrimonial y esa convicción inquebrantable nos devuelven al punto de partida. A la Plaza de San José. Exacto. El 15 de septiembre de 1842. La crueldad poética de ser ejecutado el mismo día que se celebra la independencia que él mismo ayudó a forjar. Y mientras su hijo llora desconsoladamente y él toma la pluma para escribir el testamento, las palabras que plasman no son quejas sobre su mala suerte o insultos a sus verdugos.",
+    "kind": "p"
+  },
+  {
+    "start": 3173.83,
+    "end": 3205.83,
+    "text": "Escribe esa frase inmortal: «Mi amor a Centroamérica muere conmigo». Es un documento desgarrador. Y el texto señala algo vital. Su mente no se queda en el pasado. Ya está pensando en las generaciones futuras cuando redacta: «Excito a la juventud, que es llamada a dar vida a este país». En sus últimos alientos está haciendo un pase de batuta. Totalmente. Un estadista hasta el último segundo frente a la muerte. Y fíjate que hay un detalle en esa última voluntad que desarma otro mito muy doloroso para los hondureños.",
+    "kind": "p"
+  },
+  {
+    "start": 3205.83,
+    "end": 3233.83,
+    "text": "Morazán pidió verbalmente que sus restos fueran enterrados en El Salvador. Argumentando que ese pueblo le había sido adicto. Y eso siempre causa mucha confusión hoy en día. Exacto. Tenemos que detenernos en la lingüística de la época. En el siglo XIX, la palabra adicto no tenía esta connotación negativa de dependencia tóxica de ahora. Significaba estrictamente leal, devoto, partidario. Era un halago, básicamente. Un gran halago.",
+    "kind": "p"
+  },
+  {
+    "start": 3233.83,
+    "end": 3261.83,
+    "text": "Y el autor subraya que esto de ninguna manera fue un desprecio hacia Honduras, su tierra natal, como muchos detractores quisieron interpretar después. Fue un acto de pura gratitud política. Los salvadoreños fueron quienes más tropas y sangre aportaron a su causa hasta el último minuto. Y ese profundo sentido de pertenencia regional realmente trasciende la muerte física de Morazán. De hecho, el libro nos ofrece una lectura bellísima de cómo la literatura asimiló esta tragedia. Con Pablo Neruda, ¿verdad?",
+    "kind": "p"
+  },
+  {
+    "start": 3261.83,
+    "end": 3293.83,
+    "text": "Exacto. A través de la pluma de Neruda en el Canto General. Neruda, al observar la Centroamérica fragmentada del siglo XX, escribe: «Alta es la noche y Morazán vigila». ¡Qué frase tan potente! Es hermosa. Y noten la elección de las palabras. No dice que la noche es oscura o larga. Dice que es alta. Es una noche histórica, como un muro monumental de desunión y fronteras que se eleva sobre los pueblos. Y ahí, Morazán es una conciencia insomne observando la patria que no pudo ser.",
+    "kind": "p"
+  },
+  {
+    "start": 3293.83,
+    "end": 3321.83,
+    "text": "Es una imagen súper desoladora. Pero me encanta que el poema no nos deja en la oscuridad. Neruda provoca un giro radical en la estrofa siguiente. Así es. Rompe ese letargo histórico con el verso «Hermanos, amanece». Esa simple palabra, hermanos, saca a Morazán del pasado y nos interpela directamente. Y si tomamos ese mensaje literario y lo combinamos con su testamento a la juventud, la lección para los estudiantes y futuros líderes es clarísima.",
+    "kind": "p"
+  },
+  {
+    "start": 3321.83,
+    "end": 3353.83,
+    "text": "¿Cómo adaptarías esa lección hoy? Pues Morazán nos enseñó, a través de sus aciertos y sus más dolorosos fracasos la inmensa diferencia entre soñar una idea hermosa y el trabajo meticuloso de construir instituciones reales. Hoy en día, invocar la Unión Centroamericana no significa resucitar un ejército o cruzar montañas a caballo para derrocar gobiernos vecinos. Absolutamente. Eso sería absurdo en nuestra época. Hoy esa visión de unidad se traduce o debería traducirse en mecanismos mucho más modernos y prácticos.",
+    "kind": "p"
+  },
+  {
+    "start": 3353.83,
+    "end": 3387.83,
+    "text": "O sea, uniones aduaneras ágiles, pasaportes regionales, redes de energía compartidas, incluso la protección conjunta de nuestros recursos naturales frente al cambio climático. Es adaptar ese ideal de que juntos tenemos más peso en el mundo pero utilizando el lenguaje diplomático y económico del siglo XXI. Exactamente. Se trata de honrar el espíritu ético del estadista sin caer en la trampa de ponerle palabras o armas modernas en la boca. Totalmente de acuerdo. Y si recogemos todas las piezas de este rompecabezas de hoy, nos damos cuenta del inmenso valor de bajar a estas figuras de sus pedestales de bronce.",
+    "kind": "p"
+  },
+  {
+    "start": 3387.83,
+    "end": 3415.83,
+    "text": "¿Volverlos humanos? Sí. Francisco Morazán no fue una estatua infalible. Fue un joven estudioso que aprendió de leyes entre montañas de archivos coloniales. Fue un líder brillante que cometió el trágico error de creer que podía imponer la unión de cinco realidades muy distintas a través de la fuerza militar. Un hombre de contradicciones. Exacto. Un hombre que quizás no supo leer el descontento de los más humildes, pero que al mismo tiempo demostró una integridad a prueba de balas. Sacrificó su inmensa fortuna y finalmente su vida por una convicción absoluta.",
+    "kind": "p"
+  },
+  {
+    "start": 3415.83,
+    "end": 3443.83,
+    "text": "Es a fin de cuentas la radiografía perfecta de un hombre de estado devorado por las circunstancias de su época. Pero cuyo esqueleto moral sigue intacto. Y el libro de Roque Godoy cierra este análisis con una ironía genealógica que de verdad me pareció literatura pura. A ver, cuéntanos esa ironía. Pues resulta que el hombre que nació en Honduras y entregó cada gota de su energía a borrar las fronteras de Centroamérica hoy tiene un árbol genealógico que es el reflejo exacto de su sueño roto.",
+    "kind": "p"
+  },
+  {
+    "start": 3443.83,
+    "end": 3471.83,
+    "text": "Las investigaciones muestran que sus descendientes están dispersados por Costa Rica, Guatemala, El Salvador y Nicaragua. Wow, por toda la región. Sí, su sangre quedó balcanizada. Fragmentada por toda la región que él intentó unir. Y de manera casi poética, trágica más bien, hoy no se ha identificado con certeza documental a un solo descendiente directo de su línea que viva en su natal Honduras. Qué metáfora tan profundamente dolorosa de nuestra realidad geopolítica.",
+    "kind": "p"
+  },
+  {
+    "start": 3471.83,
+    "end": 3501.83,
+    "text": "Y creo, fíjate, que esto nos deja el terreno preparado para una reflexión final. Algo que quienes nos escuchan deberían llevarse mucho más allá de esta conversación. A ver, ¿cuál sería esa reflexión? Si retrocedemos a la década de 1830, vemos a Morazán arriesgando su vida y su riqueza para conectar a un puñado de provincias completamente aisladas. Lo intenta en una era de caminos de herradura, de selvas letales, donde coordinar una simple reunión tomaba semanas de viaje al lomo de mula.",
+    "kind": "p"
+  },
+  {
+    "start": 3501.83,
+    "end": 3529.83,
+    "text": "¡Contra viento y marea! Él peleó contra la cordillera y la selva para unirnos. Hoy en día, nosotros habitamos la era del Internet de alta velocidad, del comercio globalizado y la hiperconectividad. Un mensaje cruza de San José a Tegucigalpa en milisegundos. Así es, con un solo clic. Y con estas herramientas en nuestro favor, la pregunta es ineludible. ¿Cuál es nuestra excusa para mantenernos tan fragmentados?",
+    "kind": "p"
+  },
+  {
+    "start": 3529.83,
+    "end": 3561.83,
+    "text": "O sea, ¿qué muros mentales, trabas aduaneras o fronteras políticas seguimos alimentando hoy que nos impiden verdaderamente amanecer como región? Uf, es una interrogante que golpea duro. Y tal vez la próxima vez que alguien vea un viejo billete de cinco lempiras con su perfil o pase frente a esa estatua de bronce inamovible en cualquier plaza centroamericana, la mente ya no se vaya al mito escolar de la oreja perdida. Ojalá, en cambio, pensemos en el peso de las fronteras que nosotros mismos hoy seguimos decidiendo sostener.",
+    "kind": "p"
+  },
+  {
+    "start": 3561.83,
+    "end": 3574.53,
+    "text": "Muchísimas gracias por acompañarnos en este análisis profundo por la historia, las contradicciones y el verdadero legado de Francisco Morazán. Sigan dudando de los mitos, escarbando en los libros y buscando siempre la humanidad detrás del bronce. Hasta la próxima.",
+    "kind": "p"
   }
 ];
 
-export const duracionTotalSegundos = 2173.83;
+export const duracionTotalSegundos = 3574.51;
