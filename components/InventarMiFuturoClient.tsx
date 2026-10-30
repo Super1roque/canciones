@@ -23,6 +23,7 @@ export default function InventarMiFuturoClient({
   etiqueta = 'corridos.online · Mi Historia',
   invitacion = 'Escribí la tuya y creá tu propio libro',
   remate = 'GRATIS',
+  firma = '✨ Esta historia se escribió con Mi Historia',
   cta = { texto: '🎤 Conocer corridos.online', href: 'https://corridos.online' },
   pie,
 }: {
@@ -36,6 +37,7 @@ export default function InventarMiFuturoClient({
   etiqueta?: string;
   invitacion?: string;
   remate?: string;
+  firma?: string;
   cta?: { texto: string; href: string };
   // Bloque extra debajo del llamado final (en /morazan: el acceso para quien ya compró).
   pie?: ReactNode;
@@ -50,6 +52,9 @@ export default function InventarMiFuturoClient({
   const parrafoRef = useRef<HTMLParagraphElement>(null);
   const cueIndexRef = useRef(-1);
   const saltoPorClicRef = useRef(false);
+  const finalRef = useRef<HTMLDivElement>(null);
+  // Al terminar el audio (en /morazan, la muestra) la página baja sola al llamado del final.
+  const [termino, setTermino] = useState(false);
 
   const imagenesPorCue = imagenes.reduce<Record<number, ImagenInline[]>>((acc, img) => {
     (acc[img.afterCueIdx] ??= []).push(img);
@@ -133,11 +138,15 @@ export default function InventarMiFuturoClient({
         src={audioUrl}
         onTimeUpdate={alAvanzarTiempo}
         onSeeked={alAvanzarTiempo}
-        onPlay={() => { setReproduciendo(true); setYaEmpezo(true); }}
+        onPlay={() => { setReproduciendo(true); setYaEmpezo(true); setTermino(false); }}
         onPause={() => setReproduciendo(false)}
         onWaiting={() => setCargando(true)}
         onPlaying={() => setCargando(false)}
         onCanPlay={() => setCargando(false)}
+        onEnded={() => {
+          setTermino(true);
+          finalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }}
       />
 
       {/* Reproductor flotante — siempre a mano para pausar/reanudar sin perder el punto de lectura */}
@@ -287,10 +296,10 @@ export default function InventarMiFuturoClient({
           })}
         </div>
 
-        <div style={{ textAlign: 'center', margin: '3rem 0 0.5rem' }}>
+        <div ref={finalRef} style={{ textAlign: 'center', margin: '3rem 0 0.5rem' }}>
           <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(110,231,183,0.35), transparent)', marginBottom: '2rem' }} />
           <p className={baloo.className} style={{ fontSize: '1rem', color: '#6ee7b7', marginBottom: '0.35rem' }}>
-            ✨ Esta historia se escribió con Mi Historia
+            {firma}
           </p>
           <p style={{ fontSize: '0.9rem', color: 'rgba(234,255,245,0.75)', marginBottom: '1.75rem' }}>
             {invitacion} — <strong style={{ color: '#eafff5' }}>{remate}</strong>.
@@ -298,7 +307,7 @@ export default function InventarMiFuturoClient({
           <a
             href={cta.href}
             {...(cta.href.startsWith('https://wa.me/') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            className={`${baloo.className} cta-boton`}
+            className={`${baloo.className} cta-boton${termino ? ' cta-latido' : ''}`}
           >
             {cta.texto}
           </a>
@@ -433,6 +442,8 @@ export default function InventarMiFuturoClient({
         }
         .cta-boton:hover { transform: scale(1.05); }
         .cta-boton:active { transform: scale(0.97); }
+        .cta-latido { animation: latido 1.2s ease-in-out 0.6s 3; }
+        @keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); box-shadow: 0 10px 34px rgba(242,183,5,0.6); } }
 
         @media (max-width: 480px) {
           .barra-audio { padding: 0.55rem 0.9rem 0.5rem 0.55rem; gap: 0.7rem; }

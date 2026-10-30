@@ -59,6 +59,7 @@ export default async function MorazanPage({ searchParams }: { searchParams: Prom
         duracionTotal={DURACION_MUESTRA}
         imagenes={imagenesMorazan.filter((img) => img.afterCueIdx <= ULTIMO_CUE_MUESTRA)}
         etiqueta="Homenajes · Primer capítulo gratis"
+        firma="🎧 ¿Te gustó el primer capítulo?"
         invitacion="Siguen ocho capítulos, el epílogo y el podcast «Más allá del mito»"
         remate="casi una hora de audio"
         cta={
@@ -85,6 +86,7 @@ export default async function MorazanPage({ searchParams }: { searchParams: Prom
       duracionTotal={duracionTotalSegundos}
       imagenes={imagenesMorazan}
       etiqueta={checkout ? 'Homenajes · Audiolibro' : 'Homenajes · Audiolibro gratuito'}
+      firma="🇭🇳 Gracias por escuchar a Morazán"
       invitacion={checkout ? 'Comparte el primer capítulo, sobre todo con los jóvenes' : 'Escúchalo y compártelo, sobre todo con los jóvenes'}
       remate={checkout ? 'es gratis' : 'GRATIS'}
       cta={{
