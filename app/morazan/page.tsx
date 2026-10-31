@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import InventarMiFuturoClient from '@/components/InventarMiFuturoClient';
 import AccesoMorazan from '@/components/AccesoMorazan';
 import { cuesMorazan, duracionTotalSegundos } from '@/lib/morazanCues';
+import type { CuePárrafo } from '@/lib/inventarMiFuturoCues';
 import { imagenesMorazan } from '@/lib/morazanImagenes';
 import { checkoutMorazan, COOKIE_MORAZAN, tokenValido } from '@/lib/accesoAudiolibros';
 
@@ -15,7 +16,25 @@ import { checkoutMorazan, COOKIE_MORAZAN, tokenValido } from '@/lib/accesoAudiol
 const URL = 'https://corridos.online/morazan';
 // Último cue de la muestra (fin del capítulo 1) y duración de morazan/muestra.mp3.
 const ULTIMO_CUE_MUESTRA = 26;
-const DURACION_MUESTRA = 357.5;
+const DURACION_MUESTRA = 396.1;
+// La muestra termina con un aviso hablado (voz del narrador, después de la cortina de guitarra):
+// quien la escucha en el carro no ve la pantalla y, sin esto, parecía que el audio se había cortado.
+const AVISO_FIN_MUESTRA: CuePárrafo[] = [
+  { start: 358.1, end: 363.54, text: 'Aquí termina la muestra gratuita de «Morazán: entre la unión y la derrota».', kind: 'heading' },
+  {
+    start: 363.6,
+    end: 372.38,
+    text: 'Si quieres seguir escuchando, te esperan ocho capítulos más, el epílogo y el podcast «Más allá del mito»: casi una hora de historia.',
+    kind: 'p',
+  },
+  {
+    start: 372.46,
+    end: 388.02,
+    text: 'Cuando puedas, sin estar manejando, entra a corridos.online/morazan y toca el botón «Escuchar el libro completo». Es un solo pago de US$ 4.99, y el libro queda tuyo para siempre.',
+    kind: 'p',
+  },
+  { start: 388.08, end: 389.3, text: 'Gracias por escuchar.', kind: 'p' },
+];
 
 export async function generateMetadata(): Promise<Metadata> {
   const enVenta = !!checkoutMorazan();
@@ -52,10 +71,10 @@ export default async function MorazanPage({ searchParams }: { searchParams: Prom
   if (checkout && !compro) {
     return (
       <InventarMiFuturoClient
-        audioUrl="/api/morazan/audio?parte=muestra&v=1"
+        audioUrl="/api/morazan/audio?parte=muestra&v=2"
         titulo="Morazán"
         subtitulo="Entre la unión y la derrota"
-        cues={cuesMorazan.slice(0, ULTIMO_CUE_MUESTRA + 1)}
+        cues={[...cuesMorazan.slice(0, ULTIMO_CUE_MUESTRA + 1), ...AVISO_FIN_MUESTRA]}
         duracionTotal={DURACION_MUESTRA}
         imagenes={imagenesMorazan.filter((img) => img.afterCueIdx <= ULTIMO_CUE_MUESTRA)}
         etiqueta="Homenajes · Primer capítulo gratis"
