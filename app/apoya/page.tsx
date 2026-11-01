@@ -11,6 +11,10 @@ const URL = 'https://corridos.online/apoya';
 // Tiene que coincidir con el precio del plan en Hotmart.
 const PRECIO = 'US$ 2.99';
 const TITULO = 'Apoya a Armando Roque Godoy';
+// Para quien prefiere un aporte único fuera de Hotmart (remesa o depósito): la misma cuenta
+// que RickyMath usaba antes de cobrar por Hotmart.
+const CUENTA = { banco: 'Banco Atlántida', numero: '14720926485', titular: 'Armando Roque Godoy' };
+const WHATSAPP = '50496895978';
 const DESCRIPCION = `Hazte miembro por ${PRECIO} al mes y ayúdame a seguir haciendo videos de noticias y opinión.`;
 
 export const metadata: Metadata = {
@@ -132,7 +136,28 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           </div>
           <div>
             <p className={s.pregunta}>¿Puedo apoyar sin hacerme miembro?</p>
-            <p>¡Claro! Comparte mis videos y comenta: eso también me ayuda muchísimo.</p>
+            <p>
+              ¡Claro! Puedes enviarme una remesa o hacer un depósito del monto que quieras a mi cuenta bancaria:
+            </p>
+            <div className={s.cuenta}>
+              <p>
+                <strong>{CUENTA.banco}</strong>
+              </p>
+              <p>
+                Cuenta: <strong className={s.numeroCuenta}>{CUENTA.numero}</strong>
+              </p>
+              <p>A nombre de: {CUENTA.titular}</p>
+            </div>
+            <p>
+              Si lo haces,{' '}
+              <a
+                className={s.enlace}
+                href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola Armando, te envié un aporte para tus videos 🙌')}`}
+              >
+                avísame por WhatsApp
+              </a>{' '}
+              para agradecerte. Y comentar y compartir mis videos también me ayuda muchísimo.
+            </p>
           </div>
         </section>
       </div>
