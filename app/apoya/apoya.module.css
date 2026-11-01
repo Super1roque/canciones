@@ -11,7 +11,7 @@
 .contenido {
   max-width: 560px;
   margin: 0 auto;
-  padding: 40px 16px 64px;
+  padding: 20px 16px 64px;
 }
 
 .etiqueta {
@@ -19,9 +19,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
   color: #c8cedc;
 }
 
@@ -39,27 +40,19 @@
 
 .foto {
   display: block;
-  width: 160px;
-  height: 160px;
-  margin: 28px auto 0;
+  width: 104px;
+  height: 104px;
+  margin: 18px auto 0;
   border-radius: 50%;
-  border: 4px solid #e2232a;
+  border: 3px solid #e2232a;
   box-shadow: 0 12px 40px rgba(226, 35, 42, 0.35);
   object-fit: cover;
 }
 
-.nombre {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #dfe3ee;
-}
-
 .titulo {
-  margin-top: 20px;
+  margin-top: 14px;
   text-align: center;
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.15;
 }
@@ -69,16 +62,16 @@
 }
 
 .texto {
-  margin-top: 16px;
+  margin-top: 12px;
   text-align: center;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.55;
   color: #dfe3ee;
 }
 
 .tarjeta {
-  margin-top: 40px;
-  padding: 28px 22px;
+  margin-top: 22px;
+  padding: 20px 22px 26px;
   border: 2px solid #e2232a;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.05);

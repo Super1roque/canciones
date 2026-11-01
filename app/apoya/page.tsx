@@ -75,7 +75,6 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/apoya/armando.jpg" alt="Armando Roque Godoy" width={160} height={160} className={s.foto} />
-        <p className={s.nombre}>Armando Roque Godoy</p>
 
         <h1 className={s.titulo}>
           Si te gustan mis videos, <span className={s.resaltado}>ayúdame a seguir</span>
@@ -83,10 +82,6 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
         <p className={s.texto}>
           Soy Armando Roque Godoy. Hago videos de noticias y opinión sobre lo que pasa en Honduras y el
           mundo.
-        </p>
-        <p className={s.texto}>
-          Cada video lleva horas de investigación, guion, voz y edición. Con tu membresía puedo dedicarle más tiempo y
-          hacer más.
         </p>
 
         <section className={s.tarjeta}>
@@ -115,6 +110,12 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           )}
           <p className={s.nota}>Pago seguro con Hotmart. Cancelas cuando quieras, sin compromiso.</p>
         </section>
+
+        {/* Va después de la tarjeta: en el celular, el precio tiene que verse sin bajar. */}
+        <p className={s.texto}>
+          Cada video lleva horas de investigación, guion, voz y edición. Con tu membresía puedo dedicarle más tiempo y
+          hacer más.
+        </p>
 
         <section className={s.preguntas}>
           <h2 className={s.preguntasTitulo}>Preguntas frecuentes</h2>
