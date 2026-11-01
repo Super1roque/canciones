@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,
-    images: [{ url: '/apoya/og.jpg', width: 1200, height: 630, type: 'image/jpeg' }],
+    images: [{ url: '/apoya/og.jpg?v=2', width: 1200, height: 630, type: 'image/jpeg' }],
     url: URL,
     siteName: 'Canciones',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: ['/apoya/og.jpg'] },
+  twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: ['/apoya/og.jpg?v=2'] },
 };
 
 const BENEFICIOS = [
@@ -50,7 +50,7 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
       <div className={s.contenido}>
         <p className={s.etiqueta}>
           <span className={s.punto} />
-          NOTICIAS Y OPINIÓN · HONDURAS
+          NOTICIAS Y OPINIÓN · HONDURAS Y EL MUNDO
         </p>
 
         {recienPago ? (
@@ -73,12 +73,16 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           </section>
         ) : null}
 
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/apoya/armando.jpg" alt="Armando Roque Godoy" width={160} height={160} className={s.foto} />
+        <p className={s.nombre}>Armando Roque Godoy</p>
+
         <h1 className={s.titulo}>
           Si te gustan mis videos, <span className={s.resaltado}>ayúdame a seguir</span>
         </h1>
         <p className={s.texto}>
-          Soy Armando Roque Godoy. Hago videos de noticias y opinión sobre lo que pasa en Honduras: preguntas incómodas,
-          datos claros y sin quedarme callado.
+          Soy Armando Roque Godoy. Hago videos de noticias y opinión sobre lo que pasa en Honduras y el
+          mundo.
         </p>
         <p className={s.texto}>
           Cada video lleva horas de investigación, guion, voz y edición. Con tu membresía puedo dedicarle más tiempo y

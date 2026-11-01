@@ -37,8 +37,27 @@
   50% { opacity: 0.3; }
 }
 
+.foto {
+  display: block;
+  width: 160px;
+  height: 160px;
+  margin: 28px auto 0;
+  border-radius: 50%;
+  border: 4px solid #e2232a;
+  box-shadow: 0 12px 40px rgba(226, 35, 42, 0.35);
+  object-fit: cover;
+}
+
+.nombre {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #dfe3ee;
+}
+
 .titulo {
-  margin-top: 28px;
+  margin-top: 20px;
   text-align: center;
   font-size: 36px;
   font-weight: 800;
