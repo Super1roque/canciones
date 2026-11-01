@@ -1,0 +1,205 @@
+.pagina {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 70% 40% at 0% 30%, rgba(150, 20, 28, 0.35), transparent 70%),
+    radial-gradient(ellipse 70% 40% at 100% 0%, rgba(20, 50, 120, 0.4), transparent 70%),
+    #0b0f1e;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.contenido {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 40px 16px 64px;
+}
+
+.etiqueta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #c8cedc;
+}
+
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2232a;
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  50% { opacity: 0.3; }
+}
+
+.titulo {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.resaltado {
+  color: #ffd600;
+}
+
+.texto {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.55;
+  color: #dfe3ee;
+}
+
+.tarjeta {
+  margin-top: 40px;
+  padding: 28px 22px;
+  border: 2px solid #e2232a;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.tarjetaEtiqueta {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #ff6b70;
+}
+
+.precio {
+  margin-top: 6px;
+  text-align: center;
+}
+
+.monto {
+  font-size: 48px;
+  font-weight: 800;
+}
+
+.periodo {
+  font-size: 18px;
+  color: #c8cedc;
+}
+
+.beneficios {
+  list-style: none;
+  margin-top: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.beneficio {
+  display: flex;
+  gap: 14px;
+}
+
+.icono {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.beneficioTitulo {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.beneficioTexto {
+  margin-top: 2px;
+  line-height: 1.5;
+  color: #c8cedc;
+}
+
+.boton {
+  display: block;
+  margin-top: 30px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: #e2232a;
+  color: #fff;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(226, 35, 42, 0.35);
+  transition: background 0.2s;
+}
+
+.boton:hover {
+  background: #c81d23;
+}
+
+.pronto {
+  margin-top: 30px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c8cedc;
+}
+
+.nota {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 14px;
+  color: #9aa2b6;
+}
+
+.gracias {
+  margin-top: 28px;
+  padding: 26px 22px;
+  border: 1px solid rgba(255, 214, 0, 0.4);
+  border-radius: 24px;
+  background: rgba(255, 214, 0, 0.08);
+  text-align: center;
+}
+
+.graciasIcono {
+  font-size: 48px;
+}
+
+.graciasTitulo {
+  margin-top: 8px;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.botonGrupo {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: #25d366;
+  color: #062b14;
+  font-size: 18px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.preguntas {
+  margin-top: 44px;
+  display: grid;
+  gap: 18px;
+  color: #c8cedc;
+  line-height: 1.5;
+}
+
+.preguntasTitulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pregunta {
+  font-weight: 700;
+  color: #fff;
+}

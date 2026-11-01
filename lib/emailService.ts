@@ -66,6 +66,40 @@ export async function avisarVentaAudiolibro(
   }
 }
 
+// Altas y bajas de la membresía de /apoya: Armando agrega o saca a la persona del grupo de WhatsApp.
+export async function avisarMiembroApoya(
+  tipo: 'alta' | 'baja',
+  miembro: { nombre: string; email: string; telefono: string },
+  motivo?: string,
+): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const datos = `
+    <ul>
+      <li><strong>Nombre:</strong> ${esc(miembro.nombre || '—')}</li>
+      <li><strong>Correo:</strong> ${esc(miembro.email || '—')}</li>
+      <li><strong>Teléfono:</strong> ${esc(miembro.telefono || '—')}</li>
+    </ul>`;
+  try {
+    const { error } = await resend.emails.send({
+      from: 'Canciones <onboarding@resend.dev>',
+      to: ADMIN_EMAIL,
+      subject: tipo === 'alta' ? `🙌 Nuevo miembro — ${miembro.nombre || miembro.email}` : `👋 Baja de miembro — ${miembro.nombre || miembro.email}`,
+      html:
+        tipo === 'alta'
+          ? `<p>Alguien se hizo miembro en corridos.online/apoya.</p>${datos}
+             <p>Cuando pida entrar al grupo de WhatsApp, apruébalo si el número coincide.</p>`
+          : `<p>Un miembro dejó la membresía${motivo ? ` (${esc(motivo)})` : ''}.</p>${datos}
+             <p>Si canceló la renovación, ya pagó su mes en curso: sácalo del grupo cuando ese mes termine.
+             Si fue reembolso o contracargo, sácalo ya.</p>`,
+    });
+    if (error) console.error('Resend devolvió un error al avisar del miembro:', error);
+  } catch (e) {
+    console.error('avisarMiembroApoya falló:', e);
+  }
+}
+
 export async function avisarNuevaVerificacion(telefono: string): Promise<void> {
   const resend = getResend();
   if (!resend) return;
