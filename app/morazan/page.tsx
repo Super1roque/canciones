@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import InventarMiFuturoClient from '@/components/InventarMiFuturoClient';
-import AccesoMorazan from '@/components/AccesoMorazan';
+import AccesoAudiolibro from '@/components/AccesoAudiolibro';
 import { cuesMorazan, duracionTotalSegundos } from '@/lib/morazanCues';
 import type { CuePárrafo } from '@/lib/inventarMiFuturoCues';
 import { imagenesMorazan } from '@/lib/morazanImagenes';
@@ -86,7 +86,7 @@ export default async function MorazanPage({ searchParams }: { searchParams: Prom
             ? { texto: '🎧 Abrir mi libro completo', href: '#acceso' }
             : { texto: '🎧 Escuchar el libro completo', href: checkout }
         }
-        pie={<AccesoMorazan key="acceso" />}
+        pie={<AccesoAudiolibro key="acceso" endpoint="/api/morazan/desbloquear" destino="/morazan" />}
       />
     );
   }

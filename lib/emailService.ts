@@ -43,6 +43,8 @@ export async function avisarVentaAudiolibro(
   comprador: string,
   precio?: number,
   moneda?: string,
+  // Dónde se abre el libro, si no es corridos.online/<producto> (ej. «historias/copan-ruinas»).
+  ruta: string = producto,
 ): Promise<void> {
   const resend = getResend();
   if (!resend) return;
@@ -57,7 +59,7 @@ export async function avisarVentaAudiolibro(
           <li><strong>Comprador:</strong> ${comprador}</li>
           ${precio ? `<li><strong>Precio:</strong> ${precio} ${moneda || ''}</li>` : ''}
         </ul>
-        <p>El acceso ya quedó activo: el comprador lo abre en corridos.online/${producto} con su correo.</p>
+        <p>El acceso ya quedó activo: el comprador lo abre en corridos.online/${ruta} con su correo.</p>
       `,
     });
     if (error) console.error('Resend devolvió un error al avisar de la venta:', error);

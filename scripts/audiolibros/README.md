@@ -52,3 +52,20 @@ Python 3 con `faster-whisper` y `numpy`, y `ffmpeg`.
 - Pocos y justificados: ~1 Foley cada 2 minutos como máximo. Más que eso suena a radionovela.
 - La duración del MP3 no cambia, así que los cues siguen valiendo después de mezclar.
 - Guardar `creditos.txt` de cada libro (en el Escritorio del autor) por si un patrocinador los pide.
+
+## Historias de Honduras (/historias)
+
+Libros de pueblos, ciudades y lugares con una sola plantilla: `app/historias/[slug]/page.tsx` y el
+índice `app/historias/page.tsx`. Un libro nuevo no lleva página ni rutas propias:
+
+1. **Texto.** Solo datos verificables, con fuentes anotadas; lo que sea leyenda o tradición oral se dice como tal.
+2. **Cues.** `alinear-cues.py libro.epub audio.mp3 lib/historias/<slug>Cues.ts cues<Nombre>` (mismo proceso de arriba).
+3. **Fotos.** Subirlas a Storage como `historias/<slug>/fotos/00.jpg, 01.jpg…` y listarlas en `lib/historias/<slug>Imagenes.ts`
+   con `src: '/api/historias/<slug>/foto/00.jpg'`. Portada para compartir: `public/historias/<slug>/portada.jpg` (1200×675).
+4. **Audio.** `storage.js subir mezcla.mp3 historias/<slug>/audio.mp3`.
+5. **Registro.** Agregar el libro a `HISTORIAS` en `lib/historias/index.ts` (slug, lugar, departamento, título,
+   descripción, cues, duración, imágenes, `versionAudio`). Gratis por defecto.
+6. **Venta (opcional).** Cortar `muestra.mp3` (hasta el fin del capítulo 1, con aviso hablado como en Morazán),
+   subirla a `historias/<slug>/muestra.mp3`, llenar `muestra` en el registro, crear el producto en Hotmart con
+   página de agradecimiento `https://corridos.online/historias/<slug>?compra=ok`, y en Render: `,<id>:<slug>` en
+   `HOTMART_PRODUCTOS` y `HISTORIA_<SLUG>_CHECKOUT` (slug en mayúsculas, guiones como `_`). Sin esa variable, gratis.

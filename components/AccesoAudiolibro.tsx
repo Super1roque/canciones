@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-// Pie de /morazan mientras el libro está a la venta: el comprador escribe el correo con el
-// que pagó en Hotmart y el libro completo se abre en este navegador. Hotmart lo devuelve a
-// /morazan?compra=ok después de pagar; como el aviso de Hotmart (webhook) puede tardar unos
+// Pie de un audiolibro a la venta (/morazan, /historias/<slug>): el comprador escribe el correo
+// con el que pagó en Hotmart y el libro completo se abre en este navegador. Hotmart lo devuelve a
+// la página con ?compra=ok después de pagar; como el aviso de Hotmart (webhook) puede tardar unos
 // segundos más que el comprador, en ese caso se reintenta solo durante medio minuto.
-export default function AccesoMorazan() {
+export default function AccesoAudiolibro({ endpoint, destino }: { endpoint: string; destino: string }) {
   const [abierto, setAbierto] = useState(false);
   const [recienCompro, setRecienCompro] = useState(false);
   const [email, setEmail] = useState('');
@@ -28,14 +28,14 @@ export default function AccesoMorazan() {
     const intentos = recienCompro ? 8 : 1;
     for (let i = 0; i < intentos; i++) {
       try {
-        const r = await fetch('/api/morazan/desbloquear', {
+        const r = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
         });
         const datos = await r.json();
         if (datos.ok) {
-          window.location.href = '/morazan';
+          window.location.href = destino;
           return;
         }
         if (datos.error) {

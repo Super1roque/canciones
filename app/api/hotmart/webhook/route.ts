@@ -1,6 +1,7 @@
 import { registrarCompra, revocarCompra } from '@/lib/accesoAudiolibros';
 import { avisarMiembroApoya, avisarVentaAudiolibro } from '@/lib/emailService';
 import { darDeBaja, registrarCobro } from '@/lib/miembrosApoya';
+import { getHistoria } from '@/lib/historias';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,8 @@ export const runtime = 'nodejs';
 //
 // HOTMART_PRODUCTOS asocia cada producto de Hotmart con su audiolibro: "123456:morazan".
 // Así un mismo webhook sirve para los próximos libros que se vendan. La membresía mensual
-// de /apoya entra igual, con el nombre "apoya" ("789012:apoya").
+// de /apoya entra igual, con el nombre "apoya" ("789012:apoya"), y los libros de /historias con
+// su slug ("345678:copan-ruinas").
 const DAN_ACCESO = new Set(['PURCHASE_APPROVED', 'PURCHASE_COMPLETE']);
 const QUITAN_ACCESO = new Set(['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK', 'PURCHASE_CANCELED']);
 
@@ -52,7 +54,10 @@ export async function POST(request: Request) {
         nombre: datos.buyer?.name || '',
         evento,
       });
-      if (nueva) await avisarVentaAudiolibro(producto, email, datos.purchase?.price?.value, datos.purchase?.price?.currency_value);
+      if (nueva) {
+        const ruta = getHistoria(producto) ? `historias/${producto}` : producto;
+        await avisarVentaAudiolibro(producto, email, datos.purchase?.price?.value, datos.purchase?.price?.currency_value, ruta);
+      }
     } else if (QUITAN_ACCESO.has(evento)) {
       await revocarCompra(transaccion, evento);
     }
