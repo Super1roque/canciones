@@ -7,13 +7,22 @@ import s from './historias.module.css';
 
 // Índice de «Historias de Honduras»: una tarjeta por libro. La portada de cada tarjeta es la
 // misma imagen que se comparte (public/historias/<slug>/portada.jpg).
-const TITULO = 'Historias de Honduras — audiolibros de pueblos y lugares';
-const DESCRIPCION = 'La historia de los pueblos, ciudades y lugares icónicos de Honduras, contada para escucharla.';
+const TITULO = '🎧 Historias de Honduras — audiolibros';
+const DESCRIPCION =
+  'San Pedro Sula, Morazán y más: la historia de Honduras contada con voz, fotos y sonidos. Escucha gratis el primer capítulo.';
 
 export const metadata: Metadata = {
   title: TITULO,
   description: DESCRIPCION,
-  openGraph: { title: TITULO, description: DESCRIPCION, url: 'https://corridos.online/historias', siteName: 'Canciones', type: 'website' },
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    images: [{ url: '/historias/og.jpg', width: 1200, height: 630, type: 'image/jpeg' }],
+    url: 'https://corridos.online/historias',
+    siteName: 'Canciones',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: ['/historias/og.jpg'] },
 };
 
 // Libros que tienen su propia página fuera de /historias pero también se muestran en la galería.
@@ -21,7 +30,7 @@ function otrosLibros() {
   return [
     {
       href: '/morazan',
-      portada: '/morazan/portada.jpg',
+      portada: '/morazan/portada-venta.jpg',
       lugar: 'Homenajes · Francisco Morazán',
       titulo: 'Morazán: entre la unión y la derrota',
       descripcion: 'Un homenaje a Francisco Morazán (1792-1842): su vida, la Federación Centroamericana y su legado, con un podcast al final.',

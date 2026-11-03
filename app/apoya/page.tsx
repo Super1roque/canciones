@@ -125,7 +125,7 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
         <a href="/historias" className={s.libros}>
           <div className={s.librosPortadas}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/morazan/portada.jpg" alt="Morazán: entre la unión y la derrota" className={s.librosAtras} />
+            <img src="/morazan/portada-venta.jpg" alt="Morazán: entre la unión y la derrota" className={s.librosAtras} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/historias/san-pedro-sula/portada.jpg" alt="San Pedro Sula: el valle que se hizo ciudad" className={s.librosAdelante} />
             <span className={s.librosSello}>🎧 Primer capítulo gratis</span>
