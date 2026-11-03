@@ -121,6 +121,25 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           hacer más.
         </p>
 
+        {/* Invitación a los audiolibros: las portadas son las mismas imágenes que se comparten. */}
+        <a href="/historias" className={s.libros}>
+          <div className={s.librosPortadas}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/morazan/portada.jpg" alt="Morazán: entre la unión y la derrota" className={s.librosAtras} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/historias/san-pedro-sula/portada.jpg" alt="San Pedro Sula: el valle que se hizo ciudad" className={s.librosAdelante} />
+            <span className={s.librosSello}>🎧 Primer capítulo gratis</span>
+          </div>
+          <p className={s.librosEtiqueta}>TAMBIÉN ESCRIBO</p>
+          <p className={s.librosTitulo}>
+            Historias de Honduras <span className={s.librosResaltado}>en audiolibro</span>
+          </p>
+          <p className={s.librosTexto}>
+            San Pedro Sula, Morazán y más: con mi voz, fotos, sonidos y el texto que avanza mientras escuchas.
+          </p>
+          <span className={s.librosBoton}>Escuchar mis audiolibros →</span>
+        </a>
+
         <section className={s.preguntas}>
           <h2 className={s.preguntasTitulo}>Preguntas frecuentes</h2>
           <div>

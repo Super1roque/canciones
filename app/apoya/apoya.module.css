@@ -238,3 +238,112 @@
   color: #25d366;
   font-weight: 700;
 }
+
+.libros {
+  display: block;
+  margin-top: 36px;
+  padding: 22px 20px 24px;
+  border-radius: 24px;
+  border: 2px solid #6ee7b7;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(110, 231, 183, 0.22), transparent 70%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.5);
+  animation: brillo 2.6s ease-in-out infinite;
+  text-align: center;
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.libros:hover {
+  transform: translateY(-3px);
+}
+
+@keyframes brillo {
+  50% { box-shadow: 0 0 34px 2px rgba(110, 231, 183, 0.35); }
+}
+
+.librosPortadas {
+  position: relative;
+  height: 190px;
+  margin: 0 auto;
+  max-width: 400px;
+}
+
+.librosAtras,
+.librosAdelante {
+  position: absolute;
+  width: 72%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+.librosAtras {
+  left: 0;
+  top: 0;
+  transform: rotate(-5deg);
+  opacity: 0.85;
+}
+
+.librosAdelante {
+  right: 0;
+  top: 34px;
+  transform: rotate(4deg);
+}
+
+.librosSello {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%) rotate(-2deg);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ffd600;
+  color: #1a1400;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.librosEtiqueta {
+  margin-top: 26px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #6ee7b7;
+}
+
+.librosTitulo {
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.librosResaltado {
+  color: #6ee7b7;
+}
+
+.librosTexto {
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #dfe3ee;
+}
+
+.librosBoton {
+  display: block;
+  margin-top: 20px;
+  padding: 15px 22px;
+  border-radius: 16px;
+  background: #6ee7b7;
+  color: #062b1d;
+  font-size: 19px;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(110, 231, 183, 0.3);
+}
