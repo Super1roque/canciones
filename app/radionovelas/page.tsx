@@ -9,8 +9,8 @@ import r from './radionovelas.module.css';
 
 // Índice de radionovelas. Usa las mismas tarjetas que la galería de /historias.
 const TITULO = '🎙️ Radionovelas — corridos.online';
-// Mientras haya una sola radionovela, la imagen para compartir es la suya.
-const IMAGEN = `/radionovelas/${RADIONOVELAS[0].slug}/og.jpg`;
+// La imagen para compartir muestra las portadas de todas las radionovelas (se hace con un script fuera del repo).
+const IMAGEN = '/radionovelas/og.jpg';
 const DESCRIPCION = 'Historias hondureñas de ficción, contadas por capítulos con voces, música y sonidos. El primer capítulo es gratis.';
 
 export const metadata: Metadata = {

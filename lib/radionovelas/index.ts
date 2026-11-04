@@ -1,4 +1,5 @@
 import capitulosElCamino from './elCaminoCapitulos.json';
+import capitulosDonMario from './donMarioCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -51,6 +52,30 @@ export const RADIONOVELAS: Radionovela[] = [
     aviso:
       'El camino que dejamos atrás es una obra de ficción. Sus personajes no existen, pero sus historias se parecen a las de miles de familias hondureñas.',
     capitulos: capitulosElCamino as Capitulo[],
+    versionAudio: '1',
+  },
+  {
+    slug: 'las-giras-de-don-mario',
+    titulo: 'Las giras de don Mario',
+    lema: 'Una radionovela de humor sobre un político, un cobrador… y una tasita de café.',
+    descripcion:
+      'Años 80: don Mario recorre los pueblos en su jeep, perseguido por el cobrador de don Jaime, hasta que una viejecita le ofrece una tasita de café. Una comedia en 4 capítulos de Armando Roque Godoy, inspirada en una anécdota popular hondureña.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
+      M: { nombre: 'Don Mario', edad: 'político de antaño', color: '#ff6b6b', inicial: 'M' },
+      T: { nombre: 'Toribio', edad: 'su chofer', color: '#7ee0a1' },
+      R: { nombre: 'Doña Rosaura', edad: 'correligionaria', color: '#ff8fab', inicial: 'R' },
+      A: { nombre: 'El alcalde', edad: 'Santa Rita', color: '#ffd166', inicial: 'Al' },
+      G: { nombre: 'Lic. Arriaga', edad: 'el cobrador', color: '#a0b0c4', inicial: 'Ar' },
+      P: { nombre: 'Padre Anselmo', edad: 'San Isidro', color: '#c9a27e' },
+      O: { nombre: 'Doña Toña', edad: 'San Isidro', color: '#5ed6d6', inicial: 'To' },
+      L: { nombre: 'Doña Lupita', edad: 'la del café', color: '#b79cff', inicial: 'L' },
+      U: { nombre: 'La de la pulpería', edad: 'la aldea', color: '#5ed6d6', inicial: 'Pu' },
+      X: { nombre: 'El locutor', edad: 'la radio', color: '#bee65a' },
+    },
+    aviso:
+      'Las giras de don Mario es una obra de ficción y humor, inspirada en una anécdota popular hondureña. Cualquier parecido con la realidad es pura coincidencia.',
+    capitulos: capitulosDonMario as Capitulo[],
     versionAudio: '1',
   },
 ];
