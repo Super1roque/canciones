@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import AccesoMiembro from './AccesoMiembro';
 import type { Capitulo, Personaje } from '@/lib/radionovelas';
 import s from './RadionovelaClient.module.css';
 
@@ -179,40 +180,18 @@ export default function RadionovelaClient(p: Props) {
 }
 
 function Candado({ checkout }: { checkout: string | null }) {
-  const [email, setEmail] = useState('');
-  const [estado, setEstado] = useState<'' | 'enviando' | 'no' | 'error'>('');
-  const [mensaje, setMensaje] = useState('');
-  const abrir = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEstado('enviando');
-    const r = await fetch('/api/apoya/desbloquear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
-      .then((x) => x.json())
-      .catch(() => ({ ok: false, error: 'No se pudo comprobar. Intenta de nuevo.' }));
-    if (r.ok) return window.location.reload();
-    setEstado(r.error ? 'error' : 'no');
-    setMensaje(r.error || 'No encontramos una membresía activa con ese correo. Usa el mismo con el que pagaste en Hotmart.');
-  };
   return (
     <section className={s.candado}>
       <p className={s.candadoIcono}>🔒</p>
       <h3>Este capítulo es para miembros</h3>
       <p>
-        Con la membresía de <strong>US$ 2.99 al mes</strong> escuchás la radionovela completa, sin esperar los cortes de TikTok, y además
-        entrás al grupo privado de WhatsApp.
+        Con la membresía de <strong>US$ 2.99 al mes</strong> escuchás todas las radionovelas completas, sin esperar los cortes de TikTok,
+        y además entrás al grupo privado de WhatsApp.
       </p>
       <a href={checkout || '/apoya'} className={s.botonMiembro}>
         Hacerme miembro
       </a>
-      <form onSubmit={abrir} className={s.form}>
-        <label htmlFor="correo-miembro">¿Ya sos miembro? Escribí el correo con el que pagás:</label>
-        <div>
-          <input id="correo-miembro" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" />
-          <button type="submit" disabled={estado === 'enviando'}>
-            {estado === 'enviando' ? 'Revisando…' : 'Abrir'}
-          </button>
-        </div>
-        {estado === 'no' || estado === 'error' ? <p className={s.formError}>{mensaje}</p> : null}
-      </form>
+      <AccesoMiembro etiqueta="¿Ya sos miembro? Escribí el correo con el que pagás:" clases={{ form: s.form, error: s.formError }} />
     </section>
   );
 }

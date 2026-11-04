@@ -80,6 +80,13 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
             ) : (
               <p className={s.texto}>En unas horas te escribo por WhatsApp para agregarte al grupo de miembros.</p>
             )}
+            <a href="/radionovelas" className={s.botonRadio}>
+              🎙️ Escuchar las radionovelas completas
+            </a>
+            <p className={s.nota}>
+              La primera vez te va a pedir un correo: escribe el mismo con el que pagaste en Hotmart. Con eso se abren todas, las de ahora y
+              las que vengan.
+            </p>
           </section>
         ) : null}
 

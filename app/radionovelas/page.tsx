@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import AccesoMiembro from '@/components/AccesoMiembro';
+import { COOKIE_MIEMBRO, checkoutApoya, miembroActivo } from '@/lib/miembrosApoya';
 import { RADIONOVELAS } from '@/lib/radionovelas';
 import s from '../historias/historias.module.css';
+import r from './radionovelas.module.css';
 
 // Índice de radionovelas. Usa las mismas tarjetas que la galería de /historias.
 const TITULO = '🎙️ Radionovelas — corridos.online';
@@ -23,7 +27,9 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: [IMAGEN] },
 };
 
-export default function RadionovelasPage() {
+export default async function RadionovelasPage() {
+  const miembro = await miembroActivo((await cookies()).get(COOKIE_MIEMBRO)?.value);
+  const checkout = checkoutApoya();
   return (
     <main className={s.pagina}>
       <div className={s.contenido}>
@@ -32,6 +38,19 @@ export default function RadionovelasPage() {
           <span className={s.resaltado}>Radionovelas</span>
         </h1>
         <p className={s.texto}>Historias de ficción por capítulos, con voces, música y sonidos. El primer capítulo es gratis; los demás, para los miembros.</p>
+        {miembro ? (
+          <p className={r.miembro}>✅ Sos miembro: todas las radionovelas están abiertas.</p>
+        ) : (
+          <section className={r.acceso}>
+            <p className={r.accesoTitulo}>🎙️ Escuchalas completas con la membresía</p>
+            <p className={r.accesoTexto}>US$ 2.99 al mes: todas las radionovelas, las de ahora y las que vengan, más el grupo privado de WhatsApp.</p>
+            <a href={checkout || '/apoya'} className={r.boton}>
+              Hacerme miembro
+            </a>
+            <AccesoMiembro etiqueta="¿Ya sos miembro? Escribí tu correo y se abren todas:" clases={{ form: r.form, error: r.error }} />
+          </section>
+        )}
+
         <ul className={s.lista}>
           {RADIONOVELAS.map((r) => (
             <li key={r.slug}>

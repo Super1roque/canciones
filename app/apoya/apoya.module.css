@@ -391,3 +391,15 @@
   color: #1a1000;
   box-shadow: 0 10px 30px rgba(242, 160, 61, 0.3);
 }
+
+.botonRadio {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: #f2a03d;
+  color: #1a1000;
+  font-size: 18px;
+  font-weight: 800;
+  text-decoration: none;
+}
