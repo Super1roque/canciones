@@ -1,12 +1,17 @@
+import crypto from 'node:crypto';
 import { getDb } from '@/lib/firebaseService';
 
-// Membresía mensual de /apoya (suscripción de Hotmart). No abre nada en el sitio: el miembro
-// entra al grupo privado de WhatsApp, que Armando aprueba a mano con los datos que le llegan
-// por correo. Esto solo lleva la cuenta de quién está activo para avisar altas y bajas una vez.
+// Membresía mensual de /apoya (suscripción de Hotmart). El miembro entra al grupo privado de WhatsApp
+// (Armando lo aprueba a mano con los datos que le llegan por correo) y además escucha completas las
+// radionovelas (/radionovelas): las abre en su navegador con el correo con que paga, sin contraseña.
+// Esto lleva la cuenta de quién está activo, para avisar altas y bajas una vez y para dar ese acceso.
 //
 // Un documento por suscriptor de Hotmart (las renovaciones mensuales traen el mismo código):
-//   { email, nombre, telefono, estado: 'activo' | 'baja', evento, cobros, creado, actualizado }
+//   { email, nombre, telefono, estado: 'activo' | 'baja', evento, cobros, token?, creado, actualizado }
+// El token (aleatorio, va en la cookie en lugar del correo) se crea la primera vez que el miembro abre
+// algo en el sitio. El acceso se comprueba en cada pedido: cuando hay baja, deja de valer solo.
 const COLECCION = 'miembros_apoya';
+export const COOKIE_MIEMBRO = 'miembro_apoya';
 
 // La página muestra el botón de pago solo cuando el checkout está configurado en Render.
 export function checkoutApoya(): string | null {
@@ -56,4 +61,22 @@ export async function darDeBaja(suscriptor: string, evento: string) {
   if (!actual.exists || actual.get('estado') !== 'activo') return null;
   await ref.update({ estado: 'baja', evento, actualizado: new Date().toISOString() });
   return { email: actual.get('email') as string, nombre: actual.get('nombre') as string, telefono: actual.get('telefono') as string };
+}
+
+// Token del miembro activo con ese correo (lo crea si todavía no tiene), o null si no es miembro activo.
+export async function tokenMiembro(email: string): Promise<string | null> {
+  const snap = await getDb().collection(COLECCION).where('email', '==', email.trim().toLowerCase()).get();
+  const doc = snap.docs.find((d) => d.get('estado') === 'activo');
+  if (!doc) return null;
+  const actual = doc.get('token') as string | undefined;
+  if (actual) return actual;
+  const token = crypto.randomBytes(24).toString('hex');
+  await doc.ref.update({ token, actualizado: new Date().toISOString() });
+  return token;
+}
+
+export async function miembroActivo(token: string | undefined): Promise<boolean> {
+  if (!token || !/^[0-9a-f]{48}$/.test(token)) return false;
+  const snap = await getDb().collection(COLECCION).where('token', '==', token).limit(1).get();
+  return !!snap.docs[0] && snap.docs[0].get('estado') === 'activo';
 }

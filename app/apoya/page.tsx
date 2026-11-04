@@ -4,7 +4,8 @@ import s from './apoya.module.css';
 
 // Membresía mensual para apoyar los videos de noticias y opinión. Se cobra como suscripción
 // en Hotmart (APOYA_HOTMART_CHECKOUT); Hotmart no acepta donaciones sin nada a cambio, por eso
-// es una membresía con beneficios: el grupo privado de WhatsApp y la votación del próximo tema.
+// es una membresía con beneficios: el grupo privado de WhatsApp, la votación del próximo tema y las radionovelas
+// completas (/radionovelas, que se abren con el correo del miembro).
 // Al pagar, Hotmart devuelve a /apoya?compra=ok, donde aparece el enlace del grupo
 // (APOYA_WHATSAPP_GRUPO). El grupo pide aprobación del administrador: el enlace solo no basta.
 const URL = 'https://corridos.online/apoya';
@@ -41,6 +42,11 @@ const BENEFICIOS = [
     icono: '🗳️',
     titulo: 'Tú eliges el próximo tema',
     texto: 'Cada mes los miembros votan entre varias propuestas cuál será el tema de uno de mis videos.',
+  },
+  {
+    icono: '🎙️',
+    titulo: 'Radionovelas completas',
+    texto: 'Escuchas todas las temporadas completas desde el primer día, sin esperar los cortes de TikTok.',
   },
 ];
 
