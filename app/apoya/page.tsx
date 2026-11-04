@@ -127,6 +127,23 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           hacer más.
         </p>
 
+        {/* La radionovela va primero: es lo que incluye la membresía y a lo que llegan desde TikTok. */}
+        <a href="/radionovelas" className={`${s.libros} ${s.radio}`}>
+          <div className={s.radioPortada}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/radionovelas/el-camino-que-dejamos-atras/og.jpg" alt="El camino que dejamos atrás, radionovela" />
+            <span className={`${s.librosSello} ${s.radioSello}`}>⭐ Incluida en la membresía</span>
+          </div>
+          <p className={`${s.librosEtiqueta} ${s.radioEtiqueta}`}>NUEVA · RADIONOVELA</p>
+          <p className={s.librosTitulo}>
+            El camino que <span className={s.radioResaltado}>dejamos atrás</span>
+          </p>
+          <p className={s.librosTexto}>
+            8 capítulos sobre los que se van y los que se quedan. El primero es gratis; con la membresía la escuchas completa.
+          </p>
+          <span className={`${s.librosBoton} ${s.radioBoton}`}>Escuchar la radionovela →</span>
+        </a>
+
         {/* Invitación a los audiolibros: las portadas son las mismas imágenes que se comparten. */}
         <a href="/historias" className={s.libros}>
           <div className={s.librosPortadas}>
