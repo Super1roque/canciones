@@ -5,12 +5,22 @@ import s from '../historias/historias.module.css';
 
 // Índice de radionovelas. Usa las mismas tarjetas que la galería de /historias.
 const TITULO = '🎙️ Radionovelas — corridos.online';
+// Mientras haya una sola radionovela, la imagen para compartir es la suya.
+const IMAGEN = `/radionovelas/${RADIONOVELAS[0].slug}/og.jpg`;
 const DESCRIPCION = 'Historias hondureñas de ficción, contadas por capítulos con voces, música y sonidos. El primer capítulo es gratis.';
 
 export const metadata: Metadata = {
   title: TITULO,
   description: DESCRIPCION,
-  openGraph: { title: TITULO, description: DESCRIPCION, url: 'https://corridos.online/radionovelas', siteName: 'Canciones', type: 'website' },
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    images: [{ url: IMAGEN, width: 1200, height: 630, type: 'image/jpeg' }],
+    url: 'https://corridos.online/radionovelas',
+    siteName: 'Canciones',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: [IMAGEN] },
 };
 
 export default function RadionovelasPage() {
