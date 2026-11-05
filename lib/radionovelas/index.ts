@@ -1,5 +1,6 @@
 import capitulosElCamino from './elCaminoCapitulos.json';
 import capitulosDonMario from './donMarioCapitulos.json';
+import capitulosChaleVilay from './chaleVilayCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -76,6 +77,28 @@ export const RADIONOVELAS: Radionovela[] = [
     aviso:
       'Las giras de don Mario es una obra de ficción y humor, inspirada en una anécdota popular hondureña. Cualquier parecido con la realidad es pura coincidencia.',
     capitulos: capitulosDonMario as Capitulo[],
+    versionAudio: '1',
+  },
+  {
+    slug: 'la-carreta-de-chale-vilay',
+    titulo: 'La carreta de Chale Vilay',
+    lema: 'Una leyenda de la antigua San Pedro Sula.',
+    descripcion:
+      'Cuentan que cada viernes, a la medianoche, una carreta recorría San Pedro Sula desde Guamilito hasta el cementerio general. Una leyenda de suspenso en 4 capítulos de Armando Roque Godoy.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
+      C: { nombre: 'Chale Vilay', edad: 'el carretero', color: '#c9a27e', inicial: 'Ch' },
+      T: { nombre: 'Tomás', edad: 'su sobrino', color: '#7ee0a1' },
+      R: { nombre: 'Rosa', edad: 'la novia de Tomás', color: '#ff8fab' },
+      E: { nombre: 'Doña Engracia', edad: 'vecina de Guamilito', color: '#b79cff', inicial: 'E' },
+      S: { nombre: 'Lencho', edad: 'el sereno', color: '#a0b0c4', inicial: 'L' },
+      D: { nombre: 'Dr. Medina', edad: 'el médico', color: '#6fb7ff', inicial: 'Dr' },
+      P: { nombre: 'Padre Ignacio', edad: 'el cura', color: '#ffd166' },
+      M: { nombre: 'Doña Tina', edad: 'la mamá de Rosa', color: '#5ed6d6', inicial: 'Ti' },
+    },
+    aviso:
+      'La carreta de Chale Vilay es una obra de ficción inspirada en una leyenda de la antigua San Pedro Sula. Sus personajes y su historia se cuentan como leyenda, no como hechos comprobados.',
+    capitulos: capitulosChaleVilay as Capitulo[],
     versionAudio: '1',
   },
 ];
