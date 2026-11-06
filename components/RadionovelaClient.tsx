@@ -16,6 +16,7 @@ type Props = {
   lema: string;
   aviso: string;
   estilo?: 'comic';
+  etiqueta?: string;
   personajes: Record<string, Personaje>;
   ocultos: Record<string, { hasta: number; nombre: string }>;
   capitulo: Capitulo;
@@ -116,7 +117,7 @@ export default function RadionovelaClient(p: Props) {
   return (
     <main className={`${s.pagina} ${comic ? s.comic : ''}`} style={comic ? { fontFamily: baloo.style.fontFamily } : undefined}>
       <div className={s.contenido}>
-        <p className={s.etiqueta}>{comic ? 'RADIONOVELA · SÁTIRA' : '🎙️ RADIONOVELA · FICCIÓN'}</p>
+        <p className={s.etiqueta}>{p.etiqueta ?? '🎙️ RADIONOVELA · FICCIÓN'}</p>
         <h1 className={s.titulo}>{p.titulo}</h1>
         <p className={s.lema}>{p.lema}</p>
 

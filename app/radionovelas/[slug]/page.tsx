@@ -44,6 +44,7 @@ export default async function RadionovelaPage({ params, searchParams }: Params) 
       lema={r.lema}
       aviso={r.aviso}
       estilo={r.estilo}
+      etiqueta={r.etiqueta}
       personajes={r.personajes}
       ocultos={r.ocultos ?? {}}
       capitulo={abierto ? cap : { ...cap, lineas: [], escenas: [] }}

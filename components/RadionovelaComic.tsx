@@ -5,7 +5,8 @@ import s from './RadionovelaComic.module.css';
 
 // El escenario de las radionovelas en estilo cómic (como su video de TikTok en pop art): el que habla sale recortado
 // en una viñeta con rayos de su color y rebota con cada palabra; lo que dice va en un globo (el narrador, en un
-// recuadro), con la palabra que suena en rojo; las líneas de un video viejo salen en gris con «ARCHIVO», y las
+// recuadro), con la palabra que suena en rojo; las líneas de un video viejo salen en gris con «ARCHIVO», las del
+// teléfono con «POR TELÉFONO», y las
 // onomatopeyas estallan cuando suena el mazo o la tos.
 type Props = {
   t: number;
@@ -81,6 +82,7 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
           />
         ) : null}
         {l.a ? <span className={s.etiquetaArchivo}>▶ ARCHIVO · HACE UNOS AÑOS</span> : null}
+        {l.tel ? <span className={`${s.etiquetaArchivo} ${s.telefono}`}>☎ POR TELÉFONO</span> : null}
         {escena ? <span className={s.recuadroEscena}>{escena.x.toUpperCase()}</span> : null}
         {onos.map((o) => (
           <span

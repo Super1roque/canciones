@@ -8,8 +8,9 @@ import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
 // radionovelas/<slug>/capNN.mp3. Los capítulos (líneas con tiempo, personaje y texto, y marcas de escena) se
 // generan con los scripts de montaje de cada capítulo (ver scripts/audiolibros/README.md, «Radionovelas»).
-// w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo.
-export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1 };
+// w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo;
+// tel: se oye por teléfono.
+export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1 };
 export type Capitulo = {
   n: number;
   titulo: string;
@@ -36,6 +37,8 @@ export type Radionovela = {
   versionAudio: string;
   // 'comic': la página se ve como su video de TikTok en pop art (viñeta con el que habla, globos y onomatopeyas).
   estilo?: 'comic';
+  // la etiqueta de arriba de la página (por omisión, «🎙️ RADIONOVELA · FICCIÓN»)
+  etiqueta?: string;
 };
 
 export const RADIONOVELAS: Radionovela[] = [
@@ -116,14 +119,16 @@ export const RADIONOVELAS: Radionovela[] = [
     descripcion:
       'Don Toño se arma de valor en la cena del club del barrio y le pide matrimonio a doña Queta. Una radionovela de humor de un solo capítulo, gratis, de Armando Roque Godoy.',
     personajes: {
-      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
-      T: { nombre: 'Don Toño', edad: 'viudo', color: '#78beff', inicial: 'T' },
-      Q: { nombre: 'Doña Queta', edad: 'viuda', color: '#ff8fbe', inicial: 'Q' },
-      A: { nombre: 'El animador', edad: 'del bingo', color: '#ffd65a', inicial: 'A' },
+      N: { nombre: 'Narrador', edad: '', color: '#f28c1e', cara: '/radionovelas/dijo-que-si/caras/N' },
+      T: { nombre: 'Don Toño', edad: 'viudo', color: '#1e96e6', cara: '/radionovelas/dijo-que-si/caras/T' },
+      Q: { nombre: 'Doña Queta', edad: 'viuda', color: '#e8409a', cara: '/radionovelas/dijo-que-si/caras/Q' },
+      A: { nombre: 'El animador', edad: 'del bingo', color: '#e8a800', cara: '/radionovelas/dijo-que-si/caras/A' },
     },
     aviso: '¿Dijo que sí? es una historia de humor. Sus personajes son de ficción.',
     capitulos: capitulosDijoQueSi as Capitulo[],
     versionAudio: '1',
+    estilo: 'comic',
+    etiqueta: 'RADIONOVELA · HUMOR',
   },
   {
     slug: 'sucedio-en-el-congreso',
@@ -142,6 +147,7 @@ export const RADIONOVELAS: Radionovela[] = [
     capitulos: capitulosSucedioCongreso as Capitulo[],
     versionAudio: '1',
     estilo: 'comic',
+    etiqueta: 'RADIONOVELA · SÁTIRA',
   },
 ];
 
