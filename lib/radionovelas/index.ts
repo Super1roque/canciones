@@ -1,6 +1,7 @@
 import capitulosElCamino from './elCaminoCapitulos.json';
 import capitulosDonMario from './donMarioCapitulos.json';
 import capitulosChaleVilay from './chaleVilayCapitulos.json';
+import capitulosDijoQueSi from './dijoQueSiCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -99,6 +100,22 @@ export const RADIONOVELAS: Radionovela[] = [
     aviso:
       'La carreta de Chale Vilay es una obra de ficción inspirada en una leyenda de la antigua San Pedro Sula. Sus personajes y su historia se cuentan como leyenda, no como hechos comprobados.',
     capitulos: capitulosChaleVilay as Capitulo[],
+    versionAudio: '1',
+  },
+  {
+    slug: 'dijo-que-si',
+    titulo: '¿Dijo que sí?',
+    lema: 'Él le pidió matrimonio… y al día siguiente no se acordaba de la respuesta.',
+    descripcion:
+      'Don Toño se arma de valor en la cena del club del barrio y le pide matrimonio a doña Queta. Una radionovela de humor de un solo capítulo, gratis, de Armando Roque Godoy.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
+      T: { nombre: 'Don Toño', edad: 'viudo', color: '#78beff', inicial: 'T' },
+      Q: { nombre: 'Doña Queta', edad: 'viuda', color: '#ff8fbe', inicial: 'Q' },
+      A: { nombre: 'El animador', edad: 'del bingo', color: '#ffd65a', inicial: 'A' },
+    },
+    aviso: '¿Dijo que sí? es una historia de humor. Sus personajes son de ficción.',
+    capitulos: capitulosDijoQueSi as Capitulo[],
     versionAudio: '1',
   },
 ];

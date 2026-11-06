@@ -120,6 +120,22 @@ export default function RadionovelaClient(p: Props) {
               <Link href={`/radionovelas/${p.slug}?cap=${siguiente.n}`} className={s.botonSiguiente}>
                 Siguiente: Capítulo {siguiente.n} · {siguiente.titulo} →
               </Link>
+            ) : !p.miembro ? (
+              // al terminar la última (o la única) parte, la invitación a escuchar las demás radionovelas completas
+              <section className={s.finMiembro}>
+                <p className={s.candadoIcono}>🎙️</p>
+                <h3>¿Te gustó? Hay más historias esperándote</h3>
+                <p>
+                  Con la membresía de <strong>US$ 2.99 al mes</strong> escuchás todas las radionovelas completas, las de ahora y las que
+                  vengan, y entrás al grupo privado de WhatsApp.
+                </p>
+                <a href={p.checkout || '/apoya'} className={s.botonMiembro}>
+                  Hacerme miembro
+                </a>
+                <Link href="/radionovelas" className={s.verMas}>
+                  Ver todas las radionovelas →
+                </Link>
+              </section>
             ) : null}
           </>
         ) : (
