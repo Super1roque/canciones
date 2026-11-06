@@ -3,14 +3,15 @@ import capitulosDonMario from './donMarioCapitulos.json';
 import capitulosChaleVilay from './chaleVilayCapitulos.json';
 import capitulosDijoQueSi from './dijoQueSiCapitulos.json';
 import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
+import capitulosElDinero from './elDineroQueTodaviaEsperanCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
 // radionovelas/<slug>/capNN.mp3. Los capítulos (líneas con tiempo, personaje y texto, y marcas de escena) se
 // generan con los scripts de montaje de cada capítulo (ver scripts/audiolibros/README.md, «Radionovelas»).
 // w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo;
-// tel: se oye por teléfono.
-export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1 };
+// tel: se oye por teléfono; f: foto de la noticia que llena la viñeta mientras se dice; rotulo: etiqueta de la viñeta.
+export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1; f?: string; rotulo?: string };
 export type Capitulo = {
   n: number;
   titulo: string;
@@ -20,6 +21,8 @@ export type Capitulo = {
   escenas: { t: number; x: string }[];
   // onomatopeyas del estilo cómic («¡POW!» con el mazo), en el segundo en que suenan
   ono?: { t: number; x: string }[];
+  // recuadros con los datos de la noticia sobre la viñeta (radionovela-noticia)
+  datos?: { t: number; e: number; tit: string; txt: string }[];
 };
 // cara: la caricatura del personaje sin fondo (<cara>.webp la grande, <cara>-chica.webp la del reparto).
 export type Personaje = { nombre: string; edad: string; color: string; inicial?: string; cara?: string };
@@ -148,6 +151,26 @@ export const RADIONOVELAS: Radionovela[] = [
     versionAudio: '1',
     estilo: 'comic',
     etiqueta: 'RADIONOVELA · SÁTIRA',
+  },
+  {
+    slug: 'el-dinero-que-todavia-esperan',
+    titulo: 'El dinero que todavía esperan',
+    lema: 'Una historia del caso Koriun.',
+    descripcion:
+      'Doña Reina puso en Koriun los ahorros de toda su vida. La radio vuelve a hablar del caso… pero de su dinero, nada. Una radionovela-noticia de un capítulo, gratis, de Armando Roque Godoy, con los datos del Ministerio Público y del Congreso Nacional.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f28c1e', cara: '/radionovelas/el-dinero-que-todavia-esperan/caras/N' },
+      X: { nombre: 'La radio', edad: 'el noticiero', color: '#82786e', cara: '/radionovelas/el-dinero-que-todavia-esperan/caras/X' },
+      R: { nombre: 'Doña Reina', edad: 'tortillera de Choloma', color: '#e13c32', cara: '/radionovelas/el-dinero-que-todavia-esperan/caras/R' },
+      K: { nombre: 'Kevin', edad: 'su hijo', color: '#1e78dc', cara: '/radionovelas/el-dinero-que-todavia-esperan/caras/K' },
+      C: { nombre: 'Don Chema', edad: 'el vecino', color: '#0096a5', cara: '/radionovelas/el-dinero-que-todavia-esperan/caras/C' },
+    },
+    aviso:
+      'Doña Reina y su familia son personajes de ficción. Los datos del caso Koriun son del Ministerio Público y del Congreso Nacional (6 de noviembre de 2026).',
+    capitulos: capitulosElDinero as Capitulo[],
+    versionAudio: '1',
+    estilo: 'comic',
+    etiqueta: 'RADIONOVELA-NOTICIA',
   },
 ];
 

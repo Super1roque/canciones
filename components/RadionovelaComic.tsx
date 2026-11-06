@@ -6,7 +6,8 @@ import s from './RadionovelaComic.module.css';
 // El escenario de las radionovelas en estilo cómic (como su video de TikTok en pop art): el que habla sale recortado
 // en una viñeta con rayos de su color y rebota con cada palabra; lo que dice va en un globo (el narrador, en un
 // recuadro), con la palabra que suena en rojo; las líneas de un video viejo salen en gris con «ARCHIVO», las del
-// teléfono con «POR TELÉFONO», y las
+// teléfono con «POR TELÉFONO»; en las radionovelas-noticia, la viñeta muestra las fotos de la noticia con recuadros de
+// datos mientras habla el narrador; y las
 // onomatopeyas estallan cuando suena el mazo o la tos.
 type Props = {
   t: number;
@@ -63,6 +64,7 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
   const per = personajes[l.p];
   const narr = l.p === 'N';
   const escena = capitulo.escenas.find((e) => t >= e.t && t < e.t + 3.8);
+  const dato = (capitulo.datos ?? []).find((d) => t >= d.t && t < d.e);
   const onos = (capitulo.ono ?? []).map((o, i) => ({ ...o, i })).filter((o) => t >= o.t && t < o.t + 1.5);
 
   return (
@@ -71,7 +73,11 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
         className={`${s.vineta} ${l.a ? s.archivo : ''}`}
         style={{ ['--col' as string]: l.a ? '#968c7d' : per.color }}
       >
-        {per.cara ? (
+        {l.f ? (
+          // la foto de la noticia (en estilo cómic, con las caras difuminadas) mientras el narrador da los datos
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={l.f} src={l.f} alt="" className={s.foto} />
+        ) : per.cara ? (
           // el rebote se reinicia en cada palabra alternando dos animaciones iguales
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -83,6 +89,13 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
         ) : null}
         {l.a ? <span className={s.etiquetaArchivo}>▶ ARCHIVO · HACE UNOS AÑOS</span> : null}
         {l.tel ? <span className={`${s.etiquetaArchivo} ${s.telefono}`}>☎ POR TELÉFONO</span> : null}
+        {l.rotulo ? <span className={`${s.etiquetaArchivo} ${s.abajo}`}>{l.rotulo}</span> : null}
+        {dato ? (
+          <span className={s.dato}>
+            <b>{dato.tit}</b>
+            {dato.txt}
+          </span>
+        ) : null}
         {escena ? <span className={s.recuadroEscena}>{escena.x.toUpperCase()}</span> : null}
         {onos.map((o) => (
           <span
