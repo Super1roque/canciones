@@ -126,7 +126,7 @@ export default function RadionovelaClient(p: Props) {
                 <p className={s.candadoIcono}>🎙️</p>
                 <h3>¿Te gustó? Hay más historias esperándote</h3>
                 <p>
-                  Con la membresía de <strong>US$ 2.99 al mes</strong> escuchás todas las radionovelas completas, las de ahora y las que
+                  Con la membresía de <strong>US$ 2.99 al mes</strong> (en Honduras, unos L 85) escuchás todas las radionovelas completas, las de ahora y las que
                   vengan, y entrás al grupo privado de WhatsApp.
                 </p>
                 <a href={p.checkout || '/apoya'} className={s.botonMiembro}>
@@ -201,7 +201,7 @@ function Candado({ checkout }: { checkout: string | null }) {
       <p className={s.candadoIcono}>🔒</p>
       <h3>Este capítulo es para miembros</h3>
       <p>
-        Con la membresía de <strong>US$ 2.99 al mes</strong> escuchás todas las radionovelas completas, sin esperar los cortes de TikTok,
+        Con la membresía de <strong>US$ 2.99 al mes</strong> (en Honduras, unos L 85) escuchás todas las radionovelas completas, sin esperar los cortes de TikTok,
         y además entrás al grupo privado de WhatsApp.
       </p>
       <a href={checkout || '/apoya'} className={s.botonMiembro}>

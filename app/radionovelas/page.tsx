@@ -43,7 +43,7 @@ export default async function RadionovelasPage() {
         ) : (
           <section className={r.acceso}>
             <p className={r.accesoTitulo}>🎙️ Escuchalas completas con la membresía</p>
-            <p className={r.accesoTexto}>US$ 2.99 al mes: todas las radionovelas, las de ahora y las que vengan, más el grupo privado de WhatsApp.</p>
+            <p className={r.accesoTexto}>US$ 2.99 al mes (en Honduras, unos L 85): todas las radionovelas, las de ahora y las que vengan, más el grupo privado de WhatsApp.</p>
             <a href={checkout || '/apoya'} className={r.boton}>
               Hacerme miembro
             </a>

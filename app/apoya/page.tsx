@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { checkoutApoya, grupoApoya } from '@/lib/miembrosApoya';
+import { RADIONOVELAS } from '@/lib/radionovelas';
 import s from './apoya.module.css';
 
 // Membresía mensual para apoyar los videos de noticias y opinión. Se cobra como suscripción
@@ -11,6 +12,8 @@ import s from './apoya.module.css';
 const URL = 'https://corridos.online/apoya';
 // Tiene que coincidir con el precio del plan en Hotmart.
 const PRECIO = 'US$ 2.99';
+// Hotmart cobra en la moneda del país de quien compra: en Honduras, la membresía sale en L 85.00.
+const PRECIO_HN = 'L 85';
 const TITULO = 'Apoya a Armando Roque Godoy';
 // Para quien prefiere un aporte único fuera de Hotmart (remesa o depósito): la misma cuenta
 // que RickyMath usaba antes de cobrar por Hotmart.
@@ -107,6 +110,7 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
             <span className={s.monto}>{PRECIO}</span>
             <span className={s.periodo}> / mes</span>
           </p>
+          <p className={s.precioLocal}>En Honduras, unos {PRECIO_HN} al mes</p>
           <ul className={s.beneficios}>
             {BENEFICIOS.map((b) => (
               <li key={b.titulo} className={s.beneficio}>
@@ -134,21 +138,25 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
           hacer más.
         </p>
 
-        {/* La radionovela va primero: es lo que incluye la membresía y a lo que llegan desde TikTok. */}
+        {/* Las radionovelas van primero: es lo que incluye la membresía y a lo que llegan desde TikTok. Las portadas
+            son las dos más recientes, la última adelante. */}
         <a href="/radionovelas" className={`${s.libros} ${s.radio}`}>
-          <div className={s.radioPortada}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/radionovelas/el-camino-que-dejamos-atras/og.jpg" alt="El camino que dejamos atrás, radionovela" />
-            <span className={`${s.librosSello} ${s.radioSello}`}>⭐ Incluida en la membresía</span>
+          <div className={`${s.librosPortadas} ${s.radioPortadas}`}>
+            {RADIONOVELAS.slice(-2).map((r, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={r.slug} src={`/radionovelas/${r.slug}/og.jpg`} alt={`${r.titulo}, radionovela`} className={i ? s.librosAdelante : s.librosAtras} />
+            ))}
+            <span className={`${s.librosSello} ${s.radioSello}`}>⭐ Incluidas en la membresía</span>
           </div>
-          <p className={`${s.librosEtiqueta} ${s.radioEtiqueta}`}>NUEVA · RADIONOVELA</p>
+          <p className={`${s.librosEtiqueta} ${s.radioEtiqueta}`}>{RADIONOVELAS.length} RADIONOVELAS · DRAMA Y HUMOR</p>
           <p className={s.librosTitulo}>
-            El camino que <span className={s.radioResaltado}>dejamos atrás</span>
+            Radionovelas <span className={s.radioResaltado}>hondureñas</span>
           </p>
           <p className={s.librosTexto}>
-            8 capítulos sobre los que se van y los que se quedan. El primero es gratis; con la membresía la escuchas completa.
+            {new Intl.ListFormat('es').format(RADIONOVELAS.map((r) => `«${r.titulo}»`))}, con voces, música y sonidos. El primer capítulo de cada
+            una es gratis; con la membresía las escuchas completas.
           </p>
-          <span className={`${s.librosBoton} ${s.radioBoton}`}>Escuchar la radionovela →</span>
+          <span className={`${s.librosBoton} ${s.radioBoton}`}>Escuchar las radionovelas →</span>
         </a>
 
         {/* Invitación a los audiolibros: las portadas son las mismas imágenes que se comparten. */}
