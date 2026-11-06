@@ -2,12 +2,14 @@ import capitulosElCamino from './elCaminoCapitulos.json';
 import capitulosDonMario from './donMarioCapitulos.json';
 import capitulosChaleVilay from './chaleVilayCapitulos.json';
 import capitulosDijoQueSi from './dijoQueSiCapitulos.json';
+import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
 // radionovelas/<slug>/capNN.mp3. Los capítulos (líneas con tiempo, personaje y texto, y marcas de escena) se
 // generan con los scripts de montaje de cada capítulo (ver scripts/audiolibros/README.md, «Radionovelas»).
-export type LineaRadionovela = { t: number; e: number; p: string; x: string };
+// w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo.
+export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1 };
 export type Capitulo = {
   n: number;
   titulo: string;
@@ -15,8 +17,11 @@ export type Capitulo = {
   duracion: number;
   lineas: LineaRadionovela[];
   escenas: { t: number; x: string }[];
+  // onomatopeyas del estilo cómic («¡POW!» con el mazo), en el segundo en que suenan
+  ono?: { t: number; x: string }[];
 };
-export type Personaje = { nombre: string; edad: string; color: string; inicial?: string };
+// cara: la caricatura del personaje sin fondo (<cara>.webp la grande, <cara>-chica.webp la del reparto).
+export type Personaje = { nombre: string; edad: string; color: string; inicial?: string; cara?: string };
 export type Radionovela = {
   slug: string;
   titulo: string;
@@ -29,6 +34,8 @@ export type Radionovela = {
   capitulos: Capitulo[];
   // Cambia cada vez que se reemplazan los audios en Storage (se sirven como immutable).
   versionAudio: string;
+  // 'comic': la página se ve como su video de TikTok en pop art (viñeta con el que habla, globos y onomatopeyas).
+  estilo?: 'comic';
 };
 
 export const RADIONOVELAS: Radionovela[] = [
@@ -117,6 +124,24 @@ export const RADIONOVELAS: Radionovela[] = [
     aviso: '¿Dijo que sí? es una historia de humor. Sus personajes son de ficción.',
     capitulos: capitulosDijoQueSi as Capitulo[],
     versionAudio: '1',
+  },
+  {
+    slug: 'sucedio-en-el-congreso',
+    titulo: 'Sucedió en el congreso de un país llamado Banana Republic',
+    lema: 'Antes le tiraba piedras… y ahora le tira flores.',
+    descripcion:
+      'Durante años, la diputada Valeria y su esposo fueron los críticos más duros de don Julián. Hoy ella pide un reconocimiento para él. Una sátira de humor de un solo capítulo, gratis, de Armando Roque Godoy.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f28c1e', cara: '/radionovelas/sucedio-en-el-congreso/caras/N' },
+      V: { nombre: 'Valeria', edad: 'diputada', color: '#e82832', cara: '/radionovelas/sucedio-en-el-congreso/caras/V' },
+      E: { nombre: 'Esteban', edad: 'su esposo', color: '#1e96e6', cara: '/radionovelas/sucedio-en-el-congreso/caras/E' },
+      J: { nombre: 'Don Julián', edad: 'político veterano', color: '#14a05a', cara: '/radionovelas/sucedio-en-el-congreso/caras/J' },
+      P: { nombre: 'El presidente', edad: 'del Congreso', color: '#466ec8', cara: '/radionovelas/sucedio-en-el-congreso/caras/P' },
+    },
+    aviso: 'Sucedió en el congreso de un país llamado Banana Republic es una sátira de ficción. Cualquier parecido con la realidad es pura coincidencia.',
+    capitulos: capitulosSucedioCongreso as Capitulo[],
+    versionAudio: '1',
+    estilo: 'comic',
   },
 ];
 

@@ -2,15 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { Baloo_2 } from 'next/font/google';
 import AccesoMiembro from './AccesoMiembro';
+import RadionovelaComic from './RadionovelaComic';
 import type { Capitulo, Personaje } from '@/lib/radionovelas';
 import s from './RadionovelaClient.module.css';
+
+const baloo = Baloo_2({ weight: ['600', '700', '800'], subsets: ['latin'] });
 
 type Props = {
   slug: string;
   titulo: string;
   lema: string;
   aviso: string;
+  estilo?: 'comic';
   personajes: Record<string, Personaje>;
   ocultos: Record<string, { hasta: number; nombre: string }>;
   capitulo: Capitulo;
@@ -55,9 +60,22 @@ export default function RadionovelaClient(p: Props) {
   });
   const hablando = activa >= 0 && t <= guion[activa].e + 0.4 ? guion[activa].p : null;
 
+  const comic = p.estilo === 'comic';
+  // en el estilo cómic la página no se mueve sola: lo que se mira es la viñeta, no el guion
   useEffect(() => {
-    if (activa >= 0) filas.current[activa]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [activa]);
+    if (activa >= 0 && !comic) filas.current[activa]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [activa, comic]);
+  // el globo karaoke y el rebote necesitan el tiempo más seguido que el timeupdate del audio (unas 4 veces por segundo)
+  useEffect(() => {
+    if (!comic || !sonando) return;
+    let id = 0;
+    const paso = () => {
+      if (audio.current) setT(audio.current.currentTime);
+      id = requestAnimationFrame(paso);
+    };
+    id = requestAnimationFrame(paso);
+    return () => cancelAnimationFrame(id);
+  }, [comic, sonando]);
 
   const saltar = (seg: number) => {
     if (!audio.current) return;
@@ -67,9 +85,9 @@ export default function RadionovelaClient(p: Props) {
   const siguiente = p.indice.find((c) => c.n === cap.n + 1);
 
   return (
-    <main className={s.pagina}>
+    <main className={`${s.pagina} ${comic ? s.comic : ''}`} style={comic ? { fontFamily: baloo.style.fontFamily } : undefined}>
       <div className={s.contenido}>
-        <p className={s.etiqueta}>🎙️ RADIONOVELA · FICCIÓN</p>
+        <p className={s.etiqueta}>{comic ? 'RADIONOVELA · SÁTIRA' : '🎙️ RADIONOVELA · FICCIÓN'}</p>
         <h1 className={s.titulo}>{p.titulo}</h1>
         <p className={s.lema}>{p.lema}</p>
 
@@ -83,15 +101,28 @@ export default function RadionovelaClient(p: Props) {
 
         {p.abierto ? (
           <>
+            {comic ? (
+              <RadionovelaComic t={t} capitulo={cap} personajes={p.personajes} nombre={nombre} sonando={sonando} alPulsar={() => audio.current?.play()} />
+            ) : null}
             <div className={s.reparto}>
               {reparto.map((k) => (
                 <div key={k} className={`${s.persona} ${hablando === k ? s.habla : ''}`} style={{ ['--col' as string]: p.personajes[k].color }}>
-                  <div className={s.avatar}>{oculto(k) ? '?' : (p.personajes[k].inicial ?? nombre(k)[0])}</div>
+                  <div className={s.avatar}>
+                    {p.personajes[k].cara && !oculto(k) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`${p.personajes[k].cara}-chica.webp`} alt="" />
+                    ) : oculto(k) ? (
+                      '?'
+                    ) : (
+                      (p.personajes[k].inicial ?? nombre(k)[0])
+                    )}
+                  </div>
                   <span>{nombre(k)}</span>
                   <i>{oculto(k) ? '???' : p.personajes[k].edad}</i>
                 </div>
               ))}
             </div>
+            {comic ? <h2 className={s.guionTitulo}>El guion</h2> : null}
             <div className={s.guion}>
               {guion.map((l, i) =>
                 l.escena ? (

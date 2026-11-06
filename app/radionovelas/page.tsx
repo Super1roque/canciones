@@ -58,7 +58,7 @@ export default async function RadionovelasPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/radionovelas/${r.slug}/og.jpg`} alt={r.titulo} className={s.portada} />
                 <div className={s.datos}>
-                  <p className={s.lugar}>Radionovela · {r.capitulos.length} capítulos</p>
+                  <p className={s.lugar}>Radionovela · {r.capitulos.length} {r.capitulos.length === 1 ? 'capítulo' : 'capítulos'}</p>
                   <p className={s.libro}>{r.titulo}</p>
                   <p className={s.desc}>{r.descripcion}</p>
                   <p className={s.meta}>

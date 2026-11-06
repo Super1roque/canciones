@@ -389,3 +389,169 @@
   font-size: 13px;
   color: #b9b0a6;
 }
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Estilo cómic (pop art), como el video de TikTok de la radionovela: fondo amarillo con puntos Ben-Day,
+   contornos negros gruesos y sombras duras. */
+.comic {
+  background:
+    radial-gradient(circle, #ffa000 28%, transparent 31%) 0 0 / 20px 20px,
+    radial-gradient(circle, #ffa000 28%, transparent 31%) 10px 10px / 20px 20px,
+    #ffde00;
+  color: #0c0a0a;
+}
+
+.comic .etiqueta {
+  display: table;
+  margin: 0 auto;
+  padding: 4px 12px;
+  background: #0c0a0a;
+  color: #ffde00;
+}
+
+.comic .titulo {
+  font-family: inherit;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #e82832;
+  -webkit-text-stroke: 2px #0c0a0a;
+  paint-order: stroke fill;
+  text-shadow: 2px 2px 0 #0c0a0a, 4px 4px 0 #0c0a0a;
+}
+
+.comic .lema,
+.comic .capResumen,
+.comic .aviso {
+  font-family: inherit;
+  color: #3a2e10;
+}
+
+.comic .cap,
+.comic .finMiembro,
+.comic .candado {
+  border: 4px solid #0c0a0a;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 6px 6px 0 #0c0a0a;
+  color: #2a2420;
+}
+
+.comic .capEtiqueta {
+  color: #e82832;
+}
+
+.comic .capTitulo,
+.comic .finMiembro h3,
+.comic .candado h3 {
+  font-family: inherit;
+  font-weight: 800;
+  color: #0c0a0a;
+}
+
+.comic .avatar {
+  border: 3px solid #0c0a0a;
+  background: #fff6cd;
+  opacity: 0.75;
+  filter: grayscale(0.7);
+  box-shadow: 4px 4px 0 #0c0a0a;
+}
+
+.comic .habla .avatar {
+  opacity: 1;
+  filter: none;
+  background: var(--col);
+  border-color: #0c0a0a;
+  box-shadow: 4px 4px 0 #0c0a0a;
+}
+
+.comic .persona span {
+  font-weight: 800;
+}
+
+.comic .persona i {
+  color: #5a4a20;
+}
+
+.guionTitulo {
+  margin-top: 22px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.comic .linea {
+  opacity: 0.55;
+}
+
+.comic .activa {
+  opacity: 1;
+  background: #fff;
+  border: 3px solid #0c0a0a;
+  border-radius: 0;
+}
+
+.comic .leida {
+  opacity: 0.8;
+}
+
+.comic .narrador .texto {
+  font-family: inherit;
+  font-style: normal;
+  color: #2a2420;
+}
+
+.comic .quien {
+  -webkit-text-stroke: 0.5px #0c0a0a;
+}
+
+.comic .escena,
+.comic .ep small,
+.comic .barra span {
+  color: #5a4a20;
+}
+
+.comic .botonMiembro,
+.comic .botonSiguiente {
+  border: 4px solid #0c0a0a;
+  border-radius: 0;
+  box-shadow: 5px 5px 0 #0c0a0a;
+}
+
+.comic .verMas {
+  color: #e82832;
+}
+
+.comic .lista h2 {
+  font-weight: 800;
+}
+
+.comic .ep {
+  color: #0c0a0a;
+  border-bottom: 2px solid #0c0a0a;
+}
+
+.comic .epActual {
+  background: #fff;
+  border-radius: 0;
+}
+
+.comic .barra {
+  background: #fff;
+  border-top: 4px solid #0c0a0a;
+}
+
+.comic .barra button {
+  border: 3px solid #0c0a0a;
+  background: #e82832;
+  color: #fff;
+}
+
+.comic .barra input {
+  accent-color: #e82832;
+}

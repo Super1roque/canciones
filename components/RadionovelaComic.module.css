@@ -1,0 +1,253 @@
+.escenario {
+  margin-top: 18px;
+}
+
+.vineta {
+  position: relative;
+  aspect-ratio: 880 / 610;
+  overflow: hidden;
+  border: 5px solid #0c0a0a;
+  box-shadow: 8px 8px 0 #0c0a0a;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 62%,
+    var(--col) 0deg 6.43deg,
+    color-mix(in srgb, var(--col) 55%, #fff) 6.43deg 12.86deg
+  );
+}
+
+.figura {
+  position: absolute;
+  left: 50%;
+  bottom: -1%;
+  height: 101%;
+  max-width: none;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  filter: drop-shadow(8px 6px 0 rgba(12, 10, 10, 0.35));
+  animation: entrada 0.22s ease-out;
+}
+
+.archivo .figura {
+  filter: grayscale(1) sepia(0.25) drop-shadow(8px 6px 0 rgba(12, 10, 10, 0.35));
+}
+
+.reboteA {
+  animation: reboteA 0.24s ease-out;
+}
+
+.reboteB {
+  animation: reboteB 0.24s ease-out;
+}
+
+@keyframes entrada {
+  from {
+    transform: translateX(-50%) scale(0.9);
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes reboteA {
+  50% {
+    transform: translateX(-50%) scale(0.98, 1.05);
+  }
+}
+
+@keyframes reboteB {
+  50% {
+    transform: translateX(-50%) scale(0.98, 1.05);
+  }
+}
+
+.etiquetaArchivo,
+.recuadroEscena {
+  position: absolute;
+  top: 10px;
+  padding: 4px 10px;
+  border: 3px solid #0c0a0a;
+  box-shadow: 4px 4px 0 #0c0a0a;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.etiquetaArchivo {
+  right: 10px;
+  background: #e82832;
+  color: #fff;
+}
+
+.recuadroEscena {
+  left: 10px;
+  background: #fff6cd;
+  color: #0c0a0a;
+  font-size: 15px;
+}
+
+.ono {
+  position: absolute;
+  top: 6%;
+  width: 46%;
+  aspect-ratio: 62 / 46;
+  display: grid;
+  place-items: center;
+  animation: estallido 1.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.onoDer {
+  right: 2%;
+  rotate: -9deg;
+}
+
+.onoIzq {
+  left: 2%;
+  rotate: 8deg;
+}
+
+.ono i,
+.ono::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: var(--estrella);
+}
+
+.ono::before {
+  background: #0c0a0a;
+  translate: 7px 7px;
+}
+
+.ono i {
+  background: var(--fondo);
+}
+
+.ono b {
+  position: relative;
+  font-size: clamp(30px, 10vw, 54px);
+  font-weight: 800;
+  color: var(--letra);
+  -webkit-text-stroke: 3px #0c0a0a;
+  paint-order: stroke fill;
+  text-shadow:
+    1px 1px 0 #0c0a0a,
+    2px 2px 0 #0c0a0a,
+    3px 3px 0 #0c0a0a,
+    4px 4px 0 #0c0a0a,
+    5px 5px 0 #0c0a0a,
+    6px 6px 0 #0c0a0a;
+}
+
+@keyframes estallido {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  12% {
+    transform: scale(1.15);
+  }
+  22% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.play {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  translate: -50% 0;
+  padding: 10px 22px;
+  border: 4px solid #0c0a0a;
+  box-shadow: 5px 5px 0 #0c0a0a;
+  background: #e82832;
+  color: #fff;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.zonaGlobo {
+  min-height: 150px;
+  padding-top: 30px;
+}
+
+.globo,
+.recuadro {
+  position: relative;
+  padding: 18px 18px 14px;
+  border: 4px solid #0c0a0a;
+  box-shadow: 6px 6px 0 #0c0a0a;
+  background: #fff;
+}
+
+.globo {
+  border-radius: 26px;
+}
+
+/* la colita del globo, hacia la viñeta */
+.globo::before,
+.globo::after {
+  content: '';
+  position: absolute;
+  left: 52%;
+  border-style: solid;
+}
+
+.globo::before {
+  top: -30px;
+  border-width: 0 10px 30px 26px;
+  border-color: transparent transparent #0c0a0a transparent;
+}
+
+.globo::after {
+  top: -21px;
+  margin-left: 5px;
+  border-width: 0 6px 22px 17px;
+  border-color: transparent transparent #fff transparent;
+}
+
+.recuadro {
+  background: #fff6cd;
+}
+
+.nombre {
+  position: absolute;
+  top: -16px;
+  left: 18px;
+  padding: 1px 10px;
+  border: 3px solid #0c0a0a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  -webkit-text-stroke: 1px #0c0a0a;
+  paint-order: stroke fill;
+}
+
+.globo p,
+.recuadro p {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.suena {
+  color: #e82832;
+}
+
+.dicha {
+  color: #0c0a0a;
+}
+
+.falta {
+  color: #8a837d;
+}
