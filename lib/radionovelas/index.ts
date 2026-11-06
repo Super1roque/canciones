@@ -126,7 +126,7 @@ export const RADIONOVELAS: Radionovela[] = [
     },
     aviso: '¿Dijo que sí? es una historia de humor. Sus personajes son de ficción.',
     capitulos: capitulosDijoQueSi as Capitulo[],
-    versionAudio: '1',
+    versionAudio: '2',
     estilo: 'comic',
     etiqueta: 'RADIONOVELA · HUMOR',
   },
