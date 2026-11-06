@@ -555,3 +555,17 @@
 .comic .barra input {
   accent-color: #e82832;
 }
+
+.deNuevo {
+  display: block;
+  margin: 12px auto 0;
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}

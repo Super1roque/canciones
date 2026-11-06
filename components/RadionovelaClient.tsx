@@ -35,6 +35,8 @@ export default function RadionovelaClient(p: Props) {
   const [t, setT] = useState(0);
   const [sonando, setSonando] = useState(false);
   const [dur, setDur] = useState(cap.duracion);
+  const [terminado, setTerminado] = useState(false);
+  const fin = useRef<HTMLElement>(null);
 
   // El guion: líneas y marcas de escena en el orden en que suenan.
   const guion = useMemo(
@@ -83,6 +85,33 @@ export default function RadionovelaClient(p: Props) {
     audio.current.play();
   };
   const siguiente = p.indice.find((c) => c.n === cap.n + 1);
+  // Al terminar la última (o la única) parte, la invitación a hacerse miembro sale arriba, donde estaban los
+  // personajes, para no tener que bajar hasta el final de la página.
+  const ctaArriba = terminado && !siguiente && !p.miembro;
+  useEffect(() => {
+    if (ctaArriba) fin.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [ctaArriba]);
+  const invitacion = (
+    <section ref={fin} className={s.finMiembro}>
+      <p className={s.candadoIcono}>🎙️</p>
+      <h3>¿Te gustó? Hay más historias esperándote</h3>
+      <p>
+        Con la membresía de <strong>US$ 2.99 al mes</strong> (en Honduras, unos L 85) escuchás todas las radionovelas completas, las de ahora y las que
+        vengan, y entrás al grupo privado de WhatsApp.
+      </p>
+      <a href={p.checkout || '/apoya'} className={s.botonMiembro}>
+        Hacerme miembro
+      </a>
+      <Link href="/radionovelas" className={s.verMas}>
+        Ver todas las radionovelas →
+      </Link>
+      {ctaArriba ? (
+        <button className={s.deNuevo} onClick={() => saltar(0)}>
+          ↺ Escuchar de nuevo
+        </button>
+      ) : null}
+    </section>
+  );
 
   return (
     <main className={`${s.pagina} ${comic ? s.comic : ''}`} style={comic ? { fontFamily: baloo.style.fontFamily } : undefined}>
@@ -101,7 +130,7 @@ export default function RadionovelaClient(p: Props) {
 
         {p.abierto ? (
           <>
-            {comic ? (
+            {ctaArriba ? invitacion : comic ? (
               <RadionovelaComic t={t} capitulo={cap} personajes={p.personajes} nombre={nombre} sonando={sonando} alPulsar={() => audio.current?.play()} />
             ) : null}
             <div className={s.reparto}>
@@ -151,22 +180,8 @@ export default function RadionovelaClient(p: Props) {
               <Link href={`/radionovelas/${p.slug}?cap=${siguiente.n}`} className={s.botonSiguiente}>
                 Siguiente: Capítulo {siguiente.n} · {siguiente.titulo} →
               </Link>
-            ) : !p.miembro ? (
-              // al terminar la última (o la única) parte, la invitación a escuchar las demás radionovelas completas
-              <section className={s.finMiembro}>
-                <p className={s.candadoIcono}>🎙️</p>
-                <h3>¿Te gustó? Hay más historias esperándote</h3>
-                <p>
-                  Con la membresía de <strong>US$ 2.99 al mes</strong> (en Honduras, unos L 85) escuchás todas las radionovelas completas, las de ahora y las que
-                  vengan, y entrás al grupo privado de WhatsApp.
-                </p>
-                <a href={p.checkout || '/apoya'} className={s.botonMiembro}>
-                  Hacerme miembro
-                </a>
-                <Link href="/radionovelas" className={s.verMas}>
-                  Ver todas las radionovelas →
-                </Link>
-              </section>
+            ) : !p.miembro && !ctaArriba ? (
+              invitacion
             ) : null}
           </>
         ) : (
@@ -215,7 +230,11 @@ export default function RadionovelaClient(p: Props) {
             ref={audio}
             src={p.audioUrl}
             preload="metadata"
-            onPlay={() => setSonando(true)}
+            onPlay={() => {
+              setSonando(true);
+              setTerminado(false);
+            }}
+            onEnded={() => setTerminado(true)}
             onPause={() => setSonando(false)}
             onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
             onLoadedMetadata={(e) => setDur(e.currentTarget.duration || cap.duracion)}
