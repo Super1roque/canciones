@@ -569,3 +569,34 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.seguir {
+  margin-top: 22px;
+  padding: 20px 18px 16px;
+  border: 2px solid #f2a03d;
+  border-radius: 22px;
+  background: rgba(242, 160, 61, 0.07);
+  text-align: center;
+}
+
+.seguir h3 {
+  font-size: 22px;
+  color: #fff;
+}
+
+.seguir .lista {
+  margin-top: 18px;
+  text-align: left;
+}
+
+.comic .seguir {
+  border: 4px solid #0c0a0a;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 6px 6px 0 #0c0a0a;
+}
+
+.comic .seguir h3 {
+  font-weight: 800;
+  color: #0c0a0a;
+}

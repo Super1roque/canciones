@@ -86,12 +86,44 @@ export default function RadionovelaClient(p: Props) {
     audio.current.play();
   };
   const siguiente = p.indice.find((c) => c.n === cap.n + 1);
-  // Al terminar la última (o la única) parte, la invitación a hacerse miembro sale arriba, donde estaban los
-  // personajes, para no tener que bajar hasta el final de la página.
+  // Al terminar un capítulo, lo que sigue sale arriba, donde estaban los personajes, para no tener que bajar hasta el
+  // final de la página: el siguiente capítulo y la lista de capítulos, o (en la última parte) la invitación a hacerse miembro.
   const ctaArriba = terminado && !siguiente && !p.miembro;
+  const listaArriba = terminado && !!siguiente;
   useEffect(() => {
-    if (ctaArriba) fin.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [ctaArriba]);
+    if (ctaArriba || listaArriba) fin.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [ctaArriba, listaArriba]);
+  const listaCapitulos = (
+    <section className={s.lista}>
+      <h2>Capítulos</h2>
+      {p.indice.map((c) => {
+        const libre = c.gratis || p.miembro;
+        return (
+          <Link key={c.n} href={`/radionovelas/${p.slug}?cap=${c.n}`} className={`${s.ep} ${c.n === cap.n ? s.epActual : ''}`}>
+            <span>
+              {c.n}. {c.titulo}
+              <small>{minutos(c.duracion)}</small>
+            </span>
+            <em className={c.gratis ? s.gratis : libre ? s.abierto : s.cerrado}>
+              {c.n === cap.n ? 'Escuchando' : c.gratis ? 'Gratis' : libre ? '▶ Escuchar' : '🔒 Miembros'}
+            </em>
+          </Link>
+        );
+      })}
+    </section>
+  );
+  const seguir = siguiente ? (
+    <section ref={fin} className={s.seguir}>
+      <h3>Fin del capítulo {cap.n}</h3>
+      <Link href={`/radionovelas/${p.slug}?cap=${siguiente.n}`} className={s.botonSiguiente}>
+        Siguiente: Capítulo {siguiente.n} · {siguiente.titulo} →
+      </Link>
+      {listaCapitulos}
+      <button className={s.deNuevo} onClick={() => saltar(0)}>
+        ↺ Escuchar de nuevo
+      </button>
+    </section>
+  ) : null;
   const invitacion = (
     <section ref={fin} className={s.finMiembro}>
       <p className={s.candadoIcono}>🎙️</p>
@@ -131,7 +163,7 @@ export default function RadionovelaClient(p: Props) {
 
         {p.abierto ? (
           <>
-            {ctaArriba ? invitacion : comic ? (
+            {ctaArriba ? invitacion : listaArriba ? seguir : comic ? (
               <RadionovelaComic t={t} capitulo={cap} personajes={p.personajes} nombre={nombre} sonando={sonando} alPulsar={() => audio.current?.play()} />
             ) : null}
             <div className={s.reparto}>
@@ -189,23 +221,7 @@ export default function RadionovelaClient(p: Props) {
           <Candado checkout={p.checkout} />
         )}
 
-        <section className={s.lista}>
-          <h2>Capítulos</h2>
-          {p.indice.map((c) => {
-            const libre = c.gratis || p.miembro;
-            return (
-              <Link key={c.n} href={`/radionovelas/${p.slug}?cap=${c.n}`} className={`${s.ep} ${c.n === cap.n ? s.epActual : ''}`}>
-                <span>
-                  {c.n}. {c.titulo}
-                  <small>{minutos(c.duracion)}</small>
-                </span>
-                <em className={c.gratis ? s.gratis : libre ? s.abierto : s.cerrado}>
-                  {c.n === cap.n ? 'Escuchando' : c.gratis ? 'Gratis' : libre ? '▶ Escuchar' : '🔒 Miembros'}
-                </em>
-              </Link>
-            );
-          })}
-        </section>
+        {listaArriba ? null : listaCapitulos}
       </div>
 
       {p.abierto ? (
