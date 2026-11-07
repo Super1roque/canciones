@@ -6,6 +6,8 @@ import { COOKIE_MIEMBRO, checkoutApoya, miembroActivo } from '@/lib/miembrosApoy
 import { RADIONOVELAS } from '@/lib/radionovelas';
 import s from '../historias/historias.module.css';
 import r from './radionovelas.module.css';
+// (dentro de la lista, «r» es cada radionovela; las clases de la miniatura se usan con este otro nombre)
+import mini from './radionovelas.module.css';
 
 // Índice de radionovelas. Usa las mismas tarjetas que la galería de /historias.
 const TITULO = '🎙️ Radionovelas — corridos.online';
@@ -55,8 +57,13 @@ export default async function RadionovelasPage() {
           {RADIONOVELAS.map((r) => (
             <li key={r.slug}>
               <Link href={`/radionovelas/${r.slug}`} className={s.tarjeta}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/radionovelas/${r.slug}/og.jpg`} alt={r.titulo} className={s.portada} />
+                {/* la portada con un botón de play encima, para que se entienda que es para escuchar */}
+                <div className={mini.miniatura}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/radionovelas/${r.slug}/og.jpg`} alt={r.titulo} className={s.portada} />
+                  <span className={mini.play} aria-hidden="true" />
+                  <span className={mini.escuchar}>🎧 Escuchar</span>
+                </div>
                 <div className={s.datos}>
                   <p className={s.lugar}>Radionovela · {r.capitulos.length} {r.capitulos.length === 1 ? 'capítulo' : 'capítulos'}</p>
                   <p className={s.libro}>{r.titulo}</p>
