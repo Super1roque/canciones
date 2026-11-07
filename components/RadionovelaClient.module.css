@@ -680,3 +680,22 @@
 .comic.noche .activa .texto {
   color: #2a2420;
 }
+
+/* Tema de atardecer para el estilo cómic (los dramas del camino): cielo de polvo terracota a ocre, con puntos suaves
+   y recuadros color papel. */
+.comic.atardecer {
+  background:
+    radial-gradient(circle, rgba(140, 60, 30, 0.16) 26%, transparent 30%) 0 0 / 20px 20px,
+    radial-gradient(circle, rgba(140, 60, 30, 0.16) 26%, transparent 30%) 10px 10px / 20px 20px,
+    linear-gradient(180deg, #e9a66b 0%, #efc184 45%, #f3d9a8 100%);
+  color: #2c1d14;
+}
+
+.comic.atardecer .etiqueta {
+  background: #5a2e1c;
+  color: #f3d9a8;
+}
+
+.comic.atardecer .titulo {
+  color: #7a2e1a;
+}

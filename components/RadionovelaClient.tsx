@@ -17,7 +17,7 @@ type Props = {
   aviso: string;
   estilo?: 'comic';
   etiqueta?: string;
-  tema?: 'noche';
+  tema?: 'noche' | 'atardecer';
   privada?: boolean;
   personajes: Record<string, Personaje>;
   ocultos: Record<string, { hasta: number; nombre: string }>;
@@ -150,7 +150,7 @@ export default function RadionovelaClient(p: Props) {
   );
 
   return (
-    <main className={`${s.pagina} ${comic ? s.comic : ''} ${comic && p.tema === 'noche' ? s.noche : ''}`} style={comic ? { fontFamily: baloo.style.fontFamily } : undefined}>
+    <main className={`${s.pagina} ${comic ? s.comic : ''} ${comic && p.tema ? s[p.tema] : ''}`} style={comic ? { fontFamily: baloo.style.fontFamily } : undefined}>
       <div className={s.contenido}>
         <p className={s.etiqueta}>{p.etiqueta ?? '🎙️ RADIONOVELA · FICCIÓN'}</p>
         <h1 className={s.titulo}>{p.titulo}</h1>
@@ -167,7 +167,7 @@ export default function RadionovelaClient(p: Props) {
         {p.abierto ? (
           <>
             {ctaArriba ? invitacion : listaArriba ? seguir : comic ? (
-              <RadionovelaComic t={t} capitulo={cap} personajes={p.personajes} nombre={nombre} sonando={sonando} alPulsar={() => audio.current?.play()} />
+              <RadionovelaComic t={t} capitulo={cap} personajes={p.personajes} nombre={nombre} oculto={oculto} sonando={sonando} alPulsar={() => audio.current?.play()} />
             ) : null}
             <div className={s.reparto}>
               {reparto.map((k) => (

@@ -58,7 +58,8 @@ export type Radionovela = {
   // 'comic': la página se ve como su video de TikTok en pop art (viñeta con el que habla, globos y onomatopeyas).
   estilo?: 'comic';
   // 'noche': el estilo cómic con fondo azul de noche y colores apagados (para las de suspenso)
-  tema?: 'noche';
+  // 'atardecer': fondo de cielo terracota y ocre (los dramas del camino)
+  tema?: 'noche' | 'atardecer';
   // la etiqueta de arriba de la página (por omisión, «🎙️ RADIONOVELA · FICCIÓN»)
   etiqueta?: string;
   // privada: solo se abre con el enlace (no sale en /radionovelas ni en /apoya, ni en buscadores) y todos sus
@@ -74,22 +75,24 @@ export const RADIONOVELAS: Radionovela[] = [
     descripcion:
       'Ernesto pierde su empleo y decide unirse a una caravana rumbo a Estados Unidos. Una historia de migración, familia y esperanza en 8 capítulos, de Armando Roque Godoy.',
     personajes: {
-      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
-      E: { nombre: 'Ernesto', edad: '43 años', color: '#6fb7ff' },
-      M: { nombre: 'Marta', edad: '39 años', color: '#ff8fab' },
-      D: { nombre: 'Daniel', edad: '16 años', color: '#7ee0a1' },
-      S: { nombre: 'Sofía', edad: '8 años', color: '#ffd166' },
-      C: { nombre: 'Don Chepe', edad: '52 años', color: '#c9a27e', inicial: 'Ch' },
-      V: { nombre: 'Doña Carmen', edad: 'mamá de Ernesto', color: '#b79cff' },
-      Y: { nombre: 'Yeni', edad: '24 años', color: '#5ed6d6' },
-      R: { nombre: 'Lic. Reyes', edad: '55 años', color: '#a0b0c4', inicial: 'R' },
-      J: { nombre: 'Josué', edad: '17 años', color: '#bee65a' },
+      N: { nombre: 'Narrador', edad: '', color: '#f2a03d', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/N' },
+      E: { nombre: 'Ernesto', edad: '43 años', color: '#6fb7ff', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/E' },
+      M: { nombre: 'Marta', edad: '39 años', color: '#ff8fab', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/M' },
+      D: { nombre: 'Daniel', edad: '16 años', color: '#7ee0a1', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/D' },
+      S: { nombre: 'Sofía', edad: '8 años', color: '#ffd166', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/S' },
+      C: { nombre: 'Don Chepe', edad: '52 años', color: '#c9a27e', inicial: 'Ch', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/C' },
+      V: { nombre: 'Doña Carmen', edad: 'mamá de Ernesto', color: '#b79cff', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/V' },
+      Y: { nombre: 'Yeni', edad: '24 años', color: '#5ed6d6', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/Y' },
+      R: { nombre: 'Lic. Reyes', edad: '55 años', color: '#a0b0c4', inicial: 'R', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/R' },
+      J: { nombre: 'Josué', edad: '17 años', color: '#bee65a', cara: '/radionovelas/el-camino-que-dejamos-atras/caras/J' },
     },
     ocultos: { V: { hasta: 2, nombre: 'Voz de mujer' }, J: { hasta: 7, nombre: 'Un muchacho' } },
     aviso:
       'El camino que dejamos atrás es una obra de ficción. Sus personajes no existen, pero sus historias se parecen a las de miles de familias hondureñas.',
     capitulos: capitulosElCamino as Capitulo[],
     versionAudio: '1',
+    estilo: 'comic',
+    tema: 'atardecer',
   },
   {
     slug: 'las-giras-de-don-mario',

@@ -325,3 +325,18 @@
     transform: translateX(-50%) translateY(-2.5%);
   }
 }
+
+.silueta {
+  filter: brightness(0) opacity(0.82);
+}
+
+.interrogacion {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 4px 4px 0 #0c0a0a;
+}

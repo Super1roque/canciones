@@ -14,6 +14,8 @@ type Props = {
   capitulo: Capitulo;
   personajes: Record<string, Personaje>;
   nombre: (k: string) => string;
+  // el personaje que todavía no se revela sale como silueta negra con un «?»
+  oculto?: (k: string) => boolean;
   sonando: boolean;
   alPulsar: () => void;
 };
@@ -43,7 +45,7 @@ const ESTRELLA = Array.from({ length: 28 }, (_, i) => {
 const ONO_COLOR = ['#e82832', '#ffffff', '#28c8e6', '#ffffff'];
 const ONO_LETRA = ['#ffde00', '#1e96e6', '#ffde00', '#e82832'];
 
-export default function RadionovelaComic({ t, capitulo, personajes, nombre, sonando, alPulsar }: Props) {
+export default function RadionovelaComic({ t, capitulo, personajes, nombre, oculto, sonando, alPulsar }: Props) {
   const lineas = capitulo.lineas;
   let k = 0;
   lineas.forEach((l, i) => {
@@ -85,9 +87,10 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
             key={l.p}
             src={`${per.cara}.webp`}
             alt={nombre(l.p)}
-            className={`${s.figura} ${enPalabra ? (actual % 2 ? s.reboteA : s.reboteB) : ''}`}
+            className={`${s.figura} ${oculto?.(l.p) ? s.silueta : ''} ${enPalabra ? (actual % 2 ? s.reboteA : s.reboteB) : ''}`}
           />
         ) : null}
+        {oculto?.(l.p) && !foto ? <span className={s.interrogacion}>?</span> : null}
         {l.a ? <span className={s.etiquetaArchivo}>▶ ARCHIVO · HACE UNOS AÑOS</span> : null}
         {l.tel ? <span className={`${s.etiquetaArchivo} ${s.telefono}`}>☎ POR TELÉFONO</span> : null}
         {l.rotulo ? <span className={`${s.etiquetaArchivo} ${s.abajo}`}>{l.rotulo}</span> : null}
