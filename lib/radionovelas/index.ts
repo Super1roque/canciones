@@ -6,6 +6,7 @@ import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
 import capitulosElDinero from './elDineroQueTodaviaEsperanCapitulos.json';
 import capitulosSanFrancisco from './loQueHizoEnSanFranciscoCapitulos.json';
 import capitulosRicky from './rickyShakeCapitulos.json';
+import capitulosLaComida from './laComidaLlegoCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -215,6 +216,26 @@ export const RADIONOVELAS: Radionovela[] = [
     versionAudio: '1',
     estilo: 'comic',
     etiqueta: 'RADIONOVELA · HUMOR',
+  },
+  {
+    slug: 'la-comida-llego',
+    titulo: 'La comida llegó… pero el pago era mentira',
+    lema: 'Una historia de los comprobantes falsos.',
+    descripcion:
+      'Al comedor de doña Lety le llega un pedidazo con comprobante bancario y todo. Pero en la noche, el dinero no está en la cuenta. Una radionovela-noticia de un capítulo, gratis, de Armando Roque Godoy, con el caso real de la Policía Nacional.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f28c1e', cara: '/radionovelas/la-comida-llego/caras/N' },
+      L: { nombre: 'Doña Lety', edad: 'la dueña del comedor', color: '#e13c32', cara: '/radionovelas/la-comida-llego/caras/L' },
+      M: { nombre: 'Mauricio', edad: 'su hijo, el cocinero', color: '#2ea05a', cara: '/radionovelas/la-comida-llego/caras/M' },
+      B: { nombre: 'Brayan', edad: 'el repartidor', color: '#1e78dc', cara: '/radionovelas/la-comida-llego/caras/B' },
+      X: { nombre: 'El cliente', edad: 'por teléfono', color: '#5a5a64', cara: '/radionovelas/la-comida-llego/caras/X' },
+    },
+    aviso:
+      'Doña Lety y su comedor son personajes de ficción. El caso real (comprobantes falsos para quedarse con celulares de Marketplace, San Pedro Sula, 24 de octubre de 2026) es de la Policía Nacional, publicado por La Prensa.',
+    capitulos: capitulosLaComida as Capitulo[],
+    versionAudio: '1',
+    estilo: 'comic',
+    etiqueta: 'RADIONOVELA-NOTICIA',
   },
   {
     slug: 'ricky-shake-y-sus-abuelos',
