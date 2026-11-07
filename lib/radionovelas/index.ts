@@ -255,7 +255,7 @@ export const RADIONOVELAS: Radionovela[] = [
     },
     aviso: 'Un cuento del abuelo Armando para Ricky: a los abuelos nos encanta visitarte en México, y siempre pensamos en regresar.',
     capitulos: capitulosRicky as Capitulo[],
-    versionAudio: '2',
+    versionAudio: '3',
     estilo: 'comic',
     etiqueta: 'UN CUENTO DEL ABUELO',
     privada: true,
