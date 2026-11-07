@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { checkoutApoya, grupoApoya } from '@/lib/miembrosApoya';
-import { RADIONOVELAS } from '@/lib/radionovelas';
+import { RADIONOVELAS_PUBLICAS as RADIONOVELAS } from '@/lib/radionovelas';
 import s from './apoya.module.css';
 
 // Membresía mensual para apoyar los videos de noticias y opinión. Se cobra como suscripción

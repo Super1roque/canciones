@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import AccesoMiembro from '@/components/AccesoMiembro';
 import { COOKIE_MIEMBRO, checkoutApoya, miembroActivo } from '@/lib/miembrosApoya';
-import { RADIONOVELAS } from '@/lib/radionovelas';
+import { RADIONOVELAS_PUBLICAS as RADIONOVELAS } from '@/lib/radionovelas';
 import s from '../historias/historias.module.css';
 import r from './radionovelas.module.css';
 // (dentro de la lista, «r» es cada radionovela; las clases de la miniatura se usan con este otro nombre)

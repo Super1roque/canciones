@@ -18,6 +18,7 @@ type Props = {
   estilo?: 'comic';
   etiqueta?: string;
   tema?: 'noche';
+  privada?: boolean;
   personajes: Record<string, Personaje>;
   ocultos: Record<string, { hasta: number; nombre: string }>;
   capitulo: Capitulo;
@@ -89,7 +90,8 @@ export default function RadionovelaClient(p: Props) {
   const siguiente = p.indice.find((c) => c.n === cap.n + 1);
   // Al terminar un capítulo, lo que sigue sale arriba, donde estaban los personajes, para no tener que bajar hasta el
   // final de la página: el siguiente capítulo y la lista de capítulos, o (en la última parte) la invitación a hacerse miembro.
-  const ctaArriba = terminado && !siguiente && !p.miembro;
+  // (en las privadas, que son de la familia, no se invita a la membresía)
+  const ctaArriba = terminado && !siguiente && !p.miembro && !p.privada;
   const listaArriba = terminado && !!siguiente;
   useEffect(() => {
     if (ctaArriba || listaArriba) fin.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -214,7 +216,7 @@ export default function RadionovelaClient(p: Props) {
               <Link href={`/radionovelas/${p.slug}?cap=${siguiente.n}`} className={s.botonSiguiente}>
                 Siguiente: Capítulo {siguiente.n} · {siguiente.titulo} →
               </Link>
-            ) : !p.miembro && !ctaArriba ? (
+            ) : !p.miembro && !ctaArriba && !p.privada ? (
               invitacion
             ) : null}
           </>

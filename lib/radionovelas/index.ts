@@ -5,6 +5,7 @@ import capitulosDijoQueSi from './dijoQueSiCapitulos.json';
 import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
 import capitulosElDinero from './elDineroQueTodaviaEsperanCapitulos.json';
 import capitulosSanFrancisco from './loQueHizoEnSanFranciscoCapitulos.json';
+import capitulosRicky from './rickyShakeCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -46,6 +47,9 @@ export type Radionovela = {
   tema?: 'noche';
   // la etiqueta de arriba de la página (por omisión, «🎙️ RADIONOVELA · FICCIÓN»)
   etiqueta?: string;
+  // privada: solo se abre con el enlace (no sale en /radionovelas ni en /apoya, ni en buscadores) y todos sus
+  // capítulos son gratis. Es para las historias de la familia de Armando.
+  privada?: true;
 };
 
 export const RADIONOVELAS: Radionovela[] = [
@@ -199,12 +203,39 @@ export const RADIONOVELAS: Radionovela[] = [
     estilo: 'comic',
     etiqueta: 'RADIONOVELA · HUMOR',
   },
+  {
+    slug: 'ricky-shake-y-sus-abuelos',
+    titulo: 'Ricky Shake y sus abuelos en México',
+    lema: 'Un cuento del abuelo Armando para Ricky.',
+    descripcion:
+      'Los abuelos llegan a Atizapán en pleno Mundial, y Ricky Shake descubre que hay aventuras que no vienen en ningún videojuego. Un cuento del abuelo Armando para Ricky, en 2 capítulos.',
+    personajes: {
+      N: { nombre: 'La narradora', edad: 'el libro de cuentos', color: '#e8a800', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/N' },
+      K: { nombre: 'Ricky Shake', edad: '10 años', color: '#1eb4a8', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/K' },
+      A: { nombre: 'El abuelo', edad: 'su pequeño Google', color: '#f28c1e', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/A' },
+      B: { nombre: 'La abuela Mirna', edad: 'la abuela', color: '#e8409a', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/B' },
+      M: { nombre: 'Ariza', edad: 'la mamá', color: '#8c5ad2', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/M' },
+      P: { nombre: 'Ricardo', edad: 'el papá', color: '#2ea05a', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/P' },
+      T: { nombre: 'La tía Meli', edad: 'su aliada secreta', color: '#d4a800', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/T' },
+      C: { nombre: 'La prima Marcela', edad: 'la prima', color: '#e86e7a', cara: '/radionovelas/ricky-shake-y-sus-abuelos/caras/C' },
+    },
+    aviso: 'Un cuento del abuelo Armando para Ricky: a los abuelos nos encanta visitarte en México, y siempre pensamos en regresar.',
+    capitulos: capitulosRicky as Capitulo[],
+    versionAudio: '1',
+    estilo: 'comic',
+    etiqueta: 'UN CUENTO DEL ABUELO',
+    privada: true,
+  },
 ];
 
 export function getRadionovela(slug: string): Radionovela | undefined {
   return RADIONOVELAS.find((r) => r.slug === slug);
 }
 
-export function capituloGratis(n: number) {
-  return n === 1;
+// Las que se muestran en /radionovelas y en /apoya (las privadas solo se abren con el enlace).
+export const RADIONOVELAS_PUBLICAS = RADIONOVELAS.filter((r) => !r.privada);
+
+// El capítulo 1 es gratis; en las privadas, todos.
+export function capituloGratis(n: number, r?: Radionovela) {
+  return n === 1 || !!r?.privada;
 }

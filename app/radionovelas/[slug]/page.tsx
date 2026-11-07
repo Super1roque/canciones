@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const r = getRadionovela((await params).slug);
   if (!r) return {};
   const titulo = `🎙️ ${r.titulo} — radionovela`;
-  const descripcion = `${r.descripcion} Escucha gratis el primer capítulo.`;
+  const descripcion = r.privada ? r.descripcion : `${r.descripcion} Escucha gratis el primer capítulo.`;
   const imagen = `/radionovelas/${r.slug}/og.jpg`;
   return {
     title: titulo,
@@ -27,6 +27,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       type: 'website',
     },
     twitter: { card: 'summary_large_image', title: titulo, description: descripcion, images: [imagen] },
+    // las privadas (de la familia) no van a los buscadores
+    ...(r.privada ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -36,7 +38,7 @@ export default async function RadionovelaPage({ params, searchParams }: Params) 
   const pedido = parseInt((await searchParams).cap || '1', 10);
   const cap = r.capitulos.find((c) => c.n === pedido) ?? r.capitulos[0];
   const miembro = await miembroActivo((await cookies()).get(COOKIE_MIEMBRO)?.value);
-  const abierto = capituloGratis(cap.n) || miembro;
+  const abierto = capituloGratis(cap.n, r) || miembro;
   return (
     <RadionovelaClient
       slug={r.slug}
@@ -45,11 +47,12 @@ export default async function RadionovelaPage({ params, searchParams }: Params) 
       aviso={r.aviso}
       estilo={r.estilo}
       etiqueta={r.etiqueta}
+      privada={!!r.privada}
       tema={r.tema}
       personajes={r.personajes}
       ocultos={r.ocultos ?? {}}
       capitulo={abierto ? cap : { ...cap, lineas: [], escenas: [] }}
-      indice={r.capitulos.map((c) => ({ n: c.n, titulo: c.titulo, duracion: c.duracion, gratis: capituloGratis(c.n) }))}
+      indice={r.capitulos.map((c) => ({ n: c.n, titulo: c.titulo, duracion: c.duracion, gratis: capituloGratis(c.n, r) }))}
       abierto={abierto}
       miembro={miembro}
       audioUrl={`/api/radionovelas/${r.slug}/${cap.n}?v=${r.versionAudio}`}

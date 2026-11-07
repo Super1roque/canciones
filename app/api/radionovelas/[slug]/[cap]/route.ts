@@ -7,14 +7,15 @@ import { capituloGratis, getRadionovela } from '@/lib/radionovelas';
 export const runtime = 'nodejs';
 
 // Audio de un capítulo de radionovela, desde Storage (radionovelas/<slug>/capNN.mp3), con Range requests como
-// el de /historias. El capítulo 1 es para todos; los demás, solo para miembros activos de /apoya.
+// el de /historias. El capítulo 1 es para todos (en las privadas, todos los capítulos); los demás, solo para
+// miembros activos de /apoya.
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string; cap: string }> }) {
   try {
     const { slug, cap } = await params;
     const novela = getRadionovela(slug);
     const n = /^[0-9]{1,2}$/.test(cap) ? parseInt(cap, 10) : 0;
     if (!novela || !novela.capitulos.some((c) => c.n === n)) return new Response('No encontrado', { status: 404 });
-    const gratis = capituloGratis(n);
+    const gratis = capituloGratis(n, novela);
     if (!gratis && !(await miembroActivo((await cookies()).get(COOKIE_MIEMBRO)?.value))) {
       return new Response('Este capítulo es para miembros', { status: 403 });
     }
