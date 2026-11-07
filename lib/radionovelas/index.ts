@@ -13,8 +13,21 @@ import capitulosRicky from './rickyShakeCapitulos.json';
 // generan con los scripts de montaje de cada capítulo (ver scripts/audiolibros/README.md, «Radionovelas»).
 // w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo;
 // tel: se oye por teléfono; f: foto de la noticia que llena la viñeta mientras se dice; rotulo: etiqueta de la viñeta;
-// fantasma: la voz de un muerto (la caricatura sale azulada y transparente).
-export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1; f?: string; rotulo?: string; fantasma?: 1 };
+// fantasma: la voz de un muerto (la caricatura sale azulada y transparente); fs: otras imágenes que reemplazan a f
+// desde cierto segundo de la línea (cuando una frase nombra varios lugares).
+export type LineaRadionovela = {
+  t: number;
+  e: number;
+  p: string;
+  x: string;
+  w?: number[];
+  a?: 1;
+  tel?: 1;
+  f?: string;
+  fs?: { t: number; f: string }[];
+  rotulo?: string;
+  fantasma?: 1;
+};
 export type Capitulo = {
   n: number;
   titulo: string;
@@ -221,7 +234,7 @@ export const RADIONOVELAS: Radionovela[] = [
     },
     aviso: 'Un cuento del abuelo Armando para Ricky: a los abuelos nos encanta visitarte en México, y siempre pensamos en regresar.',
     capitulos: capitulosRicky as Capitulo[],
-    versionAudio: '1',
+    versionAudio: '2',
     estilo: 'comic',
     etiqueta: 'UN CUENTO DEL ABUELO',
     privada: true,

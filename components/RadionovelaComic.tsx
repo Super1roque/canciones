@@ -64,6 +64,7 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
   const per = personajes[l.p];
   const narr = l.p === 'N';
   const escena = capitulo.escenas.find((e) => t >= e.t && t < e.t + 3.8);
+  const foto = (l.fs ?? []).filter((x) => t >= x.t).pop()?.f ?? l.f;
   const dato = (capitulo.datos ?? []).find((d) => t >= d.t && t < d.e);
   const onos = (capitulo.ono ?? []).map((o, i) => ({ ...o, i })).filter((o) => t >= o.t && t < o.t + 1.5);
 
@@ -73,10 +74,10 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
         className={`${s.vineta} ${l.a ? s.archivo : ''} ${l.fantasma ? s.fantasma : ''}`}
         style={{ ['--col' as string]: l.a ? '#968c7d' : l.fantasma ? '#24365a' : per.color }}
       >
-        {l.f ? (
-          // la foto de la noticia (en estilo cómic, con las caras difuminadas) mientras el narrador da los datos
+        {foto ? (
+          // la foto de la noticia (en estilo cómic, con las caras difuminadas) o la ilustración de la escena
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={l.f} src={l.f} alt="" className={s.foto} />
+          <img key={foto} src={foto} alt="" className={s.foto} />
         ) : per.cara ? (
           // el rebote se reinicia en cada palabra alternando dos animaciones iguales
           // eslint-disable-next-line @next/next/no-img-element
