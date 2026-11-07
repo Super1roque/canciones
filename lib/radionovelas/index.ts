@@ -4,6 +4,7 @@ import capitulosChaleVilay from './chaleVilayCapitulos.json';
 import capitulosDijoQueSi from './dijoQueSiCapitulos.json';
 import capitulosSucedioCongreso from './sucedioCongresoCapitulos.json';
 import capitulosElDinero from './elDineroQueTodaviaEsperanCapitulos.json';
+import capitulosSanFrancisco from './loQueHizoEnSanFranciscoCapitulos.json';
 
 // Radionovelas: series de ficción sonora por capítulos. El primer capítulo de cada una es gratis; los demás son
 // un beneficio de la membresía de /apoya (lib/miembrosApoya.ts). El audio de cada capítulo está en Storage como
@@ -173,6 +174,24 @@ export const RADIONOVELAS: Radionovela[] = [
     versionAudio: '1',
     estilo: 'comic',
     etiqueta: 'RADIONOVELA-NOTICIA',
+  },
+  {
+    slug: 'lo-que-hizo-en-san-francisco',
+    titulo: 'Lo que hizo en San Francisco',
+    lema: 'Un forastero, su caballo… y una amenaza misteriosa.',
+    descripcion:
+      'Un forastero entra a una cantina de Olancho, le roban el caballo y amenaza con hacer lo mismo que hizo en San Francisco. Nadie se atreve a preguntar qué fue. Una radionovela de humor de un solo capítulo, gratis, de Armando Roque Godoy.',
+    personajes: {
+      N: { nombre: 'Narrador', edad: '', color: '#f28c1e', cara: '/radionovelas/lo-que-hizo-en-san-francisco/caras/N' },
+      V: { nombre: 'El forastero', edad: 'de paso', color: '#8c4a1e', cara: '/radionovelas/lo-que-hizo-en-san-francisco/caras/V' },
+      C: { nombre: 'Don Beto', edad: 'el cantinero', color: '#2ea05a', cara: '/radionovelas/lo-que-hizo-en-san-francisco/caras/C' },
+      B: { nombre: 'Chepito', edad: 'el de siempre', color: '#e8a800', cara: '/radionovelas/lo-que-hizo-en-san-francisco/caras/B' },
+    },
+    aviso: 'Lo que hizo en San Francisco es una historia de humor, adaptada de un chiste popular. Sus personajes son de ficción.',
+    capitulos: capitulosSanFrancisco as Capitulo[],
+    versionAudio: '1',
+    estilo: 'comic',
+    etiqueta: 'RADIONOVELA · HUMOR',
   },
 ];
 
