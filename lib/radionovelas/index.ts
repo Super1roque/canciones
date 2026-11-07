@@ -11,8 +11,9 @@ import capitulosSanFrancisco from './loQueHizoEnSanFranciscoCapitulos.json';
 // radionovelas/<slug>/capNN.mp3. Los capítulos (líneas con tiempo, personaje y texto, y marcas de escena) se
 // generan con los scripts de montaje de cada capítulo (ver scripts/audiolibros/README.md, «Radionovelas»).
 // w: el segundo en que empieza cada palabra (para el globo karaoke del estilo cómic); a: la línea es de un video viejo;
-// tel: se oye por teléfono; f: foto de la noticia que llena la viñeta mientras se dice; rotulo: etiqueta de la viñeta.
-export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1; f?: string; rotulo?: string };
+// tel: se oye por teléfono; f: foto de la noticia que llena la viñeta mientras se dice; rotulo: etiqueta de la viñeta;
+// fantasma: la voz de un muerto (la caricatura sale azulada y transparente).
+export type LineaRadionovela = { t: number; e: number; p: string; x: string; w?: number[]; a?: 1; tel?: 1; f?: string; rotulo?: string; fantasma?: 1 };
 export type Capitulo = {
   n: number;
   titulo: string;
@@ -41,6 +42,8 @@ export type Radionovela = {
   versionAudio: string;
   // 'comic': la página se ve como su video de TikTok en pop art (viñeta con el que habla, globos y onomatopeyas).
   estilo?: 'comic';
+  // 'noche': el estilo cómic con fondo azul de noche y colores apagados (para las de suspenso)
+  tema?: 'noche';
   // la etiqueta de arriba de la página (por omisión, «🎙️ RADIONOVELA · FICCIÓN»)
   etiqueta?: string;
 };
@@ -103,20 +106,23 @@ export const RADIONOVELAS: Radionovela[] = [
     descripcion:
       'Cuentan que cada viernes, a la medianoche, una carreta recorría San Pedro Sula desde Guamilito hasta el cementerio general. Una leyenda de suspenso en 4 capítulos de Armando Roque Godoy.',
     personajes: {
-      N: { nombre: 'Narrador', edad: '', color: '#f2a03d' },
-      C: { nombre: 'Chale Vilay', edad: 'el carretero', color: '#c9a27e', inicial: 'Ch' },
-      T: { nombre: 'Tomás', edad: 'su sobrino', color: '#7ee0a1' },
-      R: { nombre: 'Rosa', edad: 'la novia de Tomás', color: '#ff8fab' },
-      E: { nombre: 'Doña Engracia', edad: 'vecina de Guamilito', color: '#b79cff', inicial: 'E' },
-      S: { nombre: 'Lencho', edad: 'el sereno', color: '#a0b0c4', inicial: 'L' },
-      D: { nombre: 'Dr. Medina', edad: 'el médico', color: '#6fb7ff', inicial: 'Dr' },
-      P: { nombre: 'Padre Ignacio', edad: 'el cura', color: '#ffd166' },
-      M: { nombre: 'Doña Tina', edad: 'la mamá de Rosa', color: '#5ed6d6', inicial: 'Ti' },
+      N: { nombre: 'Narrador', edad: '', color: '#c07a2a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/N' },
+      C: { nombre: 'Chale Vilay', edad: 'el carretero', color: '#a8743a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/C' },
+      T: { nombre: 'Tomás', edad: 'su sobrino', color: '#5f8a5a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/T' },
+      R: { nombre: 'Rosa', edad: 'la novia de Tomás', color: '#b05a74', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/R' },
+      E: { nombre: 'Doña Engracia', edad: 'vecina de Guamilito', color: '#6c5a96', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/E' },
+      S: { nombre: 'Lencho', edad: 'el sereno', color: '#4a6a8a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/S' },
+      D: { nombre: 'Dr. Medina', edad: 'el médico', color: '#9a7a2a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/D' },
+      P: { nombre: 'Padre Ignacio', edad: 'el cura', color: '#7a5a3a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/P' },
+      M: { nombre: 'Doña Tina', edad: 'la mamá de Rosa', color: '#b0583a', cara: '/radionovelas/la-carreta-de-chale-vilay/caras/M' },
     },
     aviso:
       'La carreta de Chale Vilay es una obra de ficción inspirada en una leyenda de la antigua San Pedro Sula. Sus personajes y su historia se cuentan como leyenda, no como hechos comprobados.',
     capitulos: capitulosChaleVilay as Capitulo[],
     versionAudio: '1',
+    estilo: 'comic',
+    tema: 'noche',
+    etiqueta: 'LEYENDA · RADIONOVELA',
   },
   {
     slug: 'dijo-que-si',

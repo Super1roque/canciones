@@ -600,3 +600,83 @@
   font-weight: 800;
   color: #0c0a0a;
 }
+
+/* Tema de noche para el estilo cómic (las leyendas de suspenso): azul oscuro con puntos ámbar de farol, textos claros
+   y recuadros color papel viejo. */
+.comic.noche {
+  background:
+    radial-gradient(circle, rgba(242, 170, 70, 0.22) 26%, transparent 30%) 0 0 / 20px 20px,
+    radial-gradient(circle, rgba(242, 170, 70, 0.22) 26%, transparent 30%) 10px 10px / 20px 20px,
+    radial-gradient(ellipse 90% 50% at 50% 0%, #2a3150, transparent 70%),
+    #0e1120;
+  color: #efe6d2;
+}
+
+.comic.noche .etiqueta {
+  background: #f2aa46;
+  color: #0e1120;
+}
+
+.comic.noche .titulo {
+  color: #f2aa46;
+}
+
+.comic.noche .lema,
+.comic.noche .aviso,
+.comic.noche .persona i,
+.comic.noche .escena,
+.comic.noche .ep small,
+.comic.noche .barra span {
+  color: #c9bea6;
+}
+
+.comic.noche .cap,
+.comic.noche .finMiembro,
+.comic.noche .candado,
+.comic.noche .seguir,
+.comic.noche .activa,
+.comic.noche .epActual {
+  background: #f4ead2;
+  color: #2a2420;
+}
+
+.comic.noche .persona span,
+.comic.noche .guionTitulo,
+.comic.noche .lista h2,
+.comic.noche .ep {
+  color: #efe6d2;
+}
+
+.comic.noche .seguir .ep,
+.comic.noche .seguir .lista h2,
+.comic.noche .epActual {
+  color: #2a2420;
+}
+
+.comic.noche .ep {
+  border-bottom-color: #3a4060;
+}
+
+.comic.noche .linea .texto {
+  color: inherit;
+}
+
+.comic.noche .avatar {
+  background: #2a3150;
+}
+
+.comic.noche .barra {
+  background: #f4ead2;
+}
+
+.comic.noche .barra span {
+  color: #5a4a30;
+}
+
+.comic.noche .narrador .texto {
+  color: #e9dfd2;
+}
+
+.comic.noche .activa .texto {
+  color: #2a2420;
+}

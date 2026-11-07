@@ -6,7 +6,7 @@ import s from './RadionovelaComic.module.css';
 // El escenario de las radionovelas en estilo cómic (como su video de TikTok en pop art): el que habla sale recortado
 // en una viñeta con rayos de su color y rebota con cada palabra; lo que dice va en un globo (el narrador, en un
 // recuadro), con la palabra que suena en rojo; las líneas de un video viejo salen en gris con «ARCHIVO», las del
-// teléfono con «POR TELÉFONO»; en las radionovelas-noticia, la viñeta muestra las fotos de la noticia con recuadros de
+// teléfono con «POR TELÉFONO», la voz de un muerto azulada y transparente; en las radionovelas-noticia, la viñeta muestra las fotos de la noticia con recuadros de
 // datos mientras habla el narrador; y las
 // onomatopeyas estallan cuando suena el mazo o la tos.
 type Props = {
@@ -70,8 +70,8 @@ export default function RadionovelaComic({ t, capitulo, personajes, nombre, sona
   return (
     <section className={s.escenario}>
       <div
-        className={`${s.vineta} ${l.a ? s.archivo : ''}`}
-        style={{ ['--col' as string]: l.a ? '#968c7d' : per.color }}
+        className={`${s.vineta} ${l.a ? s.archivo : ''} ${l.fantasma ? s.fantasma : ''}`}
+        style={{ ['--col' as string]: l.a ? '#968c7d' : l.fantasma ? '#24365a' : per.color }}
       >
         {l.f ? (
           // la foto de la noticia (en estilo cómic, con las caras difuminadas) mientras el narrador da los datos

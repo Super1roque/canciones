@@ -312,3 +312,16 @@
     translate: -50% 10px;
   }
 }
+
+/* la voz de Chale ya muerto: azulado, transparente y con un halo, sobre rayos de noche */
+.fantasma .figura {
+  opacity: 0.78;
+  filter: grayscale(1) sepia(0.6) hue-rotate(175deg) saturate(2.2) brightness(1.15) drop-shadow(0 0 22px rgba(150, 200, 255, 0.85));
+  animation: flotar 3.2s ease-in-out infinite;
+}
+
+@keyframes flotar {
+  50% {
+    transform: translateX(-50%) translateY(-2.5%);
+  }
+}
