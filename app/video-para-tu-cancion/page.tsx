@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Formulario from './Formulario';
+import VideoEjemplo from './VideoEjemplo';
 import { MENSAJE_WHATSAPP, PRECIO_VIDEO, WHATSAPP_ARMANDO } from './datos';
 import s from './pagina.module.css';
 
@@ -23,8 +24,7 @@ export default function Pagina() {
         <p className={s.etiqueta}>VIDEOS PARA CANCIONES</p>
         <h1 className={s.titulo}>¿Tienes una canción? <span className={s.resaltado}>Te hago su video</span></h1>
         <p className={s.texto}>Con tu historia, tus personajes y la letra en pantalla. Mira un ejemplo:</p>
-        {/* El video empieza con sonido apagado hasta que la persona lo toca: así lo exigen los navegadores. */}
-        <video className={s.video} src="/video-para-tu-cancion/muestra.mp4" poster="/video-para-tu-cancion/portada.jpg" controls playsInline preload="metadata" />
+        <VideoEjemplo />
 
         <section className={s.oferta}>
           <p className={s.ofertaEtiqueta}>OFERTA POR TIEMPO LIMITADO</p>
