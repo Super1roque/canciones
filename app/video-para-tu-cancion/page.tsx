@@ -33,7 +33,7 @@ export default function Pagina() {
         <VideoEjemplo />
 
         <section className={s.oferta}>
-          <p className={s.ofertaEtiqueta}>OFERTA POR TIEMPO LIMITADO</p>
+          <p className={s.ofertaEtiqueta}>OFERTA HASTA EL 30 DE NOVIEMBRE</p>
           <p className={s.precio}>{PRECIO_VIDEO}</p>
           <p className={s.ofertaTexto}>el video completo de tu canción</p>
           <p className={s.gratis}>La muestra de 20 segundos es <strong>gratis y sin compromiso</strong></p>

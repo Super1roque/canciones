@@ -14,7 +14,7 @@ export default function VideoEjemplo() {
       <video
         ref={video}
         className={s.video}
-        src="/video-para-tu-cancion/muestra.mp4"
+        src="/video-para-tu-cancion/muestra.mp4?v=2"
         poster="/video-para-tu-cancion/portada.jpg"
         controls={!terminado}
         playsInline
