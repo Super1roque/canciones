@@ -8,7 +8,13 @@ import s from './pagina.module.css';
 // y recibe gratis una muestra de 20 segundos. El video completo se cobra por WhatsApp.
 const TITULO = 'Convierte tu canción en un video';
 const DESCRIPCION = `Mándame el audio y la foto de los protagonistas. Te hago gratis una muestra de 20 segundos. Video completo: ${PRECIO_VIDEO}.`;
-export const metadata: Metadata = { title: TITULO, description: DESCRIPCION, openGraph: { title: TITULO, description: DESCRIPCION } };
+const PORTADA = '/video-para-tu-cancion/og.jpg';
+export const metadata: Metadata = {
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: { title: TITULO, description: DESCRIPCION, images: [{ url: PORTADA, width: 1200, height: 630, type: 'image/jpeg' }] },
+  twitter: { card: 'summary_large_image', title: TITULO, description: DESCRIPCION, images: [PORTADA] },
+};
 
 const PASOS = [
   ['1', 'Mándame tu canción', 'El audio y, si salen personas reales, sus fotos.'],
