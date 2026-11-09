@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { checkoutApoya, grupoApoya } from '@/lib/miembrosApoya';
 import { RADIONOVELAS_PUBLICAS as RADIONOVELAS } from '@/lib/radionovelas';
+import BotonMiembro from './BotonMiembro';
 import s from './apoya.module.css';
 
 // Membresía mensual para apoyar los videos de noticias y opinión. Se cobra como suscripción
@@ -49,7 +50,7 @@ const BENEFICIOS = [
   {
     icono: '🎙️',
     titulo: 'Radionovelas completas',
-    texto: 'Escuchas todas las temporadas completas desde el primer día, sin esperar los cortes de TikTok.',
+    texto: 'Escuchas todas las radionovelas completas desde el primer día, sin esperar los cortes de TikTok. ¡Subimos nuevas todas las semanas!',
   },
 ];
 
@@ -123,13 +124,11 @@ export default async function ApoyaPage({ searchParams }: { searchParams: Promis
             ))}
           </ul>
           {checkout ? (
-            <a href={checkout} className={s.boton}>
-              Hacerme miembro
-            </a>
+            <BotonMiembro href={checkout} className={s.boton} />
           ) : (
             <p className={s.pronto}>Muy pronto</p>
           )}
-          <p className={s.nota}>Pago seguro con Hotmart. Cancelas cuando quieras, sin compromiso.</p>
+          <p className={s.nota}>Pago seguro con Hotmart, con tarjeta de débito o crédito. Cancelas cuando quieras, sin compromiso.</p>
         </section>
 
         {/* Va después de la tarjeta: en el celular, el precio tiene que verse sin bajar. */}
