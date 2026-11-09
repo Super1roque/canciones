@@ -878,6 +878,7 @@ export default function Home() {
               </button>
             ))}
             <a href="/admin/pedidos" className="nav-btn">📦 Pedidos</a>
+            <a href="/admin/videos-cancion" className="nav-btn">🎬 Videos de canciones</a>
             <a href="/admin/tenants" className="nav-btn">👥 Tenants</a>
             <a href="/admin/mensajes" className="nav-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
               💬 Mensajes

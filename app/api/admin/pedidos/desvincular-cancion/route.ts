@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { esAdminPeticion } from '@/lib/adminServidor';
 import { desvincularCancionCompartida } from '@/lib/pedidoService';
 import { eliminarCancionCompartida } from '@/lib/cancionCompartidaService';
 
@@ -6,6 +7,7 @@ import { eliminarCancionCompartida } from '@/lib/cancionCompartidaService';
 // audio/doc de canciones_compartidas por completo (no tiene sentido
 // dejarlo huérfano si el archivo era el incorrecto).
 export async function POST(request: Request) {
+  if (!(await esAdminPeticion(request))) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   try {
     const { pedidoId } = await request.json();
     if (!pedidoId) return NextResponse.json({ error: 'Falta el id del pedido' }, { status: 400 });

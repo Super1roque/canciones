@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { enlaceFirmado, type SolicitudVideo } from '@/lib/videoCancion';
 
 const ADMIN_EMAIL = 'super1roque@gmail.com';
 
@@ -119,5 +120,41 @@ export async function avisarNuevaVerificacion(telefono: string): Promise<void> {
     if (error) console.error('Resend devolvió un error al avisar de la verificación:', error);
   } catch (e) {
     console.error('avisarNuevaVerificacion falló:', e);
+  }
+}
+
+// Solicitud de muestra gratis en /video-para-tu-cancion. Los enlaces firmados duran 7 días; después, el panel genera otros.
+export async function avisarSolicitudVideo(s: SolicitudVideo & { audio: string; fotos: string[] }): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  try {
+    const horas = 7 * 24;
+    const audio = await enlaceFirmado(s.audio, horas);
+    const fotos = await Promise.all(s.fotos.map((f) => enlaceFirmado(f, horas)));
+    const saludo = encodeURIComponent(`Hola, ${s.nombre}. Soy Armando. Recibí tu canción «${s.cancion}» y te voy a preparar tu muestra gratis de 20 segundos.`);
+    const { error } = await resend.emails.send({
+      from: 'Canciones <onboarding@resend.dev>',
+      to: ADMIN_EMAIL,
+      subject: `🎬 Nueva canción para video — ${s.nombre.replace(/[\r\n]+/g, ' ')}`,
+      html: `
+        <p><a href="https://wa.me/${s.whatsapp}?text=${saludo}"><strong>💬 Escribirle por WhatsApp (+${s.whatsapp})</strong></a></p>
+        <ul>
+          <li><strong>Nombre:</strong> ${esc(s.nombre)}</li>
+          <li><strong>Canción:</strong> ${esc(s.cancion)}</li>
+          <li><strong>Estilo:</strong> ${esc(s.estilo)}</li>
+          <li><strong>Para cuándo:</strong> ${esc(s.fecha || '—')}</li>
+        </ul>
+        <p><strong>De qué trata:</strong><br>${esc(s.historia)}</p>
+        <p><strong>Protagonistas:</strong><br>${esc(s.protagonistas || '—')}</p>
+        <p><a href="${esc(audio)}">🎵 Descargar el audio</a></p>
+        ${fotos.map((f, i) => `<p><a href="${esc(f)}">📷 Foto ${i + 1}</a></p>`).join('') || '<p>Sin fotos.</p>'}
+        <p>Confirmó tener derecho a usar la canción y el permiso de las personas que aparecen.</p>
+        <p><a href="https://corridos.online/admin/videos-cancion">Ver todas las solicitudes →</a></p>
+      `,
+    });
+    if (error) console.error('Resend devolvió un error al avisar de la solicitud de video:', error);
+  } catch (e) {
+    console.error('avisarSolicitudVideo falló:', e);
   }
 }

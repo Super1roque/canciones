@@ -1,5 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { auth } from '@/lib/firebaseClient';
+
+// Las rutas de pedidos comprueban la sesión en el servidor: hay que mandarles el token.
+async function fetchConSesion(url: string, init?: RequestInit) {
+  const token = await auth.currentUser?.getIdToken();
+  return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${token}` } });
+}
 
 // No se importa de lib/cancionCompartidaService.ts a propósito — ese
 // archivo usa next/headers (solo válido en Server Components) y esto es
@@ -150,7 +157,7 @@ function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado 
     if (!confirm('¿Quitar este enlace? Se borra el audio subido y el pedido queda sin link, como si nunca se hubiera generado.')) return;
     setDesvinculando(true);
     try {
-      const res = await fetch('/api/admin/pedidos/desvincular-cancion', {
+      const res = await fetchConSesion('/api/admin/pedidos/desvincular-cancion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pedidoId: p.id }),
@@ -269,7 +276,7 @@ export default function AdminPedidosPage() {
   // vez que se ejecuta, eso queda solo para la primera carga real.
   const cargarSilencioso = useCallback(async () => {
     const [pRes, rRes, ccRes, tRes] = await Promise.all([
-      fetch('/api/admin/pedidos'),
+      fetchConSesion('/api/admin/pedidos'),
       fetch('/api/admin/recargas'),
       fetch('/api/admin/canciones-compartidas'),
       fetch('/api/admin/tenants'),
@@ -306,7 +313,7 @@ export default function AdminPedidosPage() {
 
   async function marcarEntregado(id: string) {
     setOcupado(id);
-    await fetch('/api/admin/pedidos', {
+    await fetchConSesion('/api/admin/pedidos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
