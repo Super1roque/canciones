@@ -3,6 +3,26 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { conLinksClickeables } from '@/lib/linkify';
 
+// La foto se pide con fetch: un <img> no puede mandar el token que exige la ruta.
+function ImagenChat({ id, conTexto }: { id: string; conTexto: boolean }) {
+  const [url, setUrl] = useState('');
+  useEffect(() => {
+    let creada = '';
+    let vigente = true;
+    fetch(`/api/admin/chat/imagen/${id}`)
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => { if (b && vigente) { creada = URL.createObjectURL(b); setUrl(creada); } })
+      .catch(() => {});
+    return () => { vigente = false; if (creada) URL.revokeObjectURL(creada); };
+  }, [id]);
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt="Foto enviada" style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 6, display: 'block', marginBottom: conTexto ? '0.4rem' : 0 }} />
+    </a>
+  );
+}
+
 type EstadoPush = 'cargando' | 'sin-soporte' | 'denegado' | 'inactivo' | 'activando' | 'activo' | 'error';
 
 // El navegador solo acepta la clave pública del push como Uint8Array, no
@@ -261,15 +281,7 @@ function Hilo({ telefono, onLeido, onVolver }: { telefono: string; onLeido: (tel
                 color: m.autor === 'admin' ? '#fff' : 'var(--text)',
                 border: m.autor === 'admin' ? 'none' : '1px solid var(--border)',
               }}>
-                {m.imagenPath && (
-                  <a href={`/api/admin/chat/imagen/${m.id}`} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={`/api/admin/chat/imagen/${m.id}`}
-                      alt="Foto enviada"
-                      style={{ maxWidth: '100%', maxHeight: 220, borderRadius: 6, display: 'block', marginBottom: m.texto ? '0.4rem' : 0 }}
-                    />
-                  </a>
-                )}
+                {m.imagenPath && <ImagenChat id={m.id} conTexto={!!m.texto} />}
                 {m.texto && <div style={{ fontSize: '0.88rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{conLinksClickeables(m.texto)}</div>}
                 <div style={{ fontSize: '0.68rem', opacity: 0.75, marginTop: '0.2rem', textAlign: 'right' }}>{formatFecha(m.fecha)}</div>
               </div>

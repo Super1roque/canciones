@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { normalizarTelefono, conCodigoPais, telefonoValido, esCelularHondurasValido } from '@/lib/tenantService';
 import { obtenerOCrearLinkHistoria, listarTodosLosLinks } from '@/lib/historiaLinksService';
 import { esPlantilla, sujetoDe } from '@/lib/plantillasHistoria';
+import { soloAdmin } from '@/lib/adminServidor';
 
 // Lista todas las historias generadas hasta ahora — no todas corresponden
 // a un tenant registrado en la app de corridos (ej. familiares que solo
 // usan Mi Historia), así que esto NO se cruza contra la tabla de tenants.
-export async function GET() {
+export async function GET(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   const links = await listarTodosLosLinks();
   return NextResponse.json(
     links
@@ -18,6 +21,8 @@ export async function GET() {
 // Genera (o reusa, si ya existía) el link de "Mi Historia" para un tenant
 // puntual — se lo pasa el admin a mano, no aparece en el dashboard normal.
 export async function POST(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     // sujeto: el homenajeado (homenaje), el niño o niña (cuento) o la empresa (empresa).
     const { telefono: rawTelefono, nombre: rawNombre, plantilla: rawPlantilla, sujeto: rawSujeto } = await request.json();

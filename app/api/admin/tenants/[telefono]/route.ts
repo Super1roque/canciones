@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
+import { soloAdmin } from '@/lib/adminServidor';
 
 // Info de vista previa para el modal de confirmación de borrado en
 // /admin/tenants — mismos datos que antes había que revisar a mano en
 // Firestore antes de borrar un tenant (pedidos, recargas, verificaciones).
-export async function GET(_request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   const { telefono } = await params;
   const db = getDb();
 
@@ -41,7 +44,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tel
 // canciones_compartidas que tuvieran vinculado, incluyendo el archivo en
 // Storage), recargas y verificaciones — el mismo cascade que se venía
 // haciendo a mano cada vez que se pedía borrar un tenant de prueba.
-export async function DELETE(_request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { telefono } = await params;
     const db = getDb();

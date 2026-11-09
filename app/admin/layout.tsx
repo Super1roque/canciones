@@ -3,6 +3,22 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { esSuperAdmin } from '@/lib/admin';
+import { auth } from '@/lib/firebaseClient';
+
+// Las rutas de /api/admin verifican la sesión en el servidor: toda llamada desde el panel lleva el token.
+// Va aquí, al cargar el archivo, para que ya esté listo cuando las páginas hagan su primer fetch.
+if (typeof window !== 'undefined') {
+  const original = window.fetch.bind(window);
+  window.fetch = async (entrada, init) => {
+    const texto = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
+    const url = new URL(texto, window.location.href);
+    if (url.origin !== window.location.origin || !url.pathname.startsWith('/api/admin/')) return original(entrada, init);
+    const headers = new Headers(init?.headers ?? (entrada instanceof Request ? entrada.headers : undefined));
+    const token = await auth.currentUser?.getIdToken();
+    if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+    return original(entrada, { ...init, headers });
+  };
+}
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

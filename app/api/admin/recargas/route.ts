@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { listarTodasRecargas, resolverRecarga } from '@/lib/recargaService';
+import { soloAdmin } from '@/lib/adminServidor';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   const recargas = await listarTodasRecargas();
   return NextResponse.json(recargas);
 }
 
 export async function PATCH(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { id, aprobar } = await request.json();
     if (!id || typeof aprobar !== 'boolean') {

@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getStorageBucket } from '@/lib/firebaseService';
 import { listarMensajes, enviarMensaje, marcarLeido } from '@/lib/chatService';
+import { soloAdmin } from '@/lib/adminServidor';
 
 export const runtime = 'nodejs';
 
 const MAX_IMAGEN_BYTES = 8 * 1024 * 1024;
 
-export async function GET(_request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   const { telefono } = await params;
   const mensajes = await listarMensajes(telefono);
   await marcarLeido(telefono, 'admin');
@@ -14,6 +17,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tel
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ telefono: string }> }) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { telefono } = await params;
     const formData = await request.formData();

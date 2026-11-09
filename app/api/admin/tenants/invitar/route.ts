@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { guardarInvitacionReactivacion } from '@/lib/tenantService';
+import { soloAdmin } from '@/lib/adminServidor';
 
 export async function POST(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { telefono } = await request.json();
     if (!telefono) return NextResponse.json({ error: 'Falta el teléfono' }, { status: 400 });

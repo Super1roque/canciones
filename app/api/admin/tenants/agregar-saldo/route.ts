@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { agregarSaldo } from '@/lib/tenantService';
+import { soloAdmin } from '@/lib/adminServidor';
 
 // Función exclusiva del admin — nada de esto pasa por aprobación de una
 // solicitud del tenant. El admin la usa recién después de confirmar el
 // depósito por su cuenta (la foto del comprobante que le llega por
 // WhatsApp), no en base a lo que el tenant reporte dentro de la app.
 export async function POST(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { telefono, monto } = await request.json();
     const montoNum = Number(monto);

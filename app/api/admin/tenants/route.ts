@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { listarTodosTenants } from '@/lib/tenantService';
 import { listarTodosLosLinks } from '@/lib/historiaLinksService';
+import { soloAdmin } from '@/lib/adminServidor';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   const [tenants, links] = await Promise.all([listarTodosTenants(), listarTodosLosLinks()]);
   // Solo el link de su propia historia: los homenajes que haga un tenant
   // comparten su teléfono y pisarían a este en el Map.

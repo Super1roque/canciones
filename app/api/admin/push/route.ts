@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { guardarSuscripcionPush, eliminarSuscripcionPush } from '@/lib/pushService';
+import { soloAdmin } from '@/lib/adminServidor';
 
-// Sin chequeo de sesión acá, igual que el resto de /api/admin/* — el
-// panel admin entero confía en el guard del lado cliente (AdminGuard), no
-// hay verificación server-side en ninguna otra ruta de este panel.
 export async function POST(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const subscription = await request.json();
     if (!subscription?.endpoint) {
@@ -22,6 +22,8 @@ export async function POST(request: Request) {
 // Se llama al desactivar las notificaciones desde el navegador — borra la
 // suscripción guardada para no seguir intentando mandarle avisos.
 export async function DELETE(request: Request) {
+  const negado = await soloAdmin(request);
+  if (negado) return negado;
   try {
     const { endpoint } = await request.json();
     if (!endpoint) return NextResponse.json({ error: 'Falta el endpoint' }, { status: 400 });
