@@ -7,7 +7,10 @@ import { getDb, getStorageBucket } from '@/lib/firebaseService';
 //   videos_cancion/{id}: { nombre, whatsapp, cancion, historia, protagonistas, estilo, fecha, audio, fotos[], estado, creado }
 const COLECCION = 'videos_cancion';
 const LIMITE = 'videos_cancion_limite';
-const MAX_POR_DIA = 5;
+// Tigo y Claro hacen que muchos clientes compartan la misma IP: por conexión el tope es alto (solo frena
+// robots) y el límite real es por número de WhatsApp, que sí identifica a cada persona.
+const MAX_POR_IP = 20;
+const MAX_POR_WHATSAPP = 3;
 const TIPOS: Record<string, string> = {
   mp3: 'audio/mpeg', mpeg: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', wav: 'audio/wav', ogg: 'audio/ogg', opus: 'audio/ogg',
   aac: 'audio/aac', flac: 'audio/flac', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
@@ -19,14 +22,17 @@ export type SolicitudVideo = {
 };
 export type Archivo = { ext: string; datos: Buffer };
 
-// Cuenta por IP (guardada como hash) para que nadie llene el almacenamiento: true si ya llegó al tope de hoy.
-export async function excedioLimite(ip: string): Promise<boolean> {
+// Cuenta por IP y por WhatsApp (guardados como hash) para que nadie llene el almacenamiento.
+// Devuelve qué tope se alcanzó hoy, o null si se puede guardar (y entonces cuenta el envío en los dos).
+export async function excedioLimite(ip: string, whatsapp: string): Promise<'ip' | 'whatsapp' | null> {
   const dia = new Date().toISOString().slice(0, 10);
-  const ref = getDb().collection(LIMITE).doc(crypto.createHash('sha256').update(`${ip}|${dia}`).digest('hex'));
-  const envios = ((await ref.get()).get('envios') as number) || 0;
-  if (envios >= MAX_POR_DIA) return true;
-  await ref.set({ envios: envios + 1, dia });
-  return false;
+  const doc = (clave: string) => getDb().collection(LIMITE).doc(crypto.createHash('sha256').update(`${clave}|${dia}`).digest('hex'));
+  const refIp = doc(ip), refWa = doc(`wa:${whatsapp}`);
+  const [envIp, envWa] = await Promise.all([refIp.get(), refWa.get()]).then(r => r.map(d => (d.get('envios') as number) || 0));
+  if (envWa >= MAX_POR_WHATSAPP) return 'whatsapp';
+  if (envIp >= MAX_POR_IP) return 'ip';
+  await Promise.all([refIp.set({ envios: envIp + 1, dia }), refWa.set({ envios: envWa + 1, dia })]);
+  return null;
 }
 
 // La canción ya está en corridos.online (botón «Haz el video de tu canción» de /cancion/[id]): se copia su

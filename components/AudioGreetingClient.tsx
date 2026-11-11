@@ -41,7 +41,8 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean }) {
+  const [descargable, setDescargable] = useState(descargableInicial);
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   const [bloqueado, setBloqueado] = useState(restringida);
@@ -64,6 +65,31 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       setPuedeCompartirArchivo(false);
     }
   }, [descargable]);
+  // Mientras la descarga no esté pagada, se vuelve a preguntar al volver a la página y cada 20 s: si el
+  // admin ya la habilitó, aparece el botón de descarga sin que la persona tenga que recargar.
+  useEffect(() => {
+    if (descargable) return;
+    let cancelado = false;
+    async function revisar() {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
+        if (res.ok && (await res.json()).descargable && !cancelado) setDescargable(true);
+      } catch {
+        // Silencioso — se reintenta en el próximo ciclo.
+      }
+    }
+    const intervalo = setInterval(revisar, 20000);
+    document.addEventListener('visibilitychange', revisar);
+    window.addEventListener('focus', revisar);
+    return () => {
+      cancelado = true;
+      clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', revisar);
+      window.removeEventListener('focus', revisar);
+    };
+  }, [descargable, audioApiUrl]);
+
   // Cada escucha (la primera Y cada replay después de que termina) debe
   // volver a pedirle autorización al server — así el contador de
   // reproducciones (y el límite de 2) se respeta de verdad. Solo se salta
@@ -167,6 +193,27 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // compartirCancion(), que solo manda la URL. El audio se trae recién acá
   // (lazy) si todavía no se había tocado play — nada se descarga de más
   // hasta que el usuario realmente pide enviarlo.
+  // Descarga directa del archivo — funciona en computadora y en cualquier celular, aunque no permita
+  // compartir archivos. Reusa el audio ya traído si la persona lo escuchó.
+  async function descargarArchivo() {
+    try {
+      let blob = blobRef.current;
+      if (!blob) {
+        const res = await fetch(audioApiUrl);
+        if (!res.ok) return;
+        blob = await res.blob();
+        blobRef.current = blob;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${titulo || 'cancion'}.mp3`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch {
+      // Sin conexión — puede volver a tocar el botón.
+    }
+  }
+
   async function enviarPorWhatsapp() {
     try {
       let blob = blobRef.current;
@@ -376,6 +423,21 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         >
           📤 Compartir esta canción
         </button>
+
+        {descargable && (
+          <button
+            type="button"
+            onClick={descargarArchivo}
+            style={{
+              padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999,
+              background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10',
+              fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
+              boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            }}
+          >
+            📥 Descargar canción
+          </button>
+        )}
 
         {descargable && puedeCompartirArchivo && (
           <button

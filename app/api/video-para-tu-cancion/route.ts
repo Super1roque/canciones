@@ -49,7 +49,9 @@ export async function POST(request: Request) {
 
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'sin-ip';
-    if (await excedioLimite(ip)) return error('Ya recibimos varias solicitudes desde tu conexión. Intenta mañana o escríbenos por WhatsApp.', 429);
+    const tope = await excedioLimite(ip, whatsapp);
+    if (tope === 'whatsapp') return error('Ya recibimos 3 solicitudes de este número hoy. Te escribimos por WhatsApp; si necesitas otra, escríbenos.', 429);
+    if (tope === 'ip') return error('Ya recibimos varias solicitudes desde tu conexión. Intenta mañana o escríbenos por WhatsApp.', 429);
     const archivo = async (f: File): Promise<Archivo> => ({ ext: extension(f.name), datos: Buffer.from(await f.arrayBuffer()) });
     const audioSolicitud = compartida ? { copiarDe: compartida.ruta } : await archivo(audio as File);
     const solicitud = await guardarSolicitud({ nombre, whatsapp, cancion, historia, protagonistas, estilo, fecha }, audioSolicitud, await Promise.all(fotos.map(archivo)), compartida ? cancionCompartidaId : undefined);
