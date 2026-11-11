@@ -5,19 +5,24 @@ import { trackMetaPixel } from '@/lib/metaPixel';
 import { ESTILOS, EXT_AUDIO, EXT_FOTO, MAX_AUDIO, MAX_FOTO, MAX_FOTOS, extension } from './datos';
 import s from './pagina.module.css';
 
-export default function Formulario({ whatsapp }: { whatsapp: string }) {
+// `cancion` llega cuando se entra desde «Haz el video de tu canción» en /cancion/[id]: el audio ya está en el sitio.
+export default function Formulario({ whatsapp, cancion }: { whatsapp: string; cancion?: { id: string; titulo: string } }) {
   const [estado, setEstado] = useState<'llenando' | 'enviando' | 'listo'>('llenando');
   const [avance, setAvance] = useState(0);
   const [error, setError] = useState('');
   const [nombreAudio, setNombreAudio] = useState('');
-  const [nombresFotos, setNombresFotos] = useState<string[]>([]);
+  // Las fotos se juntan aquí: en el celular, elegir de nuevo reemplaza la selección anterior del input
+  // y no deja cambiar de carpeta, así que cada vez que se elige se suman a la lista.
+  const [fotos, setFotos] = useState<File[]>([]);
   const form = useRef<HTMLFormElement>(null);
 
   function revisar(datos: FormData): string {
-    const audio = datos.get('audio') as File;
-    if (!audio?.size) return 'Falta el audio de tu canción.';
-    if (!EXT_AUDIO.includes(extension(audio.name))) return 'El audio debe ser MP3, M4A, WAV, OGG u OPUS.';
-    if (audio.size > MAX_AUDIO) return 'El audio pesa más de 25 MB.';
+    if (!cancion) {
+      const audio = datos.get('audio') as File;
+      if (!audio?.size) return 'Falta el audio de tu canción.';
+      if (!EXT_AUDIO.includes(extension(audio.name))) return 'El audio debe ser MP3, M4A, WAV, OGG u OPUS.';
+      if (audio.size > MAX_AUDIO) return 'El audio pesa más de 25 MB.';
+    }
     const fotos = (datos.getAll('fotos') as File[]).filter((f) => f.size);
     if (fotos.length > MAX_FOTOS) return `Puedes enviar hasta ${MAX_FOTOS} fotos.`;
     if (fotos.some((f) => !EXT_FOTO.includes(extension(f.name)))) return 'Las fotos deben ser JPG, PNG, WEBP o HEIC.';
@@ -29,6 +34,7 @@ export default function Formulario({ whatsapp }: { whatsapp: string }) {
   function enviar(e: FormEvent) {
     e.preventDefault();
     const datos = new FormData(form.current!);
+    for (const f of fotos) datos.append('fotos', f);
     const problema = revisar(datos);
     setError(problema);
     if (problema) return;
@@ -66,22 +72,49 @@ export default function Formulario({ whatsapp }: { whatsapp: string }) {
 
       <label className={s.campo}>Tu nombre<input name="nombre" required maxLength={100} autoComplete="name" /></label>
       <label className={s.campo}>Tu WhatsApp<input name="whatsapp" type="tel" required maxLength={30} autoComplete="tel" placeholder="9999-9999" /></label>
-      <label className={s.campo}>Nombre de la canción<input name="cancion" required maxLength={150} /></label>
+      <label className={s.campo}>Nombre de la canción<input name="cancion" required maxLength={150} defaultValue={cancion?.titulo} /></label>
       <label className={s.campo}>¿De qué trata?<textarea name="historia" required maxLength={2000} rows={3} /></label>
       <label className={s.campo}>¿Quiénes salen en la historia? <span className={s.opcional}>opcional</span>
         <textarea name="protagonistas" maxLength={1000} rows={2} placeholder="Nombre, edad aproximada, cómo son" />
       </label>
 
-      <label className={s.archivo}>
-        <span className={s.archivoTitulo}>🎵 Sube tu canción</span>
-        <span className={s.archivoNombre}>{nombreAudio || 'MP3, M4A, WAV u OPUS · hasta 25 MB'}</span>
-        <input name="audio" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.opus,.aac,.flac,.mpeg,.mp4" required onChange={(e) => setNombreAudio(e.target.files?.[0]?.name ?? '')} />
-      </label>
-      <label className={s.archivo}>
-        <span className={s.archivoTitulo}>📷 Fotos de los protagonistas <span className={s.opcional}>opcional</span></span>
-        <span className={s.archivoNombre}>{nombresFotos.join(', ') || 'Hasta 3 fotos, de frente y con buena luz'}</span>
-        <input name="fotos" type="file" accept="image/*,.heic,.heif" multiple onChange={(e) => setNombresFotos(Array.from(e.target.files ?? []).map((f) => f.name))} />
-      </label>
+      {cancion ? (
+        <div className={s.archivo}>
+          <span className={s.archivoTitulo}>🎵 Tu canción ya está lista ✅</span>
+          <span className={s.archivoNombre}>«{cancion.titulo}» — no hace falta subirla</span>
+          <input type="hidden" name="cancionCompartidaId" value={cancion.id} />
+        </div>
+      ) : (
+        <label className={s.archivo}>
+          <span className={s.archivoTitulo}>🎵 Sube tu canción</span>
+          <span className={s.archivoNombre}>{nombreAudio || 'MP3, M4A, WAV u OPUS · hasta 25 MB'}</span>
+          <input name="audio" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.opus,.aac,.flac,.mpeg,.mp4" required onChange={(e) => setNombreAudio(e.target.files?.[0]?.name ?? '')} />
+        </label>
+      )}
+      <div className={s.fotosLista}>
+        {fotos.map((f, i) => (
+          <div key={`${f.name}-${i}`} className={s.fotoFila}>
+            <span>📷 {f.name}</span>
+            <button type="button" className={s.fotoQuitar} aria-label={`Quitar ${f.name}`} onClick={() => setFotos(fotos.filter((_, j) => j !== i))}>✕</button>
+          </div>
+        ))}
+      </div>
+      {fotos.length < MAX_FOTOS && (
+        <label className={s.archivo}>
+          <span className={s.archivoTitulo}>📷 {fotos.length ? 'Agregar otra foto' : 'Fotos de los protagonistas'} <span className={s.opcional}>opcional</span></span>
+          <span className={s.archivoNombre}>{fotos.length ? `${fotos.length} de ${MAX_FOTOS} · puedes agregar ${MAX_FOTOS - fotos.length} más` : `Hasta ${MAX_FOTOS} fotos, de frente y con buena luz`}</span>
+          <input
+            type="file"
+            accept="image/*,.heic,.heif"
+            multiple
+            onChange={(e) => {
+              const nuevas = Array.from(e.target.files ?? []);
+              setFotos((antes) => [...antes, ...nuevas].slice(0, MAX_FOTOS));
+              e.target.value = '';   // así se puede volver a abrir el selector y elegir de otra carpeta
+            }}
+          />
+        </label>
+      )}
 
       <label className={s.campo}>Estilo
         <select name="estilo" defaultValue={ESTILOS[0]}>{ESTILOS.map((x) => <option key={x}>{x}</option>)}</select>
@@ -91,8 +124,8 @@ export default function Formulario({ whatsapp }: { whatsapp: string }) {
       {/* Campo trampa para robots: una persona no lo ve. */}
       <input name="sitio" tabIndex={-1} autoComplete="off" aria-hidden="true" className={s.trampa} />
 
-      <label className={s.confirma}><input type="checkbox" name="derechos" value="si" required />Tengo derecho a usar esta canción en un video y a publicarlo.</label>
-      <label className={s.confirma}><input type="checkbox" name="permisos" value="si" required />Las personas reales que aparecen me autorizaron a usar su nombre y su imagen.</label>
+      {/* Sin casillas que marcar (pedido de Armando): basta con el aviso, para no frenar a nadie. */}
+      <p className={s.nota}>Al enviar, confirmas que puedes usar esta canción y las fotos que mandas.</p>
 
       {error && <p className={s.error} role="alert">{error}</p>}
       <button className={s.boton} disabled={estado === 'enviando'}>

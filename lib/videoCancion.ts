@@ -29,7 +29,16 @@ export async function excedioLimite(ip: string): Promise<boolean> {
   return false;
 }
 
-export async function guardarSolicitud(datos: SolicitudVideo, audio: Archivo, fotos: Archivo[]) {
+// La canción ya está en corridos.online (botón «Haz el video de tu canción» de /cancion/[id]): se copia su
+// audio dentro de Storage en vez de pedirle al cliente que lo vuelva a subir.
+export async function audioDeCancionCompartida(cancionId: string): Promise<{ titulo: string; ruta: string } | null> {
+  const doc = await getDb().collection('canciones_compartidas').doc(cancionId).get();
+  const d = doc.data();
+  if (!d?.storagePath) return null;
+  return { titulo: d.titulo as string, ruta: d.storagePath as string };
+}
+
+export async function guardarSolicitud(datos: SolicitudVideo, audio: Archivo | { copiarDe: string }, fotos: Archivo[], cancionCompartidaId?: string) {
   const id = crypto.randomUUID();
   const bucket = getStorageBucket();
   // El nombre y el tipo los pone el servidor: nunca se confía en los del archivo que manda el navegador.
@@ -38,10 +47,17 @@ export async function guardarSolicitud(datos: SolicitudVideo, audio: Archivo, fo
     await bucket.file(ruta).save(a.datos, { resumable: false, contentType: TIPOS[a.ext], metadata: { contentDisposition: 'attachment' } });
     return ruta;
   };
-  const rutaAudio = await subir('audio', audio);
+  let rutaAudio: string;
+  if ('copiarDe' in audio) {
+    const ext = audio.copiarDe.split('.').pop()?.toLowerCase() || 'mp3';
+    rutaAudio = `${COLECCION}/${id}/audio.${TIPOS[ext] ? ext : 'mp3'}`;
+    await bucket.file(audio.copiarDe).copy(bucket.file(rutaAudio));
+  } else {
+    rutaAudio = await subir('audio', audio);
+  }
   const rutasFotos: string[] = [];
   for (const [i, f] of fotos.entries()) rutasFotos.push(await subir(`foto-${i + 1}`, f));
-  const solicitud = { ...datos, audio: rutaAudio, fotos: rutasFotos, estado: 'nuevo', creado: new Date().toISOString() };
+  const solicitud = { ...datos, audio: rutaAudio, fotos: rutasFotos, estado: 'nuevo', creado: new Date().toISOString(), ...(cancionCompartidaId ? { cancionCompartidaId } : {}) };
   await getDb().collection(COLECCION).doc(id).set(solicitud);
   return { id, ...solicitud };
 }

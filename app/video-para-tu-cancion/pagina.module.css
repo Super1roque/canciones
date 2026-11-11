@@ -46,6 +46,10 @@ html:has(.pagina) { scroll-behavior: smooth; }
 .archivo input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .archivoTitulo { display: block; font-size: 16px; font-weight: 700; }
 .archivoNombre { display: block; margin-top: 4px; font-size: 14px; color: #cfc4b2; overflow-wrap: anywhere; }
+.fotosLista { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.fotosLista:empty { display: none; }
+.fotoFila { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border: 2px solid #f0be5a; border-radius: 12px; font-size: 14px; color: #f3ead9; overflow-wrap: anywhere; }
+.fotoQuitar { flex: none; width: 32px; height: 32px; border: none; border-radius: 50%; background: #3a2a22; color: #f3ead9; font-size: 16px; cursor: pointer; }
 .trampa { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .confirma { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 14px; line-height: 1.4; color: #e4d9c6; }
 .confirma input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: #f0be5a; }

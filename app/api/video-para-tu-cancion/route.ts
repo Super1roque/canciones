@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { avisarSolicitudVideo } from '@/lib/emailService';
-import { excedioLimite, guardarSolicitud, type Archivo } from '@/lib/videoCancion';
+import { audioDeCancionCompartida, excedioLimite, guardarSolicitud, type Archivo } from '@/lib/videoCancion';
 import { ESTILOS, EXT_AUDIO, EXT_FOTO, MAX_AUDIO, MAX_FOTO, MAX_FOTOS, MB, extension } from '@/app/video-para-tu-cancion/datos';
 
 const error = (mensaje: string, status = 400) => NextResponse.json({ error: mensaje }, { status });
@@ -29,12 +29,17 @@ export async function POST(request: Request) {
   if (!nombre || !cancion || !historia) return error('Faltan datos: nombre, canción y de qué trata.');
   if (whatsapp.length < 10 || whatsapp.length > 15) return error('Revisa tu número de WhatsApp.');
   if (!ESTILOS.includes(estilo)) return error('Elige un estilo.');
-  if (form.get('derechos') !== 'si' || form.get('permisos') !== 'si') return error('Debes aceptar las dos confirmaciones.');
 
+  // Si viene de una canción de corridos.online, el audio ya lo tenemos: no se sube de nuevo.
+  const cancionCompartidaId = texto('cancionCompartidaId', 80);
+  const compartida = cancionCompartidaId ? await audioDeCancionCompartida(cancionCompartidaId) : null;
+  if (cancionCompartidaId && !compartida) return error('No encontramos esa canción. Sube el audio a mano.');
   const audio = form.get('audio');
-  if (!(audio instanceof File) || !audio.size) return error('Falta el audio de la canción.');
-  if (!EXT_AUDIO.includes(extension(audio.name))) return error('El audio debe ser MP3, M4A, WAV, OGG u OPUS.');
-  if (audio.size > MAX_AUDIO) return error('El audio pesa más de 25 MB.');
+  if (!compartida) {
+    if (!(audio instanceof File) || !audio.size) return error('Falta el audio de la canción.');
+    if (!EXT_AUDIO.includes(extension(audio.name))) return error('El audio debe ser MP3, M4A, WAV, OGG u OPUS.');
+    if (audio.size > MAX_AUDIO) return error('El audio pesa más de 25 MB.');
+  }
   const fotos = form.getAll('fotos').filter((f): f is File => f instanceof File && f.size > 0);
   if (fotos.length > MAX_FOTOS) return error(`Puedes enviar hasta ${MAX_FOTOS} fotos.`);
   for (const f of fotos) {
@@ -46,7 +51,8 @@ export async function POST(request: Request) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'sin-ip';
     if (await excedioLimite(ip)) return error('Ya recibimos varias solicitudes desde tu conexión. Intenta mañana o escríbenos por WhatsApp.', 429);
     const archivo = async (f: File): Promise<Archivo> => ({ ext: extension(f.name), datos: Buffer.from(await f.arrayBuffer()) });
-    const solicitud = await guardarSolicitud({ nombre, whatsapp, cancion, historia, protagonistas, estilo, fecha }, await archivo(audio), await Promise.all(fotos.map(archivo)));
+    const audioSolicitud = compartida ? { copiarDe: compartida.ruta } : await archivo(audio as File);
+    const solicitud = await guardarSolicitud({ nombre, whatsapp, cancion, historia, protagonistas, estilo, fecha }, audioSolicitud, await Promise.all(fotos.map(archivo)), compartida ? cancionCompartidaId : undefined);
     await avisarSolicitudVideo(solicitud);
     return NextResponse.json({ ok: true });
   } catch (e) {

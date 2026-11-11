@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ADMIN_WHATSAPP } from '@/lib/config';
+import { trackMetaPixel } from '@/lib/metaPixel';
 
 // La descarga se cobra canción por canción: el cliente paga por WhatsApp y
 // el admin la habilita desde /admin/pedidos (ver calcularAcceso).
@@ -396,6 +397,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción' })}
             style={{
               padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999, textDecoration: 'none',
               background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10',
@@ -407,6 +409,19 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           </a>
         )}
       </div>
+
+      {/* El siguiente paso del embudo: el video de esta misma canción, con la muestra gratis. */}
+      <a
+        href={`/video-para-tu-cancion?cancion=${audioApiUrl.split('/').pop()}#formulario`}
+        style={{
+          padding: '0.95rem 1.8rem', borderRadius: 999, textDecoration: 'none',
+          background: 'linear-gradient(180deg, #e0262f, #a3121b)', color: '#fdf3e0',
+          fontSize: '1.05rem', fontWeight: 800, boxShadow: '0 4px 0 #6b0b12',
+          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+        }}
+      >
+        🎬 Haz el video de tu canción — muestra gratis
+      </a>
 
       {/* Quien recibe el link es el próximo cliente: lo invita a hacer la suya. */}
       <a

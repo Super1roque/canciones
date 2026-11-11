@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Formulario from './Formulario';
+import { audioDeCancionCompartida } from '@/lib/videoCancion';
 import VideoEjemplo from './VideoEjemplo';
 import { MENSAJE_WHATSAPP, PRECIO_VIDEO, WHATSAPP_ARMANDO } from './datos';
 import s from './pagina.module.css';
@@ -22,7 +23,9 @@ const PASOS = [
   ['3', 'Si te gusta, lo terminamos', `El video completo, con su letra y las escenas de tu historia, por ${PRECIO_VIDEO}.`],
 ];
 
-export default function Pagina() {
+export default async function Pagina({ searchParams }: { searchParams: Promise<{ cancion?: string }> }) {
+  const { cancion: cancionId } = await searchParams;
+  const compartida = cancionId ? await audioDeCancionCompartida(cancionId) : null;
   const whatsapp = `https://wa.me/${WHATSAPP_ARMANDO}?text=${encodeURIComponent(MENSAJE_WHATSAPP)}`;
   return (
     <main className={s.pagina}>
@@ -48,7 +51,7 @@ export default function Pagina() {
           ))}
         </ol>
 
-        <Formulario whatsapp={whatsapp} />
+        <Formulario whatsapp={whatsapp} cancion={compartida && cancionId ? { id: cancionId, titulo: compartida.titulo } : undefined} />
 
         <p className={s.nota}>
           Las imágenes del video se crean con inteligencia artificial. Usamos tu audio y tus fotos solo para hacer tu muestra y tu video.
