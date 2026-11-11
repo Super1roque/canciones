@@ -1,6 +1,11 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { ADMIN_WHATSAPP } from '@/lib/config';
+
+// La descarga se cobra canción por canción: el cliente paga por WhatsApp y
+// el admin la habilita desde /admin/pedidos (ver calcularAcceso).
+const PRECIO_DESCARGA = 250;
 
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
@@ -208,7 +213,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             boxShadow: '0 6px 0 #b8391f, 0 16px 32px rgba(255,95,109,0.35)',
           }}
         >
-          🎤 Creá tu propia canción
+          🎤 Haz la tuya con Corridos.online
         </button>
       </main>
     );
@@ -385,7 +390,36 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             💬 Enviar a WhatsApp
           </button>
         )}
+
+        {!descargable && (
+          <a
+            href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999, textDecoration: 'none',
+              background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10',
+              fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
+              boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            }}
+          >
+            📥 Descargar a mi teléfono — L {PRECIO_DESCARGA}
+          </a>
+        )}
       </div>
+
+      {/* Quien recibe el link es el próximo cliente: lo invita a hacer la suya. */}
+      <a
+        href="/"
+        style={{
+          marginTop: '0.5rem', padding: '0.9rem 1.4rem', borderRadius: 18, textDecoration: 'none',
+          border: '2px dashed #ffd35c', background: 'rgba(44,10,16,0.65)', color: '#fdf3e0',
+          fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.35, maxWidth: '22rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+        }}
+      >
+        🎤 Haz la tuya con <span style={{ color: '#ffd35c' }}>Corridos.online</span> 👉
+      </a>
 
       <audio
         ref={audioRef}

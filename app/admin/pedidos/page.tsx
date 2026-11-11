@@ -43,6 +43,7 @@ type CancionCompartida = {
   titulo: string;
   fecha: string;
   reproducciones: number;
+  descargaHabilitada: boolean;
 };
 
 type TenantPlan = {
@@ -113,8 +114,10 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; premium: boolean; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, descargaHabilitada, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; descargaHabilitada: boolean; premium: boolean; onClose: () => void; onVinculado: () => void }) {
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
+  const [descarga, setDescarga] = useState(descargaHabilitada);
+  const [cambiandoDescarga, setCambiandoDescarga] = useState(false);
   const [archivo, setArchivo] = useState<File | null>(null);
   // Precargado con el nombre de la canción base, pero editable — a veces
   // conviene compartirla con un título distinto (ej. con el nombre de la
@@ -173,6 +176,27 @@ function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado 
     }
   }
 
+  // La descarga se cobra aparte (L 250 por WhatsApp): esto la abre o la
+  // cierra para esta canción, sin cambiar el link.
+  async function cambiarDescarga() {
+    if (!cancionCompartidaId) return;
+    setCambiandoDescarga(true);
+    try {
+      const res = await fetchConSesion('/api/admin/canciones-compartidas/descarga', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: cancionCompartidaId, habilitar: !descarga }),
+      });
+      if (!res.ok) { setErrorSubida('No se pudo cambiar la descarga'); return; }
+      setDescarga(!descarga);
+      onVinculado();
+    } catch {
+      setErrorSubida('Error de conexión');
+    } finally {
+      setCambiandoDescarga(false);
+    }
+  }
+
   return (
     <Modal onClose={onClose}>
       <div className="modal-header">
@@ -226,6 +250,19 @@ function ModalPedido({ pedido: p, reproducciones, premium, onClose, onVinculado 
                 style={{ fontSize: '0.78rem' }}
               >
                 {desvinculando ? '...' : '🗑️ Subí el audio equivocado — quitar enlace'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <p style={{ fontSize: '0.8rem', color: descarga ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>
+                {descarga ? '📥 Descarga habilitada (pagada)' : '🔒 Descarga bloqueada — se cobra L 250 por WhatsApp'}
+              </p>
+              <button
+                className={descarga ? 'btn-secondary' : 'btn-primary'}
+                disabled={cambiandoDescarga}
+                onClick={cambiarDescarga}
+                style={{ fontSize: '0.78rem' }}
+              >
+                {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Ya pagó — habilitar descarga'}
               </button>
             </div>
           </>
@@ -335,6 +372,7 @@ export default function AdminPedidosPage() {
 
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
+  const descargaPorId = new Map(cancionesCompartidas.map(c => [c.id, c.descargaHabilitada]));
   const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
   return (
@@ -436,6 +474,7 @@ export default function AdminPedidosPage() {
         <ModalPedido
           pedido={pedidoAbierto}
           reproducciones={pedidoAbierto.cancionCompartidaId ? reproduccionesPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
+          descargaHabilitada={pedidoAbierto.cancionCompartidaId ? descargaPorId.get(pedidoAbierto.cancionCompartidaId) === true : false}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}

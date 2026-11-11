@@ -4,6 +4,7 @@ import styles from '../tenant.module.css';
 import type { Tenant } from '@/lib/tenantService';
 import OnboardingVideo from './OnboardingVideo';
 import BotonResponderHablando from '@/components/BotonResponderHablando';
+import { VENTA_CREDITOS_ACTIVA, SIN_SALDO_PEDIR } from '@/lib/promo';
 
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
@@ -144,8 +145,10 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
         <div className={styles.panel} style={{ padding: '2.5rem 2rem', maxWidth: 420, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
           <span style={{ fontSize: '2.5rem' }}>🎉</span>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.4rem', margin: 0 }}>Ya usaste tu canción gratis</h2>
-          <p className={styles.textMuted}>Cada canción nueva cuesta L {COSTO_CANCION}. Comprá créditos para seguir pidiendo.</p>
-          <a href="/dashboard" className={styles.btnPrimary}>💳 Comprar créditos</a>
+          <p className={styles.textMuted}>Cada canción nueva cuesta L {COSTO_CANCION}. {SIN_SALDO_PEDIR} para seguir pidiendo.</p>
+          {VENTA_CREDITOS_ACTIVA
+            ? <a href="/dashboard" className={styles.btnPrimary}>💳 Comprar créditos</a>
+            : <a href="/dashboard#soporte" className={styles.btnPrimary}>💬 Ir al chat de soporte</a>}
           <a href="/dashboard" className={styles.btnSecondary}>← Volver al dashboard</a>
         </div>
       </main>
@@ -260,7 +263,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                     style={{ fontFamily: "'Fira Mono', monospace", fontSize: '0.85rem', lineHeight: 1.75 }}
                   />
                   <span className={styles.textMuted} style={{ fontSize: '0.78rem' }}>Podés editar la letra antes de enviarla</span>
-                  {!usaGratis && (
+                  {!usaGratis && VENTA_CREDITOS_ACTIVA && (
                     <span className={styles.textMuted} style={{ fontSize: '0.78rem' }}>
                       Esta canción te va a costar L {COSTO_CANCION} de tu saldo (tenés L {tenant.saldo ?? 0}).
                     </span>

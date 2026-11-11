@@ -4,6 +4,7 @@ import { getDb } from '@/lib/firebaseService';
 import { generarParodia } from '@/lib/claudeService';
 import { validarSesion } from '@/lib/tenantService';
 import { COSTO_CANCION } from '@/lib/pedidoService';
+import { SIN_SALDO_PEDIR } from '@/lib/promo';
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
       const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
       if (!usaGratis && (tenant.saldo ?? 0) < COSTO_CANCION) {
         return NextResponse.json(
-          { error: 'No te alcanza el saldo. Comprá créditos para pedir otra canción.' },
+          { error: `No te alcanza el saldo. ${SIN_SALDO_PEDIR} para pedir otra canción.` },
           { status: 402 }
         );
       }

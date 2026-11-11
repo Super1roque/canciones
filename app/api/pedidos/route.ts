@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { validarSesion } from '@/lib/tenantService';
 import { crearPedido, listarPedidosPorTelefono } from '@/lib/pedidoService';
 import { avisarNuevoPedido } from '@/lib/emailService';
+import { SIN_SALDO_PEDIR } from '@/lib/promo';
 
 // Registro de canciones pedidas por clientes desde el flujo público de
 // /crear-parodia — colección separada de "parodias" (que es donde el admin
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Necesitás registrarte con tu número de teléfono' }, { status: 401 });
     }
     if (msg === 'SALDO_INSUFICIENTE') {
-      return NextResponse.json({ error: 'No te alcanza el saldo. Comprá créditos para pedir esta canción.' }, { status: 402 });
+      return NextResponse.json({ error: `No te alcanza el saldo. ${SIN_SALDO_PEDIR} para pedir esta canción.` }, { status: 402 });
     }
 
     console.error('crearPedido:', msg);

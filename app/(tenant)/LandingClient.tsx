@@ -68,9 +68,19 @@ export default function LandingClient() {
           </h1>
           <p className={styles.textMuted} style={{ fontSize: '0.95rem', lineHeight: 1.5 }}>
             Contanos tu historia y te la convertimos en la parodia de tu canción favorita.
-            <br />
-            <strong style={{ color: 'var(--cr-gold)' }}>Tu primera canción es gratis 🎁</strong>
           </p>
+          {/* Explosión tipo cómic: la promo de la primera canción tiene que verse
+              de lejos, no como una línea más del texto. */}
+          <div className={styles.promoBurst} role="img" aria-label="Gratis por promoción">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <polygon className={styles.promoBurstOuter} points="100.0,2.0 113.2,25.2 133.5,7.9 138.0,34.2 163.0,24.9 158.2,51.1 184.9,51.0 171.4,74.0 196.5,83.0 176.0,100.0 196.5,117.0 171.4,126.0 184.9,149.0 158.2,148.9 163.0,175.1 138.0,165.8 133.5,192.1 113.2,174.8 100.0,198.0 86.8,174.8 66.5,192.1 62.0,165.8 37.0,175.1 41.8,148.9 15.1,149.0 28.6,126.0 3.5,117.0 24.0,100.0 3.5,83.0 28.6,74.0 15.1,51.0 41.8,51.1 37.0,24.9 62.0,34.2 66.5,7.9 86.8,25.2" />
+              <polygon className={styles.promoBurstInner} transform="translate(100 100) scale(0.8) translate(-100 -100)" points="100.0,2.0 113.2,25.2 133.5,7.9 138.0,34.2 163.0,24.9 158.2,51.1 184.9,51.0 171.4,74.0 196.5,83.0 176.0,100.0 196.5,117.0 171.4,126.0 184.9,149.0 158.2,148.9 163.0,175.1 138.0,165.8 133.5,192.1 113.2,174.8 100.0,198.0 86.8,174.8 66.5,192.1 62.0,165.8 37.0,175.1 41.8,148.9 15.1,149.0 28.6,126.0 3.5,117.0 24.0,100.0 3.5,83.0 28.6,74.0 15.1,51.0 41.8,51.1 37.0,24.9 62.0,34.2 66.5,7.9 86.8,25.2" />
+            </svg>
+            <div className={styles.promoBurstText}>
+              <span className={styles.promoBurstBig}>¡GRATIS!</span>
+              <span className={styles.promoBurstRibbon}>por promoción 🎁</span>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.formGroup}>

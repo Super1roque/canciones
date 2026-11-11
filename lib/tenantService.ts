@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { getDb } from './firebaseService';
+import { SALDO_INICIAL, PLAN_INICIAL } from './promo';
 
 const COLLECTION = 'tenants';
 
@@ -93,8 +94,8 @@ export async function obtenerOCrearTenant(telefono: string): Promise<Tenant> {
     fechaRegistro: new Date().toISOString(),
     cancionesGratisUsadas: 0,
     cancionesGratisLimite: 1,
-    saldo: 0,
-    plan: 'freemium',
+    saldo: SALDO_INICIAL,
+    plan: PLAN_INICIAL,
   };
   await ref.set(nuevo);
   return nuevo;
@@ -136,8 +137,8 @@ export async function iniciarSesion(telefono: string, sesionActualDelDispositivo
         fechaRegistro: new Date().toISOString(),
         cancionesGratisUsadas: 0,
         cancionesGratisLimite: 1,
-        saldo: 0,
-        plan: 'freemium',
+        saldo: SALDO_INICIAL,
+        plan: PLAN_INICIAL,
         sesionId,
       };
       tx.set(ref, nuevo);

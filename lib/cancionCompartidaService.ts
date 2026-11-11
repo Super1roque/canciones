@@ -24,8 +24,9 @@ export interface AccesoCancion {
 //
 // `restringida` y `descargable` son cosas distintas a propósito: la
 // escucha es gratis las primeras MAX_ESCUCHAS_GRATIS veces aunque el
-// dueño no sea premium, pero la descarga es un privilegio exclusivo de
-// premium sin importar cuántas veces se escuchó.
+// dueño no sea premium, pero la descarga se cobra aparte, canción por
+// canción (L 250 por WhatsApp): solo se puede bajar si el admin le marcó
+// `descargaHabilitada` desde /admin/pedidos, sin importar el plan.
 // `esDueño` decide QUÉ mensaje ve quien se topa con el corte — el dueño ve
 // la invitación a recargar; cualquier otra persona (a quien le reenviaron
 // el link) ve un mensaje genérico que no expone que el dueño es freemium.
@@ -41,9 +42,11 @@ export async function calcularAcceso(id: string, reproducciones: number): Promis
   const cookieStore = await cookies();
   const esDueño = cookieStore.get('tenant_phone')?.value === telefono;
 
+  const cancionDoc = await db.collection(COLLECTION).doc(id).get();
+
   return {
     restringida: !premium && reproducciones >= MAX_ESCUCHAS_GRATIS,
-    descargable: premium,
+    descargable: cancionDoc.data()?.descargaHabilitada === true,
     esDueño,
   };
 }
@@ -53,6 +56,14 @@ export interface CancionCompartida {
   titulo: string;
   fecha: string;
   reproducciones: number;
+  descargaHabilitada: boolean;
+}
+
+// Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
+// los L 250 de la descarga por WhatsApp.
+export async function habilitarDescarga(id: string, habilitar: boolean): Promise<void> {
+  const db = getDb();
+  await db.collection(COLLECTION).doc(id).update({ descargaHabilitada: habilitar });
 }
 
 // Fire-and-forget desde el GET que sirve el audio — no debe demorar la
@@ -90,6 +101,7 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         titulo: data.titulo,
         fecha: data.fecha,
         reproducciones: data.reproducciones ?? 0,
+        descargaHabilitada: data.descargaHabilitada === true,
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

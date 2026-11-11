@@ -338,3 +338,57 @@
 @media (prefers-reduced-motion: reduce) {
   .premiumBadge { animation: none; }
 }
+
+/* ---------- explosión "¡GRATIS!" de la portada (LandingClient) ---------- */
+.promoBurst {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  margin: 0.5rem auto -0.5rem;
+  transform: rotate(-8deg);
+  animation: promoPop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both, promoLatido 1.8s ease-in-out 0.8s infinite;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35));
+}
+.promoBurst svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.promoBurstOuter { fill: #e0262f; stroke: #2c0a10; stroke-width: 4; stroke-linejoin: round; }
+.promoBurstInner { fill: var(--cr-gold); stroke: #2c0a10; stroke-width: 3; stroke-linejoin: round; }
+.promoBurstText {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  color: #2c0a10;
+}
+.promoBurstBig {
+  font-family: var(--font-corrido, inherit);
+  font-size: 2.3rem;
+  line-height: 1;
+  color: #c8102e;
+  text-shadow: 2px 2px 0 #fff4c2, -1px -1px 0 #fff4c2, 3px 4px 0 #2c0a10;
+}
+.promoBurstRibbon {
+  margin-top: 0.2rem;
+  padding: 0.2rem 0.6rem;
+  background: #2c0a10;
+  color: var(--cr-gold-soft);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transform: rotate(3deg);
+}
+@keyframes promoPop {
+  from { transform: rotate(-30deg) scale(0); }
+  to { transform: rotate(-8deg) scale(1); }
+}
+@keyframes promoLatido {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(-6deg) scale(1.07); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .promoBurst { animation: none; }
+}

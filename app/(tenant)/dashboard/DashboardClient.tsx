@@ -6,6 +6,7 @@ import type { Pedido } from '@/lib/pedidoService';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import ChatTenant, { type ChatTenantHandle } from './ChatTenant';
 import NotificacionesTenant from './NotificacionesTenant';
+import { VENTA_CREDITOS_ACTIVA } from '@/lib/promo';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [300, 500, 1000] as const;
@@ -232,10 +233,18 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
           )}
           <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>📱 Conectado como {formatTelefono(tenant.telefono)}</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
-              <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
-              <div className={styles.heroTitle} style={{ fontSize: '2rem', margin: 0 }}>L {tenant.saldo ?? 0}</div>
-            </div>
+            {VENTA_CREDITOS_ACTIVA ? (
+              <div>
+                <div className={styles.textMuted} style={{ fontSize: '0.8rem' }}>Tu saldo</div>
+                <div className={styles.heroTitle} style={{ fontSize: '2rem', margin: 0 }}>L {tenant.saldo ?? 0}</div>
+              </div>
+            ) : (
+              // Durante la promo (lib/promo.ts) el saldo sigue descontándose
+              // por dentro, pero no se muestra.
+              <div className={styles.heroTitle} style={{ fontSize: '1.5rem', margin: 0, lineHeight: 1.2 }}>
+                Cuenta de Promoción GRATIS
+              </div>
+            )}
             <div style={{ position: 'relative' }}>
               {usaGratis && (
                 <span style={{
@@ -250,13 +259,17 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
               <a href="/crear-parodia" className={styles.btnPrimary}>🎤 Pedir nueva canción</a>
             </div>
           </div>
-          <div className={styles.textMuted} style={{ fontSize: '0.82rem' }}>
-            {usaGratis
-              ? 'Todavía tenés tu canción gratis disponible.'
-              : `Cada canción nueva cuesta L ${COSTO_CANCION}, se descuenta de tu saldo.`}
-          </div>
+          {VENTA_CREDITOS_ACTIVA && (
+            <div className={styles.textMuted} style={{ fontSize: '0.82rem' }}>
+              {usaGratis
+                ? 'Todavía tenés tu canción gratis disponible.'
+                : `Cada canción nueva cuesta L ${COSTO_CANCION}, se descuenta de tu saldo.`}
+            </div>
+          )}
         </div>
 
+        {/* Mientras dure la promo (lib/promo.ts) no se venden créditos. */}
+        {VENTA_CREDITOS_ACTIVA && (
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>
             Comprar créditos{' '}
@@ -297,6 +310,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
             </div>
           )}
         </div>
+        )}
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.1rem', margin: 0 }}>Tus canciones pedidas</h2>
