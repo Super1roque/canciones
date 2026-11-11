@@ -198,6 +198,38 @@ VERIFICACIÓN OBLIGATORIA ANTES DE RESPONDER: Revisa verso por verso que ninguno
   return (response.content[0] as { type: 'text'; text: string }).text;
 }
 
+// Para cuando el cliente no encuentra una pista que le guste en /crear-parodia y pide un ritmo: no hay
+// letra original que parodiar, así que se compone una canción nueva en ese ritmo, lista para Suno.
+export async function generarCancionOriginal(ritmo: string, historia: string): Promise<string> {
+  const soloNombre = esSoloNombre(historia);
+  const bloqueHistoria = soloNombre
+    ? `NOMBRE DE LA PERSONA HOMENAJEADA:\n${historia}\n\nEl usuario no dio una historia, solo el nombre: la canción debe girar en torno a "${historia.trim()}" (un homenaje, celebración o relato creativo sobre esa persona).`
+    : `HISTORIA/TEMÁTICA DE LA CANCIÓN:\n${historia}`;
+
+  const userPrompt = `Compón una canción ORIGINAL en español (no una parodia de ninguna canción existente).
+
+RITMO PEDIDO POR EL CLIENTE: ${ritmo}
+
+${bloqueHistoria}
+
+Antes de componer, corrige internamente cualquier error gramatical u ortográfico de la historia, sin mencionarlo.
+
+Reglas:
+- Usa el vocabulario, la métrica y el tipo de rima propios del ritmo "${ritmo}", con sabor hondureño y latinoamericano.
+- Estructura para cantar en Suno: [Intro], [Verse 1], [Chorus], [Verse 2], [Chorus], [Bridge] y [Outro], cada sección con su etiqueta entre corchetes en inglés.
+- Versos de 4 a 6 líneas, coro pegajoso que se repita igual, y nombres y detalles concretos de la historia.
+- Nada de violencia ni contenido ofensivo.
+- Responde SOLO con la letra, sin título, explicaciones ni comentarios.`;
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  return (response.content[0] as { type: 'text'; text: string }).text;
+}
+
 const SYSTEM_PROMPT_GALIMATIAS = `Eres un experto en fonética del español, especializado en inventar palabras sin significado (galimatías) que suenan naturales al cantarse.
 
 Reglas estrictas para cada palabra que inventes:

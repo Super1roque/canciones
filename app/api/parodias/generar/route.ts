@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getDb } from '@/lib/firebaseService';
-import { generarParodia } from '@/lib/claudeService';
+import { generarCancionOriginal, generarParodia } from '@/lib/claudeService';
 import { validarSesion } from '@/lib/tenantService';
 import { COSTO_CANCION } from '@/lib/pedidoService';
 import { SIN_SALDO_PEDIR } from '@/lib/promo';
 
 export async function POST(request: Request) {
   try {
-    const { cancionId, historia, alcance } = await request.json();
+    const { cancionId, historia, alcance, ritmo: ritmoPedido } = await request.json();
+    // Sin pista elegida: el cliente escribió el ritmo que quiere y se compone una canción original.
+    const ritmo = typeof ritmoPedido === 'string' ? ritmoPedido.trim().slice(0, 60) : '';
 
-    if (!cancionId || !historia) {
-      return NextResponse.json({ error: 'Se requieren cancionId e historia' }, { status: 400 });
+    if ((!cancionId && !ritmo) || !historia) {
+      return NextResponse.json({ error: 'Se requieren una canción (o un ritmo) y la historia' }, { status: 400 });
     }
 
     // Esta API la usan tanto el admin (sin restricción) como el flujo público
@@ -52,6 +54,20 @@ export async function POST(request: Request) {
         { error: 'API key de Anthropic no configurada. Agrega ANTHROPIC_API_KEY en el archivo .env' },
         { status: 500 }
       );
+    }
+
+    if (ritmo) {
+      const trimmedRitmo = historia.trim();
+      const letra = await generarCancionOriginal(ritmo, trimmedRitmo);
+      return NextResponse.json({
+        cancion_base: `Canción original — ${ritmo}`,
+        estilo: ritmo,
+        descripcionEstilo: `Ritmo pedido por el cliente: ${ritmo}`,
+        direccionGenerador: '',
+        historia: trimmedRitmo,
+        parodia: letra,
+        modoPrueba: false,
+      });
     }
 
     const db = getDb();

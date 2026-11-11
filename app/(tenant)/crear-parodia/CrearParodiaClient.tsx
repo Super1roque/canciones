@@ -10,7 +10,11 @@ type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?:
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
 type Toast = { msg: string; type: 'success' | 'error' } | null;
 
-const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
+const COSTO_CANCION = 100;
+// Opción «Elegí tu ritmo»: no es una pista del catálogo, se compone una canción original en ese ritmo.
+const RITMO_ID = 'ritmo-propio';
+const RITMOS = ['Norteño tradicional', 'Corrido tumbado', 'Cumbia', 'Bachata', 'Ranchera', 'Banda', 'Punta', 'Reguetón', 'Balada'];
+const OPCION_RITMO: Cancion = { id: RITMO_ID, nombre: 'Canción original en tu ritmo', estilo: '', letra: '' }; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 
 export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
@@ -21,6 +25,8 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
   const [busqueda, setBusqueda] = useState('');
   const [seleccionada, setSeleccionada] = useState<Cancion | null>(null);
   const [historia, setHistoria] = useState('');
+  const [ritmo, setRitmo] = useState('');
+  const esRitmo = seleccionada?.id === RITMO_ID;
   const [generando, setGenerando] = useState(false);
   const [parodiaActual, setParodiaActual] = useState<ParodiaResult | null>(null);
   const [letraEditada, setLetraEditada] = useState('');
@@ -84,6 +90,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
 
   async function handleGenerar() {
     if (!seleccionada) { showToast('Primero elegí una canción', 'error'); return; }
+    if (esRitmo && ritmo.trim().length < 3) { showToast('Contanos en qué ritmo la querés', 'error'); return; }
     if (historia.trim().length < 2) { showToast('Contanos la historia o al menos un nombre', 'error'); return; }
 
     setGenerando(true);
@@ -92,7 +99,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
       const res = await fetch('/api/parodias/generar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancionId: seleccionada.id, historia }),
+        body: JSON.stringify(esRitmo ? { ritmo: ritmo.trim(), historia } : { cancionId: seleccionada.id, historia }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Error al generar la parodia', 'error'); return; }
@@ -193,6 +200,18 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
             onChange={e => setBusqueda(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box', marginBottom: '0.75rem' }}
           />
+          <button
+            onClick={() => seleccionarCancion(OPCION_RITMO)}
+            style={{
+              width: '100%', textAlign: 'left', padding: '0.7rem 0.8rem', borderRadius: 10, cursor: 'pointer', marginBottom: '0.75rem',
+              border: '2px dashed var(--cr-gold)',
+              background: esRitmo ? 'rgba(242,183,5,0.2)' : 'rgba(242,183,5,0.08)',
+              color: 'var(--cr-text)', fontFamily: 'inherit',
+            }}
+          >
+            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--cr-gold)' }}>🎶 ¿No encontrás la tuya? Elegí tu ritmo</div>
+            <div className={styles.textMuted} style={{ fontSize: '0.78rem' }}>Norteño, corrido tumbado, cumbia, bachata…</div>
+          </button>
           <div style={{ maxHeight: 480, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {cargando ? (
               <p className={styles.textMuted} style={{ fontSize: '0.85rem' }}>Cargando canciones…</p>
@@ -225,15 +244,41 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                 <h3 className={styles.heroTitle} style={{ fontSize: '1.2rem', margin: '0 0 0.4rem' }}>
                   {seleccionada ? seleccionada.nombre : parodiaActual!.cancion_base}
                 </h3>
-                {(seleccionada?.estilo || parodiaActual?.estilo) && (
-                  <span className={styles.badge}>{seleccionada?.estilo ?? parodiaActual?.estilo}</span>
+                {(seleccionada?.estilo || parodiaActual?.estilo || (esRitmo && ritmo)) && (
+                  <span className={styles.badge}>{esRitmo ? ritmo : (seleccionada?.estilo || parodiaActual?.estilo)}</span>
                 )}
               </div>
 
               {seleccionada && (
                 <>
+                  {esRitmo && (
+                    <div className={styles.formGroup}>
+                      <label htmlFor="ritmo">¿En qué ritmo la querés?</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {RITMOS.map(r => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setRitmo(r)}
+                            className={styles.badge}
+                            style={{ cursor: 'pointer', fontFamily: 'inherit', ...(ritmo === r ? { background: 'var(--cr-gold)', color: '#2c0a10' } : {}) }}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        id="ritmo"
+                        className={styles.input}
+                        placeholder="O escribí otro: salsa, vallenato, merengue…"
+                        value={ritmo}
+                        maxLength={60}
+                        onChange={e => setRitmo(e.target.value)}
+                      />
+                    </div>
+                  )}
                   <div className={styles.formGroup}>
-                    <label htmlFor="historia">2. Contanos la historia para tu parodia</label>
+                    <label htmlFor="historia">{esRitmo ? '2. Contanos la historia para tu canción' : '2. Contanos la historia para tu parodia'}</label>
                     <textarea
                       id="historia"
                       rows={6}
@@ -247,7 +292,7 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
                   </div>
 
                   <button className={styles.btnPrimary} onClick={handleGenerar} disabled={generando}>
-                    {generando ? '⏳ Generando...' : '✨ Generar parodia'}
+                    {generando ? '⏳ Generando...' : esRitmo ? '✨ Generar mi canción' : '✨ Generar parodia'}
                   </button>
                 </>
               )}
