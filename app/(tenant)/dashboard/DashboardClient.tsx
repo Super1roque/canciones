@@ -124,9 +124,10 @@ async function compartirApp() {
   window.open(`https://wa.me/?text=${encodeURIComponent(`${MENSAJE_COMPARTIR} ${url}`)}`, '_blank');
 }
 
-export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales, pendientes }: { tenant: Tenant; pedidosIniciales: Pedido[]; pendientes: CancionPendiente[] }) {
+export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales, pendientes: pendientesIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[]; pendientes: CancionPendiente[] }) {
   const [tenant, setTenant] = useState(tenantInicial);
   const [pedidos, setPedidos] = useState(pedidosIniciales);
+  const [pendientes, setPendientes] = useState(pendientesIniciales);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
   const [montoAConfirmar, setMontoAConfirmar] = useState<number | null>(null);
   const [enviandoAviso, setEnviandoAviso] = useState(false);
@@ -143,7 +144,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   const saldoAnteriorRef = useRef(tenantInicial.saldo ?? 0);
   const chatRef = useRef<ChatTenantHandle>(null);
 
-  // Trae saldo y pedidos actualizados en segundo plano — así si el admin
+  // Trae saldo, pedidos y canciones pendientes actualizados en segundo plano — así si el admin
   // aprueba una recarga o marca un pedido como entregado, se refleja acá
   // sin que el tenant tenga que recargar la página a mano. Solo mientras
   // la pestaña está visible, para no gastar batería/datos de fondo.
@@ -153,12 +154,14 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
     async function actualizar() {
       if (document.visibilityState !== 'visible') return;
       try {
-        const [resPedidos, resTenant] = await Promise.all([
+        const [resPedidos, resTenant, resPendientes] = await Promise.all([
           fetch('/api/pedidos'),
           fetch('/api/tenants/me'),
+          fetch('/api/tenants/pendientes'),
         ]);
         if (cancelado) return;
         if (resPedidos.ok) setPedidos(await resPedidos.json());
+        if (resPendientes.ok) setPendientes(await resPendientes.json());
         if (resTenant.ok) {
           const nuevoTenant = await resTenant.json();
           const saldoNuevo = nuevoTenant.saldo ?? 0;
