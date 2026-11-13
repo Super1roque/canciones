@@ -51,6 +51,22 @@ export async function calcularAcceso(id: string, reproducciones: number): Promis
   };
 }
 
+// Sin la descarga pagada, la canción se puede escuchar HORAS_VIGENCIA horas desde que se subió; después
+// el audio deja de servirse (el archivo sigue guardado: si paga, el admin habilita la descarga y vuelve).
+// Las canciones de antes de esta regla cuentan desde INICIO_VIGENCIA, no desde su fecha, para que
+// ninguna se bloquee de golpe al publicarla. `vigenteDesde` lo pone el botón «Darle 36 h más» del panel.
+export const HORAS_VIGENCIA = 36;
+const INICIO_VIGENCIA = '2026-11-13T18:00:00Z';
+export function venceEn(data: { fecha: string; vigenteDesde?: string }): number {
+  const desde = Math.max(Date.parse(data.fecha) || 0, Date.parse(INICIO_VIGENCIA), Date.parse(data.vigenteDesde ?? '') || 0);
+  return desde + HORAS_VIGENCIA * 3600 * 1000;
+}
+
+// Vuelve a contar las 36 h desde ahora: revive una canción vencida (o le da más tiempo) sin habilitar la descarga.
+export async function prorrogarVigencia(id: string): Promise<void> {
+  await getDb().collection(COLLECTION).doc(id).update({ vigenteDesde: new Date().toISOString() });
+}
+
 // Si ya alguien la escuchó completa: desde ahí toda escucha sin descarga pagada sale con pausas.
 // Canciones de antes de esta marca: si ya tenían reproducciones, cuentan como escuchadas.
 export function estaEscuchada(data: { escuchadaCompleta?: boolean; reproducciones?: number } | undefined): boolean {
@@ -64,6 +80,7 @@ export interface CancionCompartida {
   reproducciones: number;
   descargaHabilitada: boolean;
   escuchasConPausa: number;
+  vence: number;
 }
 
 // Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
@@ -110,6 +127,7 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         reproducciones: data.reproducciones ?? 0,
         descargaHabilitada: data.descargaHabilitada === true,
         escuchasConPausa: data.escuchasConPausa ?? 0,
+        vence: venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde }),
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

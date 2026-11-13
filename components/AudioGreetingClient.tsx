@@ -8,6 +8,13 @@ import { trackMetaPixel } from '@/lib/metaPixel';
 // el admin la habilita desde /admin/pedidos (ver calcularAcceso).
 const PRECIO_DESCARGA = 250;
 
+// 35:04:09 — horas totales (no días), minutos y segundos.
+function formatoRestante(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const dos = (n: number) => String(n).padStart(2, '0');
+  return `${Math.floor(s / 3600)}:${dos(Math.floor(s / 60) % 60)}:${dos(s % 60)}`;
+}
+
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
 // position:relative + z-index:0 EXPLÍCITO (no alcanza con position solo)
@@ -41,8 +48,22 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number }) {
   const [descargable, setDescargable] = useState(descargableInicial);
+  // Cuenta regresiva hasta que la canción se retira (36 h desde que se subió, ver venceEn). Arranca en
+  // null y se llena al montar: la hora del servidor y la del teléfono no coinciden al segundo.
+  const [ahora, setAhora] = useState<number | null>(null);
+  useEffect(() => {
+    if (descargable) return;
+    setAhora(Date.now());
+    const reloj = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(reloj);
+  }, [descargable]);
+  const [vencidaServidor, setVencidaServidor] = useState(false);
+  const vencida = !descargable && (vencidaServidor || (ahora !== null && ahora >= vence));
+  useEffect(() => {
+    if (vencida) audioRef.current?.pause();
+  }, [vencida]);
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
   // Se muestra solo cuando la pausa la hizo la página (ver alAvanzar), no cuando la persona pausa.
@@ -226,6 +247,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       }
       const res = await fetch(audioApiUrl);
       if (res.status === 403) { setBloqueado(true); setEstado('inicial'); return; }
+      if (res.status === 410) { setVencidaServidor(true); setEstado('inicial'); return; }
       if (!res.ok) { setEstado('inicial'); return; }
       const blob = await res.blob();
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
@@ -343,6 +365,48 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   }
 
   const reproduciendo = estado === 'reproduciendo';
+
+  const enlaceDescarga = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`;
+
+  if (vencida) {
+    return (
+      <main style={{
+        position: 'relative', zIndex: 0, overflow: 'hidden',
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(160deg, #9a1f2b 0%, #5c0f18 55%, #2c0a10 100%)',
+        color: '#fdf3e0', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem 1.5rem', gap: '1.1rem',
+      }}>
+        <HeroVideoFondo overlay="radial-gradient(ellipse 70% 55% at 50% 30%, rgba(44,10,16,0.6) 0%, rgba(44,10,16,0.88) 100%)" />
+        <div style={{ fontSize: '2.2rem' }}>⌛</div>
+        <h1 style={{ fontSize: '1.25rem', margin: 0, maxWidth: '26rem', lineHeight: 1.4 }}>
+          «{titulo}» fue retirada de nuestro servidor por falta de espacio.
+        </h1>
+        <p style={{ maxWidth: '26rem', fontSize: '0.95rem', lineHeight: 1.55, color: '#e0b98f', margin: 0 }}>
+          Todavía la podemos recuperar para vos. Escribinos y te la dejamos lista para descargar a tu teléfono.
+        </p>
+        <a
+          href={enlaceDescarga}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (retirada)' })}
+          style={{
+            marginTop: '0.5rem', padding: '1rem 1.6rem', borderRadius: 999, textDecoration: 'none',
+            background: 'linear-gradient(135deg, #25d366, #128c7e)', color: '#fff',
+            fontSize: '1rem', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+          }}
+        >
+          💬 Recuperar mi canción — L {PRECIO_DESCARGA}
+        </a>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          style={{ marginTop: '0.25rem', background: 'none', border: 'none', color: '#ffd35c', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer' }}
+        >
+          🎤 Haz otra con Corridos.online
+        </button>
+      </main>
+    );
+  }
 
   if (bloqueado && !esDueño) {
     return (
@@ -520,6 +584,21 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         <p style={{ margin: 0, color: '#e0b98f', fontSize: '0.9rem' }}>
           {estado === 'cargando' ? 'Cargando...' : estado === 'pausado' ? 'Pausado' : 'Tocá para escuchar'}
         </p>
+      )}
+
+      {!descargable && ahora !== null && (
+        <div style={{
+          maxWidth: '22rem', padding: '0.75rem 1rem', borderRadius: 14,
+          background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,211,92,0.55)', lineHeight: 1.4,
+        }}>
+          <div style={{ fontSize: '0.85rem', color: '#fdf3e0' }}>
+            ⏳ Por falta de espacio en nuestro servidor, esta canción será borrada en
+          </div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffd35c', fontVariantNumeric: 'tabular-nums', margin: '0.15rem 0' }}>
+            {formatoRestante(vence - ahora)}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#e0b98f' }}>Descárgala antes para no perderla.</div>
+        </div>
       )}
 
       {avisoPausa && estado === 'pausado' && !descargable && (

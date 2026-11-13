@@ -45,6 +45,7 @@ type CancionCompartida = {
   reproducciones: number;
   descargaHabilitada: boolean;
   escuchasConPausa: number;
+  vence: number;
 };
 
 type TenantPlan = {
@@ -120,7 +121,9 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; premium: boolean; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; onClose: () => void; onVinculado: () => void }) {
+  const [vence, setVence] = useState(venceInicial);
+  const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
   const [descarga, setDescarga] = useState(descargaHabilitada);
   const [cambiandoDescarga, setCambiandoDescarga] = useState(false);
@@ -179,6 +182,27 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
       setErrorSubida('Error de conexión');
     } finally {
       setDesvinculando(false);
+    }
+  }
+
+  // Sin pagar, la canción deja de sonar 36 h después de subida (ver venceEn): esto vuelve a contar
+  // las 36 h desde ahora, aunque ya haya vencido.
+  async function prorrogar() {
+    if (!cancionCompartidaId) return;
+    setProrrogando(true);
+    try {
+      const res = await fetchConSesion('/api/admin/canciones-compartidas/prorrogar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: cancionCompartidaId }),
+      });
+      if (!res.ok) { setErrorSubida('No se pudo dar más tiempo'); return; }
+      setVence(Date.now() + 36 * 3600 * 1000);
+      onVinculado();
+    } catch {
+      setErrorSubida('Error de conexión');
+    } finally {
+      setProrrogando(false);
     }
   }
 
@@ -272,6 +296,18 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
                 {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Ya pagó — habilitar descarga'}
               </button>
             </div>
+            {!descarga && vence !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <p style={{ fontSize: '0.8rem', color: vence <= Date.now() ? 'var(--error)' : 'var(--text-muted)', margin: 0 }}>
+                  {vence <= Date.now()
+                    ? '⌛ Vencida — ya no suena'
+                    : `⏳ Se retira en ${Math.floor((vence - Date.now()) / 3600000)} h ${Math.floor((vence - Date.now()) / 60000) % 60} min`}
+                </p>
+                <button className="btn-secondary" disabled={prorrogando} onClick={prorrogar} style={{ fontSize: '0.78rem' }}>
+                  {prorrogando ? '...' : '⏳ Darle 36 h más'}
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <div className="campo-copiable">
@@ -485,6 +521,7 @@ export default function AdminPedidosPage() {
           reproducciones={pedidoAbierto.cancionCompartidaId ? reproduccionesPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
           conPausa={pedidoAbierto.cancionCompartidaId ? conPausaPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
           descargaHabilitada={pedidoAbierto.cancionCompartidaId ? descargaPorId.get(pedidoAbierto.cancionCompartidaId) === true : false}
+          vence={pedidoAbierto.cancionCompartidaId ? cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.vence : undefined}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}

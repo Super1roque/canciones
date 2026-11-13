@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
-import { calcularAcceso, estaEscuchada } from '@/lib/cancionCompartidaService';
+import { calcularAcceso, estaEscuchada, venceEn } from '@/lib/cancionCompartidaService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; fecha: string; reproducciones?: number; escuchadaCompleta?: boolean };
+  return doc.data() as { titulo: string; fecha: string; reproducciones?: number; escuchadaCompleta?: boolean; vigenteDesde?: string };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -66,6 +66,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       descargable={descargable}
       esDueño={esDueño}
       yaEscuchada={estaEscuchada(cancion)}
+      vence={venceEn(cancion)}
     />
   );
 }

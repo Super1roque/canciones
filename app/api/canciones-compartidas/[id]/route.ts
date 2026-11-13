@@ -1,5 +1,5 @@
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
-import { calcularAcceso, incrementarReproduccion } from '@/lib/cancionCompartidaService';
+import { calcularAcceso, incrementarReproduccion, venceEn } from '@/lib/cancionCompartidaService';
 
 export const runtime = 'nodejs';
 
@@ -17,8 +17,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     const data = doc.data()!;
     const reproducciones = data.reproducciones ?? 0;
-    const { restringida } = await calcularAcceso(id, reproducciones);
+    const { restringida, descargable } = await calcularAcceso(id, reproducciones);
     if (restringida) return new Response('Alcanzaste el límite de reproducciones gratis', { status: 403 });
+    if (!descargable && Date.now() >= venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde })) return new Response('Esta canción ya no está disponible', { status: 410 });
 
     incrementarReproduccion(id);
 
