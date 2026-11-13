@@ -1,5 +1,6 @@
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
 import { calcularAcceso, incrementarReproduccion, venceEn } from '@/lib/cancionCompartidaService';
+import { esNavegadorAdmin } from '@/lib/adminServidor';
 
 export const runtime = 'nodejs';
 
@@ -7,7 +8,7 @@ export const runtime = 'nodejs';
 // a partir de la reproducción MAX_ESCUCHAS_GRATIS+1, este endpoint se
 // niega a servir el audio (403) si el dueño no es premium. Así el corte
 // es real y no algo que se pueda evadir mirando el network tab.
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const db = getDb();
@@ -21,7 +22,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (restringida) return new Response('Alcanzaste el límite de reproducciones gratis', { status: 403 });
     if (!descargable && Date.now() >= venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde })) return new Response('Esta canción ya no está disponible', { status: 410 });
 
-    incrementarReproduccion(id);
+    // Las escuchas del admin revisando la canción no suman: el contador del panel es solo de clientes.
+    if (!esNavegadorAdmin(request)) incrementarReproduccion(id);
 
     const bucket = getStorageBucket();
     const [buffer] = await bucket.file(data.storagePath).download();

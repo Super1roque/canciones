@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import admin from 'firebase-admin';
 import { getDb } from '@/lib/firebaseService';
+import { esNavegadorAdmin } from '@/lib/adminServidor';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +10,7 @@ export const runtime = 'nodejs';
 // varias veces (al empezar, al salir, al terminar) y aquí se va completando la misma fila.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (esNavegadorAdmin(request)) return NextResponse.json({ ok: true });   // el admin no cuenta
   let datos: Record<string, unknown>;
   try {
     datos = JSON.parse(await request.text());

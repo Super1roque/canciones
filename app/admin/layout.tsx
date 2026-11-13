@@ -31,7 +31,11 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     if (!esSuperAdmin(user)) router.replace('/admin/login');
     // Marca este navegador como del admin: al revisar una canción, su escucha no cuenta como la
     // primera escucha limpia del cliente (ver AudioGreetingClient).
-    else try { localStorage.setItem('corridos-admin', '1'); } catch { /* sin almacenamiento */ }
+    else {
+      try { localStorage.setItem('corridos-admin', '1'); } catch { /* sin almacenamiento */ }
+      // Y en el servidor: así sus escuchas tampoco suman al contador de reproducciones del panel.
+      fetch('/api/admin/marcar-navegador', { method: 'POST' }).catch(() => {});
+    }
   }, [loading, user, esLogin, router]);
 
   // La página de login siempre se muestra tal cual, sin esperar el estado
