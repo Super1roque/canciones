@@ -51,12 +51,19 @@ export async function calcularAcceso(id: string, reproducciones: number): Promis
   };
 }
 
+// Si ya alguien la escuchó completa: desde ahí toda escucha sin descarga pagada sale con pausas.
+// Canciones de antes de esta marca: si ya tenían reproducciones, cuentan como escuchadas.
+export function estaEscuchada(data: { escuchadaCompleta?: boolean; reproducciones?: number } | undefined): boolean {
+  return data?.escuchadaCompleta === true || (data?.escuchadaCompleta === undefined && (data?.reproducciones ?? 0) >= 1);
+}
+
 export interface CancionCompartida {
   id: string;
   titulo: string;
   fecha: string;
   reproducciones: number;
   descargaHabilitada: boolean;
+  escuchasConPausa: number;
 }
 
 // Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
@@ -102,6 +109,7 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         fecha: data.fecha,
         reproducciones: data.reproducciones ?? 0,
         descargaHabilitada: data.descargaHabilitada === true,
+        escuchasConPausa: data.escuchasConPausa ?? 0,
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

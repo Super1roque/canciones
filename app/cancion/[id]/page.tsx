@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
-import { calcularAcceso } from '@/lib/cancionCompartidaService';
+import { calcularAcceso, estaEscuchada } from '@/lib/cancionCompartidaService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
 
 export const dynamic = 'force-dynamic';
@@ -65,8 +65,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       restringida={restringida}
       descargable={descargable}
       esDueño={esDueño}
-      // Canciones de antes de esta marca: si ya tenían reproducciones, cuentan como escuchadas.
-      yaEscuchada={cancion.escuchadaCompleta === true || (cancion.escuchadaCompleta === undefined && (cancion.reproducciones ?? 0) >= 1)}
+      yaEscuchada={estaEscuchada(cancion)}
     />
   );
 }

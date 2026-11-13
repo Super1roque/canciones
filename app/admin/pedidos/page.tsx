@@ -44,6 +44,7 @@ type CancionCompartida = {
   fecha: string;
   reproducciones: number;
   descargaHabilitada: boolean;
+  escuchasConPausa: number;
 };
 
 type TenantPlan = {
@@ -59,9 +60,14 @@ function formatFecha(iso: string) {
 // importado de lib/cancionCompartidaService.ts) — esta barra es solo para
 // que el admin vea de un vistazo a quién le queda una escucha o ya se le
 // bloqueó, no decide nada por su cuenta.
-function EstadoEscuchas({ reproducciones, premium }: { reproducciones: number; premium: boolean }) {
+function EstadoEscuchas({ reproducciones, premium, conPausa }: { reproducciones: number; premium: boolean; conPausa: number }) {
   if (premium) {
-    return <span style={{ fontSize: '0.72rem', color: '#f2b705', whiteSpace: 'nowrap' }}>⭐ Premium — sin límite</span>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+        <span style={{ fontSize: '0.72rem', color: '#f2b705', whiteSpace: 'nowrap' }}>⭐ Premium — sin límite</span>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>▶️ {reproducciones} · ⏸️ {conPausa} con pausas</span>
+      </div>
+    );
   }
 
   const bloqueada = reproducciones >= MAX_ESCUCHAS_GRATIS;
@@ -114,7 +120,7 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, descargaHabilitada, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; descargaHabilitada: boolean; premium: boolean; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; premium: boolean; onClose: () => void; onVinculado: () => void }) {
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
   const [descarga, setDescarga] = useState(descargaHabilitada);
   const [cambiandoDescarga, setCambiandoDescarga] = useState(false);
@@ -242,6 +248,7 @@ function ModalPedido({ pedido: p, reproducciones, descargaHabilitada, premium, o
                   : (reproducciones ?? 0) >= MAX_ESCUCHAS_GRATIS
                     ? `🔒 Bloqueada — ya usó sus ${MAX_ESCUCHAS_GRATIS} escuchas gratis`
                     : `▶️ Reproducida ${reproducciones ?? 0}/${MAX_ESCUCHAS_GRATIS} escuchas gratis`}
+                {` · ⏸️ ${conPausa ?? 0} con pausas`}
               </p>
               <button
                 className="btn-secondary"
@@ -373,6 +380,7 @@ export default function AdminPedidosPage() {
   const recargasPendientes = recargas.filter(r => r.estado === 'pendiente');
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
   const descargaPorId = new Map(cancionesCompartidas.map(c => [c.id, c.descargaHabilitada]));
+  const conPausaPorId = new Map(cancionesCompartidas.map(c => [c.id, c.escuchasConPausa ?? 0]));
   const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
   return (
@@ -443,6 +451,7 @@ export default function AdminPedidosPage() {
                       {p.cancionCompartidaId && (
                         <EstadoEscuchas
                           reproducciones={reproduccionesPorId.get(p.cancionCompartidaId) ?? 0}
+                          conPausa={conPausaPorId.get(p.cancionCompartidaId) ?? 0}
                           premium={planPorTelefono.get(p.telefono) === 'premium'}
                         />
                       )}
@@ -474,6 +483,7 @@ export default function AdminPedidosPage() {
         <ModalPedido
           pedido={pedidoAbierto}
           reproducciones={pedidoAbierto.cancionCompartidaId ? reproduccionesPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
+          conPausa={pedidoAbierto.cancionCompartidaId ? conPausaPorId.get(pedidoAbierto.cancionCompartidaId) : undefined}
           descargaHabilitada={pedidoAbierto.cancionCompartidaId ? descargaPorId.get(pedidoAbierto.cancionCompartidaId) === true : false}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           onClose={() => setPedidoAbierto(null)}

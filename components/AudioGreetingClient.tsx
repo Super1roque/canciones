@@ -103,9 +103,11 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // al azar, como si la hubiera pausado, para que no la graben con otro teléfono. La marca vive en
   // la canción (escuchadaCompleta en el servidor), no en el teléfono.
   const PAUSAS_REPETIDAS = 5;
-  const [yaEscuchada, setYaEscuchada] = useState(yaEscuchadaInicial);
+  // Ref y no estado: se lee al planear las pausas, justo después de actualizarla en alTocar.
+  const yaEscuchadaRef = useRef(yaEscuchadaInicial);
   const pausasRef = useRef<number[] | null>(null);
-  function yaLaEscucho() { return yaEscuchada; }
+  const pausaAvisadaRef = useRef(false);
+  function yaLaEscucho() { return yaEscuchadaRef.current; }
   function esAdmin() {
     try { return localStorage.getItem('corridos-admin') === '1'; } catch { return false; }
   }
@@ -119,15 +121,30 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
     return puntos.sort((x, y) => x - y);
   }
+  // Mucha gente no llega al final (se sale o la deja abierta): pasado el 51 % ya cuenta como
+  // escuchada. Las pausas de ESTA escucha ya se planearon al arrancar, así que sigue limpia hasta el final.
+  const MARCA_ESCUCHADA = 0.51;
+  function marcarEscuchada() {
+    // La escucha del admin revisando la canción no cuenta como la primera del cliente.
+    if (yaEscuchadaRef.current || esAdmin()) return;
+    yaEscuchadaRef.current = true;
+    fetch(`${audioApiUrl}/escuchada`, { method: 'POST' }).catch(() => {});
+  }
   function alAvanzar() {
     const a = audioRef.current;
     if (!a) return;
     if (pausasRef.current === null) pausasRef.current = planearPausas(a.duration);
+    if (isFinite(a.duration) && a.currentTime >= a.duration * MARCA_ESCUCHADA) marcarEscuchada();
     const siguiente = pausasRef.current[0];
     if (siguiente !== undefined && a.currentTime >= siguiente) {
       pausasRef.current.shift();
       a.pause();   // onPause deja el botón en «Pausado», igual que si la persona lo hubiera pausado
       setAvisoPausa(true);
+      // Para el panel: cuenta la escucha como «con pausas» una sola vez.
+      if (!pausaAvisadaRef.current && !esAdmin()) {
+        pausaAvisadaRef.current = true;
+        fetch(`${audioApiUrl}/pausa`, { method: 'POST' }).catch(() => {});
+      }
     }
   }
 
@@ -153,6 +170,20 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
 
     setEstado('cargando');
     try {
+      // Antes de cada escucha nueva pregunta si alguien ya la escuchó completa: WhatsApp a veces
+      // devuelve la página guardada de antes, que no se enteró. Va antes de pedir el audio (y no en
+      // paralelo) porque ese pedido suma una reproducción, y en las canciones viejas eso solo ya la
+      // haría contar como escuchada. Si falla, se queda con lo que sabía la página.
+      try {
+        const acceso = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
+        if (acceso.ok) {
+          const datos = await acceso.json();
+          if (datos.escuchada === true) yaEscuchadaRef.current = true;
+          if (datos.descargable === true) setDescargable(true);
+        }
+      } catch {
+        // Sin conexión con /acceso: sigue igual.
+      }
       const res = await fetch(audioApiUrl);
       if (res.status === 403) { setBloqueado(true); setEstado('inicial'); return; }
       if (!res.ok) { setEstado('inicial'); return; }
@@ -163,6 +194,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       blobRef.current = blob;
       a.src = url;
       pausasRef.current = null;   // escucha nueva: se planean pausas nuevas cuando se conozca la duración
+      pausaAvisadaRef.current = false;
       await a.play();
       necesitaFetchRef.current = false;
       setEstado('reproduciendo');
@@ -208,11 +240,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   function alTerminar() {
     setEstado('inicial');
     necesitaFetchRef.current = true;
-    // La escucha del admin revisando la canción no cuenta como la primera del cliente.
-    if (!yaEscuchada && !esAdmin()) {
-      setYaEscuchada(true);
-      fetch(`${audioApiUrl}/escuchada`, { method: 'POST' }).catch(() => {});
-    }
+    marcarEscuchada();
   }
 
   // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su
