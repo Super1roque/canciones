@@ -166,9 +166,9 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
     return puntos.sort((x, y) => x - y);
   }
-  // Mucha gente no llega al final (se sale o la deja abierta): pasado el 51 % ya cuenta como
+  // Mucha gente no llega al final (se sale o la deja abierta): pasado el 10 % ya cuenta como
   // escuchada. Las pausas de ESTA escucha ya se planearon al arrancar, así que sigue limpia hasta el final.
-  const MARCA_ESCUCHADA = 0.51;
+  const MARCA_ESCUCHADA = 0.10;
   function marcarEscuchada() {
     // La escucha del admin revisando la canción no cuenta como la primera del cliente.
     if (yaEscuchadaRef.current || esAdmin()) return;
