@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { validarSesion } from '@/lib/tenantService';
+import { cancionesPendientes } from '@/lib/cancionCompartidaService';
 import CrearParodiaClient from './CrearParodiaClient';
 
 // Server Component — resuelve la sesión del tenant server-side (lectura de
@@ -16,5 +17,5 @@ export default async function CrearParodiaPage() {
   const tenant = await validarSesion(telefono, cookieStore.get('tenant_session')?.value);
   if (!tenant) redirect('/');
 
-  return <CrearParodiaClient tenant={tenant} />;
+  return <CrearParodiaClient tenant={tenant} pendientes={await cancionesPendientes(telefono)} />;
 }

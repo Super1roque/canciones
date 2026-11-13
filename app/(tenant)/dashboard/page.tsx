@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { validarSesion } from '@/lib/tenantService';
 import { listarPedidosPorTelefono } from '@/lib/pedidoService';
+import { cancionesPendientes } from '@/lib/cancionCompartidaService';
 import DashboardClient from './DashboardClient';
 
 // Server Component — misma resolución de sesión que /crear-parodia: sin
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
   if (usaGratis) redirect('/crear-parodia');
 
-  const pedidos = await listarPedidosPorTelefono(telefono);
+  const [pedidos, pendientes] = await Promise.all([listarPedidosPorTelefono(telefono), cancionesPendientes(telefono)]);
 
-  return <DashboardClient tenant={tenant} pedidosIniciales={pedidos} />;
+  return <DashboardClient tenant={tenant} pedidosIniciales={pedidos} pendientes={pendientes} />;
 }

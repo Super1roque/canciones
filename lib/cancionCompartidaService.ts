@@ -67,6 +67,28 @@ export async function prorrogarVigencia(id: string): Promise<void> {
   await getDb().collection(COLLECTION).doc(id).update({ vigenteDesde: new Date().toISOString() });
 }
 
+export interface CancionPendiente {
+  id: string;
+  titulo: string;
+  vence: number;
+}
+
+// Las canciones del tenant sin la descarga pagada que todavía suenan (no vencieron), la más urgente
+// primero — para recordárselas al entrar a su cuenta.
+export async function cancionesPendientes(telefono: string): Promise<CancionPendiente[]> {
+  const db = getDb();
+  const pedidos = await db.collection('pedidos').where('telefono', '==', telefono).get();
+  const ids = [...new Set(pedidos.docs.map(d => d.data().cancionCompartidaId as string | undefined).filter((id): id is string => !!id))];
+  if (!ids.length) return [];
+  const docs = await db.getAll(...ids.map(id => db.collection(COLLECTION).doc(id)));
+  const ahora = Date.now();
+  return docs
+    .filter(d => d.exists && d.data()!.descargaHabilitada !== true)
+    .map(d => ({ id: d.id, titulo: d.data()!.titulo as string, vence: venceEn(d.data() as { fecha: string; vigenteDesde?: string }) }))
+    .filter(c => c.vence > ahora)
+    .sort((a, b) => a.vence - b.vence);
+}
+
 // Si ya alguien la escuchó completa: desde ahí toda escucha sin descarga pagada sale con pausas.
 // Canciones de antes de esta marca: si ya tenían reproducciones, cuentan como escuchadas.
 export function estaEscuchada(data: { escuchadaCompleta?: boolean; reproducciones?: number } | undefined): boolean {

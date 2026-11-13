@@ -5,6 +5,8 @@ import type { Tenant } from '@/lib/tenantService';
 import OnboardingVideo from './OnboardingVideo';
 import BotonResponderHablando from '@/components/BotonResponderHablando';
 import { VENTA_CREDITOS_ACTIVA, SIN_SALDO_PEDIR } from '@/lib/promo';
+import CancionesPendientes from '@/components/CancionesPendientes';
+import type { CancionPendiente } from '@/lib/cancionCompartidaService';
 
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
@@ -16,7 +18,7 @@ const RITMO_ID = 'ritmo-propio';
 const RITMOS = ['Norteño tradicional', 'Corrido tumbado', 'Cumbia', 'Bachata', 'Ranchera', 'Banda', 'Punta', 'Reguetón', 'Balada'];
 const OPCION_RITMO: Cancion = { id: RITMO_ID, nombre: 'Canción original en tu ritmo', estilo: '', letra: '' }; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 
-export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
+export default function CrearParodiaClient({ tenant, pendientes }: { tenant: Tenant; pendientes: CancionPendiente[] }) {
   const usaGratis = tenant.cancionesGratisUsadas < tenant.cancionesGratisLimite;
   const saldoInsuficiente = !usaGratis && (tenant.saldo ?? 0) < COSTO_CANCION;
 
@@ -178,8 +180,9 @@ export default function CrearParodiaClient({ tenant }: { tenant: Tenant }) {
   }
 
   return (
-    <main className={styles.main} style={{ alignItems: 'flex-start', paddingTop: '1.5rem' }}>
+    <main className={styles.main} style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '1.1rem', paddingTop: '1.5rem' }}>
       {!tenant.onboardingVisto && <OnboardingVideo />}
+      <CancionesPendientes canciones={pendientes} />
       <div className={styles.crearGrid}>
         <aside className={styles.panel} style={{ padding: '1rem' }}>
           <h2 className={styles.heroTitle} style={{ fontSize: '1rem', margin: '0 0 0.75rem' }}>1. Elegí una pista para tu canción</h2>

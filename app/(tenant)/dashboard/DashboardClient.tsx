@@ -7,6 +7,8 @@ import { trackMetaPixel } from '@/lib/metaPixel';
 import ChatTenant, { type ChatTenantHandle } from './ChatTenant';
 import NotificacionesTenant from './NotificacionesTenant';
 import { VENTA_CREDITOS_ACTIVA } from '@/lib/promo';
+import CancionesPendientes from '@/components/CancionesPendientes';
+import type { CancionPendiente } from '@/lib/cancionCompartidaService';
 
 const COSTO_CANCION = 100; // debe coincidir con COSTO_CANCION en lib/pedidoService.ts
 const MONTOS = [300, 500, 1000] as const;
@@ -122,7 +124,7 @@ async function compartirApp() {
   window.open(`https://wa.me/?text=${encodeURIComponent(`${MENSAJE_COMPARTIR} ${url}`)}`, '_blank');
 }
 
-export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales }: { tenant: Tenant; pedidosIniciales: Pedido[] }) {
+export default function DashboardClient({ tenant: tenantInicial, pedidosIniciales, pendientes }: { tenant: Tenant; pedidosIniciales: Pedido[]; pendientes: CancionPendiente[] }) {
   const [tenant, setTenant] = useState(tenantInicial);
   const [pedidos, setPedidos] = useState(pedidosIniciales);
   const [recargaPendiente, setRecargaPendiente] = useState<number | null>(null);
@@ -223,6 +225,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
   return (
     <main className={styles.main} style={{ alignItems: 'flex-start', paddingTop: '1.5rem' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: 640 }}>
+        <CancionesPendientes canciones={pendientes} />
 
         <div className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {tenant.plan === 'premium' && (

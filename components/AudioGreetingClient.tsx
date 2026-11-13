@@ -3,17 +3,11 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
+import { PRECIO_DESCARGA } from '@/lib/promo';
+import { formatoRestante } from '@/lib/tiempo';
 
 // La descarga se cobra canción por canción: el cliente paga por WhatsApp y
 // el admin la habilita desde /admin/pedidos (ver calcularAcceso).
-const PRECIO_DESCARGA = 250;
-
-// 35:04:09 — horas totales (no días), minutos y segundos.
-function formatoRestante(ms: number): string {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const dos = (n: number) => String(n).padStart(2, '0');
-  return `${Math.floor(s / 3600)}:${dos(Math.floor(s / 60) % 60)}:${dos(s % 60)}`;
-}
 
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
@@ -365,6 +359,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   }
 
   const reproduciendo = estado === 'reproduciendo';
+  const enPausaAuto = avisoPausa && estado === 'pausado' && !descargable;
 
   const enlaceDescarga = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`;
 
@@ -601,22 +596,34 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         </div>
       )}
 
-      {avisoPausa && estado === 'pausado' && !descargable && (
+      {/* En la pausa automática solo queda la invitación a descargar, bien grande; los demás botones
+          vuelven al reanudar (onPlay apaga avisoPausa). */}
+      {enPausaAuto && (
         <a
           href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (aviso de pausa)' })}
           style={{
-            maxWidth: '22rem', padding: '0.6rem 1rem', borderRadius: 14, textDecoration: 'none',
-            background: 'rgba(44,10,16,0.75)', border: '1px solid rgba(255,211,92,0.6)',
-            color: '#fdf3e0', fontSize: '0.9rem', lineHeight: 1.4,
+            width: 'min(92vw, 24rem)', padding: '1.3rem 1.2rem', borderRadius: 22, textDecoration: 'none',
+            background: 'linear-gradient(180deg, #ffe27a, #f2b705)', border: '3px solid #fff4c2',
+            color: '#2c0a10', lineHeight: 1.25, boxShadow: '0 6px 0 #a87d00, 0 0 36px rgba(255,211,92,0.7)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem',
+            animation: 'latidoDescarga 1.1s ease-in-out infinite',
           }}
         >
-          ¿Te gusta? <strong style={{ color: '#ffd35c' }}>Descárgala sin interrupciones — L {PRECIO_DESCARGA}</strong> 👉
+          <span style={{ fontSize: '1.5rem', fontWeight: 900 }}>¿Te gusta? 🎶</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>Descárgala sin interrupciones</span>
+          <span style={{
+            marginTop: '0.2rem', padding: '0.35rem 1.1rem', borderRadius: 999,
+            background: '#c0161f', color: '#fff', fontSize: '1.25rem', fontWeight: 900,
+          }}>
+            📥 L {PRECIO_DESCARGA} 👉
+          </span>
         </a>
       )}
 
+      {!enPausaAuto && (<>
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           type="button"
@@ -704,6 +711,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       >
         🎤 Haz la tuya con <span style={{ color: '#ffd35c' }}>Corridos.online</span> 👉
       </a>
+      </>)}
 
       <audio
         ref={audioRef}
@@ -714,6 +722,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       />
       <style>{`
         @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
+        @keyframes latidoDescarga { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
       `}</style>
     </main>
   );
