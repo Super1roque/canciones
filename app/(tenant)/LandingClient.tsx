@@ -94,6 +94,10 @@ export default function LandingClient() {
             onChange={e => setTelefono(e.target.value)}
             required
           />
+          {/* Muchos escriben mal el número y después no les llega la canción por WhatsApp. */}
+          <p style={{ margin: '0.1rem 0 0', fontSize: '0.8rem', lineHeight: 1.4, color: '#ffd35c', textAlign: 'left' }}>
+            ⚠️ Revisá que tu número esté bien escrito: a ese WhatsApp te enviamos tu canción. Si está mal, no te va a llegar.
+          </p>
           <button type="submit" className={styles.btnPrimary} disabled={enviando} style={{ marginTop: '0.5rem' }}>
             {enviando ? 'Entrando...' : '🎤 Entrar'}
           </button>
