@@ -41,10 +41,12 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean }) {
   const [descargable, setDescargable] = useState(descargableInicial);
   const router = useRouter();
   const [estado, setEstado] = useState<'inicial' | 'cargando' | 'reproduciendo' | 'pausado'>('inicial');
+  // Se muestra solo cuando la pausa la hizo la página (ver alAvanzar), no cuando la persona pausa.
+  const [avisoPausa, setAvisoPausa] = useState(false);
   const [bloqueado, setBloqueado] = useState(restringida);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
@@ -96,6 +98,39 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // el fetch para un simple pausa/resume DENTRO de la misma escucha.
   const necesitaFetchRef = useRef(true);
 
+  // La primera escucha completa de la canción (la del dueño) es limpia. Después, cualquiera que la
+  // escuche —en cualquier aparato— sin haber pagado la descarga la oye con PAUSAS_REPETIDAS pausas
+  // al azar, como si la hubiera pausado, para que no la graben con otro teléfono. La marca vive en
+  // la canción (escuchadaCompleta en el servidor), no en el teléfono.
+  const PAUSAS_REPETIDAS = 5;
+  const [yaEscuchada, setYaEscuchada] = useState(yaEscuchadaInicial);
+  const pausasRef = useRef<number[] | null>(null);
+  function yaLaEscucho() { return yaEscuchada; }
+  function esAdmin() {
+    try { return localStorage.getItem('corridos-admin') === '1'; } catch { return false; }
+  }
+  // Momentos al azar entre el 10 % y el 92 % de la canción, separados al menos un 8 % entre sí.
+  function planearPausas(dur: number): number[] {
+    if (descargable || !yaLaEscucho() || !isFinite(dur) || dur < 30) return [];
+    const puntos: number[] = [];
+    for (let intento = 0; puntos.length < PAUSAS_REPETIDAS && intento < 200; intento++) {
+      const t = dur * (0.1 + Math.random() * 0.82);
+      if (puntos.every(p => Math.abs(p - t) > dur * 0.08)) puntos.push(t);
+    }
+    return puntos.sort((x, y) => x - y);
+  }
+  function alAvanzar() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (pausasRef.current === null) pausasRef.current = planearPausas(a.duration);
+    const siguiente = pausasRef.current[0];
+    if (siguiente !== undefined && a.currentTime >= siguiente) {
+      pausasRef.current.shift();
+      a.pause();   // onPause deja el botón en «Pausado», igual que si la persona lo hubiera pausado
+      setAvisoPausa(true);
+    }
+  }
+
   // El audio no se sirve como un link directo descargable — se trae como
   // blob a través de la API (mismo patrón que AudioPlayer.tsx de
   // /escuchar), así nunca queda expuesta una URL de archivo real. La
@@ -127,6 +162,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       blobUrlRef.current = url;
       blobRef.current = blob;
       a.src = url;
+      pausasRef.current = null;   // escucha nueva: se planean pausas nuevas cuando se conozca la duración
       await a.play();
       necesitaFetchRef.current = false;
       setEstado('reproduciendo');
@@ -172,6 +208,11 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   function alTerminar() {
     setEstado('inicial');
     necesitaFetchRef.current = true;
+    // La escucha del admin revisando la canción no cuenta como la primera del cliente.
+    if (!yaEscuchada && !esAdmin()) {
+      setYaEscuchada(true);
+      fetch(`${audioApiUrl}/escuchada`, { method: 'POST' }).catch(() => {});
+    }
   }
 
   // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su
@@ -410,6 +451,22 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         </p>
       )}
 
+      {avisoPausa && estado === 'pausado' && !descargable && (
+        <a
+          href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (aviso de pausa)' })}
+          style={{
+            maxWidth: '22rem', padding: '0.6rem 1rem', borderRadius: 14, textDecoration: 'none',
+            background: 'rgba(44,10,16,0.75)', border: '1px solid rgba(255,211,92,0.6)',
+            color: '#fdf3e0', fontSize: '0.9rem', lineHeight: 1.4,
+          }}
+        >
+          ¿Te gusta? <strong style={{ color: '#ffd35c' }}>Descárgala sin interrupciones — L {PRECIO_DESCARGA}</strong> 👉
+        </a>
+      )}
+
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           type="button"
@@ -501,6 +558,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       <audio
         ref={audioRef}
         onEnded={alTerminar}
+        onTimeUpdate={alAvanzar}
+        onPlay={() => setAvisoPausa(false)}
         onPause={() => setEstado(e => (e === 'reproduciendo' ? 'pausado' : e))}
       />
       <style>{`

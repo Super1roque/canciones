@@ -10,7 +10,7 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; fecha: string; reproducciones?: number };
+  return doc.data() as { titulo: string; fecha: string; reproducciones?: number; escuchadaCompleta?: boolean };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -65,6 +65,8 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       restringida={restringida}
       descargable={descargable}
       esDueño={esDueño}
+      // Canciones de antes de esta marca: si ya tenían reproducciones, cuentan como escuchadas.
+      yaEscuchada={cancion.escuchadaCompleta === true || (cancion.escuchadaCompleta === undefined && (cancion.reproducciones ?? 0) >= 1)}
     />
   );
 }

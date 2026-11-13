@@ -29,6 +29,9 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading || esLogin) return;
     if (!esSuperAdmin(user)) router.replace('/admin/login');
+    // Marca este navegador como del admin: al revisar una canción, su escucha no cuenta como la
+    // primera escucha limpia del cliente (ver AudioGreetingClient).
+    else try { localStorage.setItem('corridos-admin', '1'); } catch { /* sin almacenamiento */ }
   }, [loading, user, esLogin, router]);
 
   // La página de login siempre se muestra tal cual, sin esperar el estado

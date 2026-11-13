@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       contentType: file.type || 'audio/mpeg',
       size: buffer.length,
       fecha: new Date().toISOString(),
+      escuchadaCompleta: false,   // la primera escucha completa (la del dueño) es limpia; ver /escuchada
     });
 
     // Opcional — cuando se sube desde el modal de un pedido puntual en
