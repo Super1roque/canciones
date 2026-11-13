@@ -56,7 +56,7 @@ export async function calcularAcceso(id: string, reproducciones: number): Promis
 // Las canciones de antes de esta regla cuentan desde INICIO_VIGENCIA, no desde su fecha, para que
 // ninguna se bloquee de golpe al publicarla. `vigenteDesde` lo pone el botón «Darle 36 h más» del panel.
 export const HORAS_VIGENCIA = 36;
-const INICIO_VIGENCIA = '2026-11-13T18:00:00Z';
+const INICIO_VIGENCIA = '2026-11-13T16:37:00Z';
 export function venceEn(data: { fecha: string; vigenteDesde?: string }): number {
   const desde = Math.max(Date.parse(data.fecha) || 0, Date.parse(INICIO_VIGENCIA), Date.parse(data.vigenteDesde ?? '') || 0);
   return desde + HORAS_VIGENCIA * 3600 * 1000;
