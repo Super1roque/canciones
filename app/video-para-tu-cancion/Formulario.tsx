@@ -6,7 +6,11 @@ import { ESTILOS, EXT_AUDIO, EXT_FOTO, MAX_AUDIO, MAX_FOTO, MAX_FOTOS, extension
 import s from './pagina.module.css';
 
 // `cancion` llega cuando se entra desde «Haz el video de tu canción» en /cancion/[id]: el audio ya está en el sitio.
-export default function Formulario({ whatsapp, cancion }: { whatsapp: string; cancion?: { id: string; titulo: string } }) {
+export default function Formulario({ whatsapp, cancion: cancionDelEnlace }: { whatsapp: string; cancion?: { id: string; titulo: string } }) {
+  // Quien llega desde la canción de otra persona (se la compartieron) puede querer el video de SU
+  // canción: con «¿Es otra canción?» se descarta la cargada y se sube el audio propio.
+  const [otraCancion, setOtraCancion] = useState(false);
+  const cancion = otraCancion ? undefined : cancionDelEnlace;
   const [estado, setEstado] = useState<'llenando' | 'enviando' | 'listo'>('llenando');
   const [avance, setAvance] = useState(0);
   const [error, setError] = useState('');
@@ -72,7 +76,7 @@ export default function Formulario({ whatsapp, cancion }: { whatsapp: string; ca
 
       <label className={s.campo}>Tu nombre<input name="nombre" required maxLength={100} autoComplete="name" /></label>
       <label className={s.campo}>Tu WhatsApp<input name="whatsapp" type="tel" required maxLength={30} autoComplete="tel" placeholder="9999-9999" /></label>
-      <label className={s.campo}>Nombre de la canción<input name="cancion" required maxLength={150} defaultValue={cancion?.titulo} /></label>
+      <label className={s.campo}>Nombre de la canción<input key={cancion ? 'cargada' : 'propia'} name="cancion" required maxLength={150} defaultValue={cancion?.titulo} /></label>
       <label className={s.campo}>¿De qué trata?<textarea name="historia" required maxLength={2000} rows={3} /></label>
       <label className={s.campo}>¿Quiénes salen en la historia? <span className={s.opcional}>opcional</span>
         <textarea name="protagonistas" maxLength={1000} rows={2} placeholder="Nombre, edad aproximada, cómo son" />
@@ -80,9 +84,16 @@ export default function Formulario({ whatsapp, cancion }: { whatsapp: string; ca
 
       {cancion ? (
         <div className={s.archivo}>
-          <span className={s.archivoTitulo}>🎵 Tu canción ya está lista ✅</span>
-          <span className={s.archivoNombre}>«{cancion.titulo}» — no hace falta subirla</span>
+          <span className={s.archivoTitulo}>🎵 Canción: «{cancion.titulo}» ✅</span>
+          <span className={s.archivoNombre}>Ya la tenemos, no hace falta subirla.</span>
           <input type="hidden" name="cancionCompartidaId" value={cancion.id} />
+          <button
+            type="button"
+            onClick={() => { setOtraCancion(true); setError(''); }}
+            style={{ marginTop: 10, padding: '8px 14px', borderRadius: 999, border: '1px solid #f0be5a', background: 'transparent', color: '#f0be5a', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ¿Es otra canción? Subí tu propio audio
+          </button>
         </div>
       ) : (
         <label className={s.archivo}>
