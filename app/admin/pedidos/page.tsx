@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebaseClient';
+import CancionesPendientes from '@/components/CancionesPendientes';
 
 // Las rutas de pedidos comprueban la sesión en el servidor: hay que mandarles el token.
 async function fetchConSesion(url: string, init?: RequestInit) {
@@ -118,6 +119,48 @@ function CampoCopiable({ label, valor, mono = false }: { label: string; valor: s
       </div>
       <div className={mono ? 'campo-copiable-body mono' : 'campo-copiable-body'}>{valor}</div>
     </div>
+  );
+}
+
+// Lo que ve el tenant en su cuenta: la tarjeta de canciones pendientes (la misma que le sale a él)
+// y todos sus pedidos, con el estado de cada canción.
+function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telefono: string; pedidos: Pedido[]; canciones: CancionCompartida[]; premium: boolean; onClose: () => void }) {
+  const ahora = Date.now();
+  const porId = new Map(canciones.map(c => [c.id, c]));
+  const suyos = pedidos.filter(p => p.telefono === telefono);
+  const pendientes = suyos
+    .map(p => p.cancionCompartidaId ? porId.get(p.cancionCompartidaId) : undefined)
+    .filter((c): c is CancionCompartida => !!c && !c.descargaHabilitada && c.vence > ahora)
+    .map(c => ({ id: c.id, titulo: c.titulo, vence: c.vence }))
+    .sort((a, b) => a.vence - b.vence);
+  function estadoCancion(p: Pedido): string {
+    if (!p.cancionCompartidaId) return p.estado === 'entregada' ? 'Entregada (sin canción subida)' : '🛠️ La estamos preparando';
+    const c = porId.get(p.cancionCompartidaId);
+    if (!c) return 'Canción no encontrada';
+    if (c.descargaHabilitada) return `📥 «${c.titulo}» — descarga pagada`;
+    if (c.vence <= ahora) return `⌛ «${c.titulo}» — vencida`;
+    return `⏳ «${c.titulo}» — sin pagar · ▶️ ${c.reproducciones} · ⏸️ ${c.escuchasConPausa ?? 0} con pausas`;
+  }
+  return (
+    <Modal onClose={onClose}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0 }}>👤 Cuenta de {telefono}{premium ? ' · ⭐ Premium' : ''}</h2>
+        <button className="btn-secondary" onClick={onClose}>✕</button>
+      </div>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.6rem' }}>Así le aparece arriba en su cuenta:</p>
+      {pendientes.length > 0
+        ? <CancionesPendientes canciones={pendientes} vistaAdmin />
+        : <p className="empty-msg" style={{ margin: 0 }}>No tiene canciones pendientes (sin pagar y todavía vigentes).</p>}
+      <h3 style={{ margin: '1.25rem 0 0.6rem' }}>Sus pedidos ({suyos.length})</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {suyos.map(p => (
+          <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.6rem 0.8rem' }}>
+            <div style={{ fontWeight: 600 }}>{p.cancion_base}</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {estadoCancion(p)}</div>
+          </div>
+        ))}
+      </div>
+    </Modal>
   );
 }
 
@@ -350,6 +393,7 @@ export default function AdminPedidosPage() {
   const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState<Pedido | null>(null);
+  const [cuentaAbierta, setCuentaAbierta] = useState<string | null>(null);
 
   // Separado del "cargando" a propósito — el refresco automático de fondo
   // no debe hacer parpadear la lista con el mensaje de "Cargando…" cada
@@ -476,7 +520,7 @@ export default function AdminPedidosPage() {
                 <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem' }}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(160px, 1fr) 130px 90px 115px',
+                    gridTemplateColumns: 'minmax(160px, 1fr) 130px auto 115px',
                     alignItems: 'center', gap: '0.75rem',
                   }}>
                     <div>
@@ -492,8 +536,9 @@ export default function AdminPedidosPage() {
                         />
                       )}
                     </div>
-                    <div>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button className="btn-secondary" onClick={() => setPedidoAbierto(p)} style={{ whiteSpace: 'nowrap' }}>🔍 Revisar</button>
+                      <button className="btn-secondary" onClick={() => setCuentaAbierta(p.telefono)} style={{ whiteSpace: 'nowrap' }} title="Ver lo que ve este cliente en su cuenta">👤 Cuenta</button>
                     </div>
                     <div>
                       {p.estado === 'entregada' ? (
@@ -514,6 +559,16 @@ export default function AdminPedidosPage() {
         </section>
 
       </main>
+
+      {cuentaAbierta && (
+        <ModalCuenta
+          telefono={cuentaAbierta}
+          pedidos={pedidos}
+          canciones={cancionesCompartidas}
+          premium={planPorTelefono.get(cuentaAbierta) === 'premium'}
+          onClose={() => setCuentaAbierta(null)}
+        />
+      )}
 
       {pedidoAbierto && (
         <ModalPedido

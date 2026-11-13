@@ -8,7 +8,8 @@ import type { CancionPendiente } from '@/lib/cancionCompartidaService';
 
 // Tarjeta arriba de la cuenta del tenant: sus canciones sin la descarga pagada que todavía suenan,
 // cada una con su cuenta regresiva hasta que se retira (ver venceEn). Las que vencen se quitan solas.
-export default function CancionesPendientes({ canciones }: { canciones: CancionPendiente[] }) {
+// `vistaAdmin`: el admin la mira desde /admin/pedidos — sus clics no deben contar en el Píxel.
+export default function CancionesPendientes({ canciones, vistaAdmin = false }: { canciones: CancionPendiente[]; vistaAdmin?: boolean }) {
   // null hasta montar: la hora del servidor y la del teléfono no coinciden al segundo.
   const [ahora, setAhora] = useState<number | null>(null);
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function CancionesPendientes({ canciones }: { canciones: CancionP
               href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${c.titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${c.id}`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (recordatorio en la cuenta)' })}
+              onClick={() => !vistaAdmin && trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (recordatorio en la cuenta)' })}
               style={{
                 padding: '0.6rem 1rem', borderRadius: 999, textDecoration: 'none', fontWeight: 800, fontSize: '0.9rem',
                 background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10', boxShadow: '0 3px 0 #a87d00',
