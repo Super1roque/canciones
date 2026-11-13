@@ -107,13 +107,37 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   const yaEscuchadaRef = useRef(yaEscuchadaInicial);
   const pausasRef = useRef<number[] | null>(null);
   const pausaAvisadaRef = useRef(false);
+  // Registro de cada escucha (una fila por escucha en el servidor) para poder revisar después si
+  // salió con pausas, cuántas hizo y hasta dónde llegó. Las del admin no se registran.
+  const registroRef = useRef<{ id: string; conPausas: boolean; pausasPlaneadas: number; pausasHechas: number; duracion: number; avance: number } | null>(null);
+  function enviarRegistro() {
+    const r = registroRef.current;
+    if (!r || esAdmin()) return;
+    const cuerpo = JSON.stringify({ ...r, avance: Math.round(r.avance * 100) });
+    try {
+      if (navigator.sendBeacon?.(`${audioApiUrl}/escucha`, new Blob([cuerpo], { type: 'application/json' }))) return;
+    } catch {
+      // Sin sendBeacon: va por fetch.
+    }
+    fetch(`${audioApiUrl}/escucha`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: cuerpo, keepalive: true }).catch(() => {});
+  }
+  // Al salir de la página (atrás, swipe, cambiar de app) se manda hasta dónde llegó.
+  useEffect(() => {
+    function alOcultar() { if (document.visibilityState === 'hidden') enviarRegistro(); }
+    document.addEventListener('visibilitychange', alOcultar);
+    window.addEventListener('pagehide', enviarRegistro);
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultar);
+      window.removeEventListener('pagehide', enviarRegistro);
+    };
+  });
   function yaLaEscucho() { return yaEscuchadaRef.current; }
   function esAdmin() {
     try { return localStorage.getItem('corridos-admin') === '1'; } catch { return false; }
   }
   // Momentos al azar entre el 10 % y el 92 % de la canción, separados al menos un 8 % entre sí.
   function planearPausas(dur: number): number[] {
-    if (descargable || !yaLaEscucho() || !isFinite(dur) || dur < 30) return [];
+    if (descargable || !yaLaEscucho() || dur < 30) return [];
     const puntos: number[] = [];
     for (let intento = 0; puntos.length < PAUSAS_REPETIDAS && intento < 200; intento++) {
       const t = dur * (0.1 + Math.random() * 0.82);
@@ -133,11 +157,27 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   function alAvanzar() {
     const a = audioRef.current;
     if (!a) return;
-    if (pausasRef.current === null) pausasRef.current = planearPausas(a.duration);
-    if (isFinite(a.duration) && a.currentTime >= a.duration * MARCA_ESCUCHADA) marcarEscuchada();
+    // En algunos teléfonos la duración todavía no se conoce al empezar a sonar: se espera a tenerla
+    // para decidir las pausas, en vez de dejar toda la escucha sin pausas.
+    if (!isFinite(a.duration) || a.duration <= 0) return;
+    if (pausasRef.current === null) {
+      pausasRef.current = planearPausas(a.duration);
+      registroRef.current = {
+        id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        conPausas: pausasRef.current.length > 0,
+        pausasPlaneadas: pausasRef.current.length,
+        pausasHechas: 0,
+        duracion: Math.round(a.duration),
+        avance: 0,
+      };
+      enviarRegistro();
+    }
+    if (registroRef.current) registroRef.current.avance = Math.max(registroRef.current.avance, a.currentTime / a.duration);
+    if (a.currentTime >= a.duration * MARCA_ESCUCHADA) marcarEscuchada();
     const siguiente = pausasRef.current[0];
     if (siguiente !== undefined && a.currentTime >= siguiente) {
       pausasRef.current.shift();
+      if (registroRef.current) registroRef.current.pausasHechas++;
       a.pause();   // onPause deja el botón en «Pausado», igual que si la persona lo hubiera pausado
       setAvisoPausa(true);
       // Para el panel: cuenta la escucha como «con pausas» una sola vez.
@@ -193,6 +233,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       blobUrlRef.current = url;
       blobRef.current = blob;
       a.src = url;
+      enviarRegistro();   // cierra la escucha anterior con su avance final
+      registroRef.current = null;
       pausasRef.current = null;   // escucha nueva: se planean pausas nuevas cuando se conozca la duración
       pausaAvisadaRef.current = false;
       await a.play();
@@ -241,6 +283,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     setEstado('inicial');
     necesitaFetchRef.current = true;
     marcarEscuchada();
+    if (registroRef.current) { registroRef.current.avance = 1; enviarRegistro(); }
   }
 
   // Al bloquearse, si es el dueño y ya está logueado lo manda directo a su
