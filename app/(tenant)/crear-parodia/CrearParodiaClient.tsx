@@ -7,6 +7,8 @@ import BotonResponderHablando from '@/components/BotonResponderHablando';
 import { VENTA_CREDITOS_ACTIVA, SIN_SALDO_PEDIR } from '@/lib/promo';
 import CancionesPendientes from '@/components/CancionesPendientes';
 import type { CancionPendiente } from '@/lib/cancionCompartidaService';
+import NotificacionesTenant from '../dashboard/NotificacionesTenant';
+import { estadoNotificaciones, activarNotificaciones, type EstadoNotificaciones } from '@/lib/notificacionesCliente';
 
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
@@ -36,6 +38,9 @@ export default function CrearParodiaClient({ tenant, pendientes }: { tenant: Ten
   const [enviado, setEnviado] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
   const seccionRef = useRef<HTMLElement>(null);
+  // Al enviar el pedido se piden las notificaciones, para avisarle cuando la canción esté lista o le respondan.
+  const [notif, setNotif] = useState<EstadoNotificaciones | null>(null);
+  useEffect(() => { estadoNotificaciones().then(setNotif); }, []);
 
   useEffect(() => {
     if (saldoInsuficiente) { setCargando(false); return; }
@@ -118,6 +123,8 @@ export default function CrearParodiaClient({ tenant, pendientes }: { tenant: Ten
   async function handleEnviar() {
     if (!parodiaActual) return;
     if (letraEditada.trim().length < 2) { showToast('La letra no puede quedar vacía', 'error'); return; }
+    // El permiso se pide aquí mismo, antes de cualquier await, para que el navegador lo vea como parte del clic.
+    if (notif === 'inactivo') activarNotificaciones().then(r => setNotif(r.estado));
 
     setEnviando(true);
     try {
@@ -173,6 +180,8 @@ export default function CrearParodiaClient({ tenant, pendientes }: { tenant: Ten
           <p className={styles.textMuted} style={{ maxWidth: 380 }}>
             Ya tenemos la letra de tu parodia de &quot;{parodiaActual?.cancion_base}&quot;. Te la vamos a entregar por WhatsApp.
           </p>
+          {/* Mientras no estén activas, el mismo botón del dashboard; si ya están, confirma que le vamos a avisar. */}
+          <div style={{ width: '100%' }}><NotificacionesTenant /></div>
           <a href="/dashboard" className={styles.btnPrimary}>📋 Ir a mi dashboard</a>
         </div>
       </main>
