@@ -120,6 +120,9 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   const PAUSAS_REPETIDAS = 5;
   // Ref y no estado: se lee al planear las pausas, justo después de actualizarla en alTocar.
   const yaEscuchadaRef = useRef(yaEscuchadaInicial);
+  // El contador de 36 h no se muestra en la primera escucha (la limpia): aparece cuando la canción
+  // ya venía escuchada o cuando termina esa primera escucha (pedido de Armando, 15 nov 2026).
+  const [conContador, setConContador] = useState(yaEscuchadaInicial);
   const pausasRef = useRef<number[] | null>(null);
   const pausaAvisadaRef = useRef(false);
   // Registro de cada escucha (una fila por escucha en el servidor) para poder revisar después si
@@ -233,7 +236,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         const acceso = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
         if (acceso.ok) {
           const datos = await acceso.json();
-          if (datos.escuchada === true) yaEscuchadaRef.current = true;
+          if (datos.escuchada === true) { yaEscuchadaRef.current = true; setConContador(true); }
           if (datos.descargable === true) setDescargable(true);
         }
       } catch {
@@ -299,6 +302,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     setEstado('inicial');
     necesitaFetchRef.current = true;
     marcarEscuchada();
+    if (yaEscuchadaRef.current) setConContador(true);
     if (registroRef.current) { registroRef.current.avance = 1; enviarRegistro(); }
   }
 
@@ -597,7 +601,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         </p>
       )}
 
-      {!descargable && ahora !== null && (
+      {!descargable && conContador && ahora !== null && (
         <div style={{
           maxWidth: '22rem', padding: '0.75rem 1rem', borderRadius: 14,
           background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,211,92,0.55)', lineHeight: 1.4,
