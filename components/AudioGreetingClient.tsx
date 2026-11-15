@@ -544,6 +544,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           background: 'rgba(255,255,255,0.4)',
           boxShadow: '0 6px 0 rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: enPausaAuto ? 'latidoDescarga 1.1s ease-in-out infinite' : undefined,
         }}
       >
         {estado === 'cargando' ? (
@@ -558,6 +559,21 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           }} />
         )}
       </button>
+
+      {/* Muchos creían que la canción había terminado en la pausa automática: una flecha señala el play
+          y se va sola al reanudar (onPlay apaga avisoPausa). */}
+      {enPausaAuto && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '-0.6rem' }}>
+          <span aria-hidden style={{ fontSize: '2.6rem', lineHeight: 1, color: '#ffd35c', animation: 'flechaPlay 0.9s ease-in-out infinite' }}>⬆</span>
+          <span style={{
+            padding: '0.5rem 1rem', borderRadius: 14, background: 'rgba(0,0,0,0.6)', border: '2px solid #ffd35c',
+            color: '#fdf3e0', fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.3, maxWidth: '20rem',
+          }}>
+            La canción está en pausa.<br />
+            <span style={{ color: '#ffd35c' }}>Presioná aquí para seguir escuchando</span>
+          </span>
+        </div>
+      )}
 
       <h1 style={{ fontSize: '1.15rem', margin: 0, maxWidth: '90vw' }}>{titulo}</h1>
 
@@ -686,19 +702,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         )}
       </div>
 
-      {/* El siguiente paso del embudo: el video de esta misma canción, con la muestra gratis. */}
-      <a
-        href={`/video-para-tu-cancion?cancion=${audioApiUrl.split('/').pop()}#formulario`}
-        style={{
-          padding: '0.95rem 1.8rem', borderRadius: 999, textDecoration: 'none',
-          background: 'linear-gradient(180deg, #e0262f, #a3121b)', color: '#fdf3e0',
-          fontSize: '1.05rem', fontWeight: 800, boxShadow: '0 4px 0 #6b0b12',
-          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-        }}
-      >
-        🎬 Haz el video de tu canción — muestra gratis
-      </a>
-
       {/* Quien recibe el link es el próximo cliente: lo invita a hacer la suya. */}
       <a
         href="/"
@@ -723,6 +726,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       <style>{`
         @keyframes eqBar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
         @keyframes latidoDescarga { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes flechaPlay { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
       `}</style>
     </main>
   );
