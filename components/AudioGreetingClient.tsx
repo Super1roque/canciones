@@ -65,6 +65,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   const [bloqueado, setBloqueado] = useState(restringida);
   const audioRef = useRef<HTMLAudioElement>(null);
   const blobUrlRef = useRef<string>('');
+  // El archivo ORIGINAL para descargar o enviar; para escuchar se baja la copia liviana, que no se reusa aquí.
   const blobRef = useRef<Blob | null>(null);
   const [puedeCompartirArchivo, setPuedeCompartirArchivo] = useState(false);
 
@@ -189,6 +190,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         avance: 0,
       };
       enviarRegistro();
+      // Ya está sonando: recién aquí cuenta como reproducción (el ▶️ del panel y el límite de gratis).
+      if (!esAdmin()) fetch(`${audioApiUrl}/reproduccion`, { method: 'POST' }).catch(() => {});
     }
     if (registroRef.current) registroRef.current.avance = Math.max(registroRef.current.avance, a.currentTime / a.duration);
     if (a.currentTime >= a.duration * MARCA_ESCUCHADA) marcarEscuchada();
@@ -250,7 +253,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
       const url = URL.createObjectURL(blob);
       blobUrlRef.current = url;
-      blobRef.current = blob;
       a.src = url;
       enviarRegistro();   // cierra la escucha anterior con su avance final
       registroRef.current = null;
@@ -326,12 +328,12 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // (lazy) si todavía no se había tocado play — nada se descarga de más
   // hasta que el usuario realmente pide enviarlo.
   // Descarga directa del archivo — funciona en computadora y en cualquier celular, aunque no permita
-  // compartir archivos. Reusa el audio ya traído si la persona lo escuchó.
+  // compartir archivos. Baja el original (no la copia liviana con que se escucha) una sola vez.
   async function descargarArchivo() {
     try {
       let blob = blobRef.current;
       if (!blob) {
-        const res = await fetch(audioApiUrl);
+        const res = await fetch(`${audioApiUrl}?original=1`);
         if (!res.ok) return;
         blob = await res.blob();
         blobRef.current = blob;
@@ -350,7 +352,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     try {
       let blob = blobRef.current;
       if (!blob) {
-        const res = await fetch(audioApiUrl);
+        const res = await fetch(`${audioApiUrl}?original=1`);
         if (!res.ok) return;
         blob = await res.blob();
         blobRef.current = blob;

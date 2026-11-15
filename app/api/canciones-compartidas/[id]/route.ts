@@ -1,6 +1,5 @@
 import { getDb, getStorageBucket } from '@/lib/firebaseService';
-import { calcularAcceso, incrementarReproduccion, venceEn } from '@/lib/cancionCompartidaService';
-import { esNavegadorAdmin } from '@/lib/adminServidor';
+import { calcularAcceso, venceEn } from '@/lib/cancionCompartidaService';
 
 export const runtime = 'nodejs';
 
@@ -22,15 +21,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (restringida) return new Response('Alcanzaste el límite de reproducciones gratis', { status: 403 });
     if (!descargable && Date.now() >= venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde })) return new Response('Esta canción ya no está disponible', { status: 410 });
 
-    // Las escuchas del admin revisando la canción no suman: el contador del panel es solo de clientes.
-    if (!esNavegadorAdmin(request)) incrementarReproduccion(id);
+    // La reproducción ya no se cuenta aquí sino en /reproduccion, cuando la canción empieza a sonar:
+    // con datos lentos mucha gente bajaba el audio varias veces sin llegar a oírlo e inflaba el contador.
+    // Para escuchar va la copia liviana; el original solo con ?original=1 y la descarga pagada.
+    const original = new URL(request.url).searchParams.get('original') === '1' && descargable;
+    const ruta = !original && data.storagePathLigera ? data.storagePathLigera as string : data.storagePath;
 
     const bucket = getStorageBucket();
-    const [buffer] = await bucket.file(data.storagePath).download();
+    const [buffer] = await bucket.file(ruta).download();
 
     return new Response(new Uint8Array(buffer), {
       headers: {
-        'Content-Type': data.contentType || 'audio/mpeg',
+        'Content-Type': ruta === data.storagePath ? data.contentType || 'audio/mpeg' : 'audio/mpeg',
         'Content-Length': buffer.length.toString(),
         'Cache-Control': 'no-store',
       },

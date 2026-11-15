@@ -112,13 +112,11 @@ export async function habilitarDescarga(id: string, habilitar: boolean): Promise
   await db.collection(COLLECTION).doc(id).update({ descargaHabilitada: habilitar });
 }
 
-// Fire-and-forget desde el GET que sirve el audio — no debe demorar la
-// reproducción esperando a que esto termine.
-export function incrementarReproduccion(id: string): void {
-  const db = getDb();
-  void db.collection(COLLECTION).doc(id).update({
+// Se llama desde /reproduccion cuando la canción ya empezó a sonar (no al bajar el audio).
+export async function incrementarReproduccion(id: string): Promise<void> {
+  await getDb().collection(COLLECTION).doc(id).update({
     reproducciones: admin.firestore.FieldValue.increment(1),
-  }).catch(err => console.error('incrementarReproduccion:', err.message));
+  });
 }
 
 // Borra el archivo de Storage y el doc — para cuando se subió el audio
@@ -128,9 +126,9 @@ export async function eliminarCancionCompartida(id: string): Promise<void> {
   const db = getDb();
   const doc = await db.collection(COLLECTION).doc(id).get();
   if (doc.exists) {
-    const storagePath = doc.data()!.storagePath as string | undefined;
-    if (storagePath) {
-      await getStorageBucket().file(storagePath).delete().catch(() => {});
+    for (const campo of ['storagePath', 'storagePathLigera']) {
+      const ruta = doc.data()![campo] as string | undefined;
+      if (ruta) await getStorageBucket().file(ruta).delete().catch(() => {});
     }
     await doc.ref.delete();
   }
