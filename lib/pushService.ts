@@ -100,6 +100,26 @@ export async function avisarNuevoMensajeAdmin(telefono: string, texto?: string):
   await enviarATodos(snap.docs, payload);
 }
 
+// Se llama cuando el admin responde en el chat de soporte — sin esto, el
+// tenant que escribió y cerró la página nunca se enteraba de la respuesta.
+export async function avisarRespuestaSoporte(telefono: string, texto?: string): Promise<void> {
+  if (!process.env.VAPID_PRIVATE_KEY) return;
+  configurar();
+
+  const db = getDb();
+  const snap = await db.collection(COLLECTION_TENANTS).where('telefono', '==', telefono).get();
+  if (snap.empty) return;
+
+  const payload = JSON.stringify({
+    titulo: '💬 Te respondieron en Corridos.online',
+    cuerpo: texto ? (texto.length > 140 ? texto.slice(0, 137) + '…' : texto) : 'Te mandaron una foto',
+    url: '/dashboard#soporte',
+    tag: 'chat-tenant',
+  });
+
+  await enviarATodos(snap.docs, payload);
+}
+
 // Se llama cuando el admin marca un pedido como "entregada" — le avisa al
 // tenant que su canción ya está lista, aunque no tenga la app abierta.
 export async function avisarCancionLista(telefono: string, cancionBase: string): Promise<void> {

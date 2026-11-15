@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHand
 import styles from '../tenant.module.css';
 import type { Mensaje } from '@/lib/chatService';
 import { conLinksClickeables } from '@/lib/linkify';
+import { estadoNotificaciones, activarNotificaciones, type EstadoNotificaciones } from '@/lib/notificacionesCliente';
 
 function formatHora(iso: string) {
   return new Date(iso).toLocaleString('es', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -21,7 +22,22 @@ const ChatTenant = forwardRef<ChatTenantHandle>(function ChatTenant(_props, ref)
   const [archivo, setArchivo] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [cargado, setCargado] = useState(false);
+  // Muchos escribían, Armando les respondía y no volvían: no se enteraban de la respuesta. Por eso el chat pide
+  // activar las notificaciones al mandar un mensaje y, mientras no estén activas, muestra un aviso con su botón.
+  const [notif, setNotif] = useState<EstadoNotificaciones | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    estadoNotificaciones().then(setNotif);
+    const alCambiar = (e: Event) => setNotif((e as CustomEvent<EstadoNotificaciones>).detail);
+    window.addEventListener('notificaciones-tenant', alCambiar);
+    return () => window.removeEventListener('notificaciones-tenant', alCambiar);
+  }, []);
+
+  async function activar() {
+    const r = await activarNotificaciones();
+    setNotif(r.estado);
+  }
   const listaRef = useRef<HTMLDivElement>(null);
 
   const cargar = useCallback(async () => {
@@ -65,6 +81,8 @@ const ChatTenant = forwardRef<ChatTenantHandle>(function ChatTenant(_props, ref)
   async function enviar() {
     const textoLimpio = texto.trim();
     if (!textoLimpio && !archivo) return;
+    // El permiso se pide aquí mismo, antes de cualquier await, para que el navegador lo vea como parte del clic.
+    const pidiendoPermiso = notif === 'inactivo' ? activarNotificaciones() : null;
     setEnviando(true);
     try {
       const formData = new FormData();
@@ -82,7 +100,10 @@ const ChatTenant = forwardRef<ChatTenantHandle>(function ChatTenant(_props, ref)
     } finally {
       setEnviando(false);
     }
+    if (pidiendoPermiso) setNotif((await pidiendoPermiso).estado);
   }
+
+  const yaEscribio = mensajes.some(m => m.autor === 'tenant');
 
   return (
     <div id="soporte" className={styles.panel} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', scrollMarginTop: '1rem' }}>
@@ -129,6 +150,26 @@ const ChatTenant = forwardRef<ChatTenantHandle>(function ChatTenant(_props, ref)
           ))
         )}
       </div>
+
+      {yaEscribio && notif === 'inactivo' && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', borderRadius: 10,
+          background: 'var(--cr-surface-2)', border: '2px solid var(--cr-gold)',
+        }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>
+            🔔 Activá las notificaciones para enterarte cuando te respondamos
+          </span>
+          <button type="button" className={styles.btnPrimary} style={{ width: '100%', minHeight: 'auto' }} onClick={activar}>
+            Activar notificaciones
+          </button>
+        </div>
+      )}
+      {yaEscribio && notif === 'denegado' && (
+        <p className={styles.textMuted} style={{ fontSize: '0.78rem', margin: 0 }}>
+          🔕 Tenés las notificaciones bloqueadas, así que no te vamos a poder avisar cuando te respondamos. Para
+          activarlas, tocá el candado de la barra de direcciones y permití las notificaciones.
+        </p>
+      )}
 
       {archivo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
