@@ -47,6 +47,8 @@ type CancionCompartida = {
   descargaHabilitada: boolean;
   escuchasConPausa: number;
   vence: number;
+  clicsPagar?: number;
+  comprobantes?: number;
 };
 
 type TenantPlan = {
@@ -164,7 +166,16 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, comprobantes = 0, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; comprobantes?: number; onClose: () => void; onVinculado: () => void }) {
+  // El comprobante que la persona subió en la página de la canción: se trae con la sesión del admin y se abre aparte.
+  async function verComprobante(i: number) {
+    if (!p.cancionCompartidaId) return;
+    const ventana = window.open('', '_blank');
+    const res = await fetchConSesion(`/api/admin/canciones-compartidas/comprobante?id=${p.cancionCompartidaId}&i=${i}`);
+    if (!res.ok) { ventana?.close(); return; }
+    const url = URL.createObjectURL(await res.blob());
+    if (ventana) ventana.location.href = url; else window.open(url, '_blank');
+  }
   const [vence, setVence] = useState(venceInicial);
   const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
@@ -328,8 +339,18 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <p style={{ fontSize: '0.8rem', color: descarga ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>
-                {descarga ? '📥 Descarga habilitada (pagada)' : '🔒 Descarga bloqueada — se cobra L 250 por WhatsApp'}
+                {descarga ? '📥 Descarga habilitada (pagada)' : '🔒 Descarga bloqueada — se cobra L 250'}
+                {` · 💳 tocó «Pagar» ${clicsPagar} ${clicsPagar === 1 ? 'vez' : 'veces'}`}
               </p>
+              {comprobantes > 0 && (
+                <span style={{ display: 'inline-flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                  {Array.from({ length: comprobantes }, (_, i) => (
+                    <button key={i} className={descarga ? 'btn-secondary' : 'btn-primary'} onClick={() => verComprobante(i)} style={{ fontSize: '0.78rem' }}>
+                      🧾 Ver comprobante{comprobantes > 1 ? ` ${i + 1}` : ''}
+                    </button>
+                  ))}
+                </span>
+              )}
               <button
                 className={descarga ? 'btn-secondary' : 'btn-primary'}
                 disabled={cambiandoDescarga}
@@ -526,6 +547,13 @@ export default function AdminPedidosPage() {
                     <div>
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
+                      {(() => {
+                        // Comprobante de la descarga subido en la página y todavía sin habilitar: hay que revisarlo.
+                        const c = p.cancionCompartidaId ? cancionesCompartidas.find(x => x.id === p.cancionCompartidaId) : undefined;
+                        return c && (c.comprobantes ?? 0) > 0 && !c.descargaHabilitada
+                          ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f2b705' }}>🧾 Comprobante por revisar</div>
+                          : null;
+                      })()}
                     </div>
                     <div>
                       {p.cancionCompartidaId && (
@@ -578,6 +606,8 @@ export default function AdminPedidosPage() {
           descargaHabilitada={pedidoAbierto.cancionCompartidaId ? descargaPorId.get(pedidoAbierto.cancionCompartidaId) === true : false}
           vence={pedidoAbierto.cancionCompartidaId ? cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.vence : undefined}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
+          clicsPagar={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsPagar}
+          comprobantes={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.comprobantes}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
         />

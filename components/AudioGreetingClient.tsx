@@ -5,6 +5,7 @@ import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import { PRECIO_DESCARGA } from '@/lib/promo';
 import { formatoRestante } from '@/lib/tiempo';
+import type { DatosBanco } from '@/lib/pagoDescarga';
 
 // La descarga se cobra canción por canción: el cliente paga por WhatsApp y
 // el admin la habilita desde /admin/pedidos (ver calcularAcceso).
@@ -42,7 +43,12 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean }) {
+  // Pago directo de la descarga (ver lib/pagoDescarga.ts): la hoja con la cuenta del banco y la foto del comprobante.
+  const [hojaPago, setHojaPago] = useState(false);
+  const [comprobante, setComprobante] = useState<'no' | 'subiendo' | 'enviado'>(comprobanteInicial ? 'enviado' : 'no');
+  const [errorComprobante, setErrorComprobante] = useState('');
+  const [copiado, setCopiado] = useState(false);
   const [descargable, setDescargable] = useState(descargableInicial);
   // Cuenta regresiva hasta que la canción se retira (36 h desde que se subió, ver venceEn). Arranca en
   // null y se llena al montar: la hora del servidor y la del teléfono no coinciden al segundo.
@@ -92,7 +98,10 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       if (document.visibilityState !== 'visible') return;
       try {
         const res = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
-        if (res.ok && (await res.json()).descargable && !cancelado) setDescargable(true);
+        if (!res.ok || cancelado) return;
+        const datos = await res.json();
+        if (datos.descargable) { setDescargable(true); setHojaPago(false); }
+        else if (datos.comprobante) setComprobante('enviado');
       } catch {
         // Silencioso — se reintenta en el próximo ciclo.
       }
@@ -364,6 +373,36 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
   }
 
+  // «Pagar L 250»: abre la hoja de pago (y cuenta el toque para el panel). Sin cuenta configurada, como antes: WhatsApp.
+  function abrirPago(origen: string) {
+    trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: `Descarga de canción (${origen})` });
+    if (!pago) { window.open(enlaceDescarga, '_blank'); return; }
+    fetch(`${audioApiUrl}/clic-pagar`, { method: 'POST' }).catch(() => {});
+    setHojaPago(true);
+  }
+  async function copiarCuenta() {
+    if (!pago) return;
+    try { await navigator.clipboard.writeText(pago.cuenta); setCopiado(true); setTimeout(() => setCopiado(false), 2500); } catch { /* sin portapapeles: el número igual está a la vista */ }
+  }
+  async function subirComprobante(file: File | undefined) {
+    if (!file) return;
+    setErrorComprobante('');
+    setComprobante('subiendo');
+    try {
+      const fd = new FormData();
+      fd.append('imagen', file);
+      const res = await fetch(`${audioApiUrl}/comprobante`, { method: 'POST', body: fd });
+      const datos = await res.json().catch(() => ({}));
+      if (!res.ok) { setErrorComprobante(datos.error || 'No se pudo subir, intentá de nuevo'); setComprobante('no'); return; }
+      if (datos.yaHabilitada) { setDescargable(true); setHojaPago(false); return; }
+      setComprobante('enviado');
+      trackMetaPixel('AddPaymentInfo', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Comprobante de descarga' });
+    } catch {
+      setErrorComprobante('Sin conexión, intentá de nuevo');
+      setComprobante('no');
+    }
+  }
+
   const reproduciendo = estado === 'reproduciendo';
   const enPausaAuto = avisoPausa && estado === 'pausado' && !descargable;
 
@@ -621,12 +660,11 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       {/* En la pausa automática solo queda la invitación a descargar, bien grande; los demás botones
           vuelven al reanudar (onPlay apaga avisoPausa). */}
       {enPausaAuto && (
-        <a
-          href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (aviso de pausa)' })}
+        <button
+          type="button"
+          onClick={() => abrirPago('aviso de pausa')}
           style={{
+            cursor: 'pointer', font: 'inherit',
             width: 'min(92vw, 24rem)', padding: '1.3rem 1.2rem', borderRadius: 22, textDecoration: 'none',
             background: 'linear-gradient(180deg, #ffe27a, #f2b705)', border: '3px solid #fff4c2',
             color: '#2c0a10', lineHeight: 1.25, boxShadow: '0 6px 0 #a87d00, 0 0 36px rgba(255,211,92,0.7)',
@@ -642,7 +680,79 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           }}>
             📥 L {PRECIO_DESCARGA} 👉
           </span>
-        </a>
+        </button>
+      )}
+
+      {hojaPago && pago && (
+        <div
+          onClick={() => setHojaPago(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.72)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(100vw, 28rem)', maxHeight: '92vh', overflowY: 'auto', boxSizing: 'border-box',
+              background: '#2c0a10', color: '#fdf3e0', borderRadius: '22px 22px 0 0', border: '2px solid #ffd35c',
+              padding: '1.3rem 1.2rem 1.6rem', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.9rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ fontSize: '1.2rem' }}>📥 Descargá «{titulo}»</strong>
+              <button type="button" onClick={() => setHojaPago(false)} aria-label="Cerrar"
+                style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {comprobante === 'enviado' ? (
+              <div style={{ padding: '1rem', borderRadius: 14, background: 'rgba(52,196,111,0.15)', border: '1px solid #34c46f', lineHeight: 1.45 }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>✅ Recibimos tu comprobante</div>
+                <div style={{ fontSize: '0.92rem', color: '#e8d6bd', marginTop: '0.3rem' }}>
+                  En cuanto lo revisemos, el botón de descarga aparece aquí mismo, sin pausas. Podés cerrar esta página: te avisamos.
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
+                  <strong>1.</strong> Transferí <strong style={{ color: '#ffd35c' }}>L {PRECIO_DESCARGA}</strong> a esta cuenta:
+                </div>
+                <div style={{ padding: '0.9rem 1rem', borderRadius: 14, background: 'rgba(255,211,92,0.1)', border: '1px solid rgba(255,211,92,0.5)', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '0.85rem', color: '#e0b98f' }}>{pago.banco}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>{pago.cuenta}</span>
+                    <button type="button" onClick={copiarCuenta}
+                      style={{ padding: '0.45rem 0.8rem', borderRadius: 999, border: 'none', background: '#ffd35c', color: '#2c0a10', fontWeight: 800, cursor: 'pointer' }}>
+                      {copiado ? '✓ Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#e8d6bd' }}>A nombre de {pago.titular}</div>
+                </div>
+                <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
+                  <strong>2.</strong> Subí la foto o captura del comprobante:
+                </div>
+                <label style={{
+                  padding: '0.95rem 1rem', borderRadius: 999, textAlign: 'center', cursor: comprobante === 'subiendo' ? 'wait' : 'pointer',
+                  background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1.05rem', fontWeight: 900,
+                  boxShadow: '0 4px 0 #a87d00',
+                }}>
+                  {comprobante === 'subiendo' ? 'Subiendo…' : '📷 Subir comprobante'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={comprobante === 'subiendo'}
+                    onChange={e => subirComprobante(e.target.files?.[0])} />
+                </label>
+                {errorComprobante && <div style={{ color: '#ff9a8a', fontSize: '0.88rem' }}>⚠️ {errorComprobante}</div>}
+                <div style={{ fontSize: '0.82rem', color: '#e0b98f', lineHeight: 1.4 }}>
+                  Revisamos el pago y se habilita la descarga sin pausas aquí mismo, en esta página.
+                </div>
+              </>
+            )}
+
+            <a href={enlaceDescarga} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '0.85rem', color: '#9be3b4', textAlign: 'center' }}>
+              💬 ¿Dudas? Escribinos por WhatsApp
+            </a>
+          </div>
+        </div>
       )}
 
       {!enPausaAuto && (<>
@@ -691,20 +801,19 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         )}
 
         {!descargable && (
-          <a
-            href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción' })}
+          <button
+            type="button"
+            onClick={() => abrirPago('botón')}
             style={{
+              font: 'inherit',
               padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999, textDecoration: 'none',
               background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10',
               fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
               boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}
           >
-            📥 Descargar a mi teléfono — L {PRECIO_DESCARGA}
-          </a>
+            {comprobante === 'enviado' ? '🧾 Comprobante enviado — en revisión' : `📥 Descargar a mi teléfono — L ${PRECIO_DESCARGA}`}
+          </button>
         )}
       </div>
 

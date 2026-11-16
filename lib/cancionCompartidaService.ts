@@ -103,6 +103,8 @@ export interface CancionCompartida {
   descargaHabilitada: boolean;
   escuchasConPausa: number;
   vence: number;
+  clicsPagar: number;        // veces que se abrió «Pagar L 250» en la página
+  comprobantes: number;      // fotos de comprobante subidas, pendientes de revisar si no está habilitada
 }
 
 // Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
@@ -130,6 +132,7 @@ export async function eliminarCancionCompartida(id: string): Promise<void> {
       const ruta = doc.data()![campo] as string | undefined;
       if (ruta) await getStorageBucket().file(ruta).delete().catch(() => {});
     }
+    await getStorageBucket().deleteFiles({ prefix: `comprobantes/${id}/` }).catch(() => {});
     await doc.ref.delete();
   }
 }
@@ -148,6 +151,8 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         descargaHabilitada: data.descargaHabilitada === true,
         escuchasConPausa: data.escuchasConPausa ?? 0,
         vence: venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde }),
+        clicsPagar: data.clicsPagar ?? 0,
+        comprobantes: data.comprobantes?.length ?? 0,
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

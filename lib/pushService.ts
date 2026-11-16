@@ -120,6 +120,45 @@ export async function avisarRespuestaSoporte(telefono: string, texto?: string): 
   await enviarATodos(snap.docs, payload);
 }
 
+// La persona subió el comprobante de la descarga (L 250) en la página de la canción: el admin lo revisa en
+// /admin/pedidos y habilita la descarga.
+export async function avisarComprobanteAdmin(titulo: string, telefono?: string): Promise<void> {
+  if (!process.env.VAPID_PRIVATE_KEY) return;
+  configurar();
+
+  const db = getDb();
+  const snap = await db.collection(COLLECTION_ADMIN).get();
+  if (snap.empty) return;
+
+  const payload = JSON.stringify({
+    titulo: '💰 Comprobante de descarga',
+    cuerpo: `«${titulo}»${telefono ? ` · ${telefono}` : ''} — revisalo y habilitá la descarga`,
+    url: '/admin/pedidos',
+    tag: 'comprobante-descarga',
+  });
+
+  await enviarATodos(snap.docs, payload);
+}
+
+// El admin habilitó la descarga (después de revisar el pago): se le avisa al dueño de la canción.
+export async function avisarDescargaLista(telefono: string, titulo: string, cancionId: string): Promise<void> {
+  if (!process.env.VAPID_PRIVATE_KEY) return;
+  configurar();
+
+  const db = getDb();
+  const snap = await db.collection(COLLECTION_TENANTS).where('telefono', '==', telefono).get();
+  if (snap.empty) return;
+
+  const payload = JSON.stringify({
+    titulo: '📥 ¡Tu descarga está lista!',
+    cuerpo: `Ya podés descargar «${titulo}» sin pausas.`,
+    url: `/cancion/${cancionId}`,
+    tag: 'descarga-lista',
+  });
+
+  await enviarATodos(snap.docs, payload);
+}
+
 // Se llama cuando el admin marca un pedido como "entregada" — le avisa al
 // tenant que su canción ya está lista, aunque no tenga la app abierta.
 export async function avisarCancionLista(telefono: string, cancionBase: string): Promise<void> {
