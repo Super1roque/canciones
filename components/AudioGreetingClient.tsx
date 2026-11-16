@@ -5,7 +5,7 @@ import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import { PRECIO_DESCARGA } from '@/lib/promo';
 import { formatoRestante } from '@/lib/tiempo';
-import type { DatosBanco } from '@/lib/pagoDescarga';
+import { VISITAS_FB_PARA_DESBLOQUEO, urlCompartirFacebook, type DatosBanco } from '@/lib/pagoDescarga';
 
 // La descarga se cobra canción por canción: el cliente paga por WhatsApp y
 // el admin la habilita desde /admin/pedidos (ver calcularAcceso).
@@ -43,7 +43,26 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false, visitasFb: visitasFbInicial = 0 }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean; visitasFb?: number }) {
+  // Descarga gratis por compartir en Facebook: progreso hacia VISITAS_FB_PARA_DESBLOQUEO visitas desde Facebook.
+  const [visitasFb, setVisitasFb] = useState(visitasFbInicial);
+  const [compartioFb, setCompartioFb] = useState(false);
+  const cancionId = audioApiUrl.split('/').pop() ?? '';
+  useEffect(() => {
+    try { setCompartioFb(localStorage.getItem(`corridos-compartio-${cancionId}`) === '1'); } catch { /* sin almacenamiento */ }
+    // ¿Llegó desde una publicación de Facebook? Cuenta como visita para quien la compartió (una vez por sesión;
+    // el dueño que la compartió desde este teléfono y el admin no cuentan).
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const deFacebook = q.has('fbclid') || /facebook\.com|fb\.com|fb\.me/i.test(document.referrer);
+      const clave = `corridos-visita-fb-${cancionId}`;
+      if (q.get('c') === 'fb' && deFacebook && !sessionStorage.getItem(clave)
+          && localStorage.getItem(`corridos-compartio-${cancionId}`) !== '1' && localStorage.getItem('corridos-admin') !== '1') {
+        sessionStorage.setItem(clave, '1');
+        fetch(`${audioApiUrl}/visita-fb`, { method: 'POST' }).catch(() => {});
+      }
+    } catch { /* sin almacenamiento: no se cuenta */ }
+  }, [audioApiUrl, cancionId]);
   // Pago directo de la descarga (ver lib/pagoDescarga.ts): la hoja con la cuenta del banco y la foto del comprobante.
   const [hojaPago, setHojaPago] = useState(false);
   const [comprobante, setComprobante] = useState<'no' | 'subiendo' | 'enviado'>(comprobanteInicial ? 'enviado' : 'no');
@@ -100,6 +119,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         const res = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
         if (!res.ok || cancelado) return;
         const datos = await res.json();
+        if (typeof datos.visitasFb === 'number') setVisitasFb(datos.visitasFb);
         if (datos.descargable) { setDescargable(true); setHojaPago(false); }
         else if (datos.comprobante) setComprobante('enviado');
       } catch {
@@ -380,6 +400,20 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     fetch(`${audioApiUrl}/clic-pagar`, { method: 'POST' }).catch(() => {});
     setHojaPago(true);
   }
+  // Abre Facebook para publicar la canción con su link ?c=fb (el que cuenta las visitas).
+  function compartirFacebook() {
+    try { localStorage.setItem(`corridos-compartio-${cancionId}`, '1'); } catch { /* sin almacenamiento */ }
+    setCompartioFb(true);
+    fetch(`${audioApiUrl}/compartio-fb`, { method: 'POST' }).catch(() => {});
+    trackMetaPixel('Lead', { content_name: 'Compartir canción en Facebook para descarga gratis' });
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlCompartirFacebook(cancionId))}`, '_blank');
+  }
+  const progresoFb = (
+    <span style={{ letterSpacing: '0.15em' }}>
+      {Array.from({ length: VISITAS_FB_PARA_DESBLOQUEO }, (_, i) => (i < visitasFb ? '●' : '○')).join('')}
+    </span>
+  );
+
   async function copiarCuenta() {
     if (!pago) return;
     try { await navigator.clipboard.writeText(pago.cuenta); setCopiado(true); setTimeout(() => setCopiado(false), 2500); } catch { /* sin portapapeles: el número igual está a la vista */ }
@@ -747,6 +781,32 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
               </>
             )}
 
+            {comprobante !== 'enviado' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e0b98f', fontSize: '0.85rem' }}>
+                  <span style={{ flex: 1, height: 1, background: 'rgba(224,185,143,0.4)' }} />
+                  o descárgala gratis
+                  <span style={{ flex: 1, height: 1, background: 'rgba(224,185,143,0.4)' }} />
+                </div>
+                <button type="button" onClick={compartirFacebook}
+                  style={{
+                    padding: '0.9rem 1rem', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(180deg, #3b82f6, #1d4ed8)', color: '#fff', fontSize: '1.02rem', fontWeight: 800,
+                    boxShadow: '0 4px 0 #173a9e',
+                  }}>
+                  📲 {compartioFb ? 'Compártela otra vez en Facebook' : 'Compártela en tu Facebook'}
+                </button>
+                <div style={{ fontSize: '0.86rem', color: '#e8d6bd', lineHeight: 1.4, textAlign: 'center' }}>
+                  Cuando <strong>{VISITAS_FB_PARA_DESBLOQUEO} amigos</strong> la abran desde tu publicación, la descarga es tuya, sin pagar.
+                  {(compartioFb || visitasFb > 0) && (
+                    <div style={{ marginTop: '0.3rem', fontWeight: 800, color: '#ffd35c' }}>
+                      {progresoFb} {Math.min(visitasFb, VISITAS_FB_PARA_DESBLOQUEO)} de {VISITAS_FB_PARA_DESBLOQUEO}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <a href={enlaceDescarga} target="_blank" rel="noopener noreferrer"
               style={{ fontSize: '0.85rem', color: '#9be3b4', textAlign: 'center' }}>
               💬 ¿Dudas? Escribinos por WhatsApp
@@ -816,6 +876,16 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           </button>
         )}
       </div>
+
+      {/* La opción gratis, a la vista sin abrir la hoja: con el progreso si ya la compartió. */}
+      {!descargable && pago && comprobante !== 'enviado' && (
+        <button type="button" onClick={() => setHojaPago(true)}
+          style={{ background: 'none', border: 'none', color: '#9ec5ff', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+          {compartioFb || visitasFb > 0
+            ? <>📲 Descarga gratis por compartir: {progresoFb} {Math.min(visitasFb, VISITAS_FB_PARA_DESBLOQUEO)} de {VISITAS_FB_PARA_DESBLOQUEO}</>
+            : '🎁 O descárgala gratis compartiéndola en Facebook'}
+        </button>
+      )}
 
       {/* Quien recibe el link es el próximo cliente: lo invita a hacer la suya. */}
       <a

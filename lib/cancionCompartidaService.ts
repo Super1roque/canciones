@@ -105,6 +105,9 @@ export interface CancionCompartida {
   vence: number;
   clicsPagar: number;        // veces que se abrió «Pagar L 250» en la página
   comprobantes: number;      // fotos de comprobante subidas, pendientes de revisar si no está habilitada
+  compartidasFb: number;     // toques en «Compartila en tu Facebook»
+  visitasFb: number;         // personas distintas que la abrieron desde Facebook
+  desbloqueadaPor?: string;  // 'facebook' si la descarga se habilitó sola por compartir
 }
 
 // Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
@@ -153,6 +156,9 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         vence: venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde }),
         clicsPagar: data.clicsPagar ?? 0,
         comprobantes: data.comprobantes?.length ?? 0,
+        compartidasFb: data.compartidasFb ?? 0,
+        visitasFb: data.visitasFb ?? 0,
+        desbloqueadaPor: data.desbloqueadaPor,
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

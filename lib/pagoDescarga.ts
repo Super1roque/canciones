@@ -15,5 +15,11 @@ export function datosBanco(): DatosBanco | null {
   return { banco: process.env.BANCO_NOMBRE?.trim() || 'Banco Atlántida', cuenta, titular };
 }
 
+// Descarga gratis por compartir (16 nov 2026): quien comparte la canción en Facebook con el botón de la página la
+// desbloquea cuando VISITAS_FB_PARA_DESBLOQUEO personas distintas la abren desde Facebook. Facebook no le avisa a
+// una web si alguien publicó, así que se cuenta lo que sí se puede ver: visitas reales que llegan desde Facebook.
+export const VISITAS_FB_PARA_DESBLOQUEO = 2;
+export const urlCompartirFacebook = (id: string) => `https://corridos.online/cancion/${id}?c=fb`;
+
 export const MAX_COMPROBANTES = 5;   // por canción: evita que alguien llene el almacenamiento con el mismo link
 export const MAX_COMPROBANTE_BYTES = 8 * 1024 * 1024;

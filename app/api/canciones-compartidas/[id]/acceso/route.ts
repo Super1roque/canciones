@@ -14,5 +14,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!doc.exists) return NextResponse.json({ error: 'Link no válido' }, { status: 404 });
   const { descargable } = await calcularAcceso(id, doc.data()?.reproducciones ?? 0);
   const comprobante = (doc.get('comprobantes')?.length ?? 0) > 0;   // ya subió el comprobante y espera la revisión
-  return NextResponse.json({ descargable, escuchada: estaEscuchada(doc.data()), comprobante }, { headers: { 'Cache-Control': 'no-store' } });
+  const visitasFb = doc.get('visitasFb') ?? 0;   // progreso de la descarga gratis por compartir en Facebook
+  return NextResponse.json({ descargable, escuchada: estaEscuchada(doc.data()), comprobante, visitasFb }, { headers: { 'Cache-Control': 'no-store' } });
 }

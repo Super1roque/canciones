@@ -11,7 +11,7 @@ async function obtenerCancion(id: string) {
   const db = getDb();
   const doc = await db.collection('canciones_compartidas').doc(id).get();
   if (!doc.exists) return null;
-  return doc.data() as { titulo: string; fecha: string; reproducciones?: number; escuchadaCompleta?: boolean; vigenteDesde?: string; comprobantes?: unknown[] };
+  return doc.data() as { titulo: string; fecha: string; reproducciones?: number; escuchadaCompleta?: boolean; vigenteDesde?: string; comprobantes?: unknown[]; visitasFb?: number };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -70,6 +70,7 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       vence={venceEn(cancion)}
       pago={datosBanco()}
       comprobanteEnviado={(cancion.comprobantes?.length ?? 0) > 0}
+      visitasFb={cancion.visitasFb ?? 0}
     />
   );
 }
