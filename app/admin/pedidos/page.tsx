@@ -50,7 +50,8 @@ type CancionCompartida = {
   clicsPagar?: number;
   comprobantes?: number;
   compartidasFb?: number;
-  visitasFb?: number;
+  compartidasWa?: number;
+  visitasCompartidas?: number;
   desbloqueadaPor?: string;
 };
 
@@ -169,7 +170,7 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, comprobantes = 0, compartidasFb = 0, visitasFb = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; comprobantes?: number; compartidasFb?: number; visitasFb?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, comprobantes = 0, compartidasFb = 0, compartidasWa = 0, visitasCompartidas = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; comprobantes?: number; compartidasFb?: number; compartidasWa?: number; visitasCompartidas?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
   // El comprobante que la persona subió en la página de la canción: se trae con la sesión del admin y se abre aparte.
   async function verComprobante(i: number) {
     if (!p.cancionCompartidaId) return;
@@ -342,9 +343,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <p style={{ fontSize: '0.8rem', color: descarga ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>
-                {descarga ? (desbloqueadaPor === 'facebook' ? '📲 Descarga desbloqueada por compartir en Facebook' : '📥 Descarga habilitada (pagada)') : '🔒 Descarga bloqueada — se cobra L 250'}
+                {descarga ? (desbloqueadaPor === 'compartir' ? '🎁 Descarga desbloqueada por compartir' : '📥 Descarga habilitada (pagada)') : '🔒 Descarga bloqueada — se cobra L 250'}
                 {` · 💳 tocó «Pagar» ${clicsPagar} ${clicsPagar === 1 ? 'vez' : 'veces'}`}
-                {` · 📲 compartió en Facebook ${compartidasFb} · 👥 ${visitasFb} ${visitasFb === 1 ? 'visita' : 'visitas'} desde Facebook`}
+                {` · 📲 compartió: Facebook ${compartidasFb}, WhatsApp ${compartidasWa} · 👥 ${visitasCompartidas} ${visitasCompartidas === 1 ? 'persona la abrió' : 'personas la abrieron'} con su link`}
               </p>
               {comprobantes > 0 && (
                 <span style={{ display: 'inline-flex', gap: '0.35rem', flexWrap: 'wrap' }}>
@@ -613,7 +614,8 @@ export default function AdminPedidosPage() {
           clicsPagar={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsPagar}
           comprobantes={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.comprobantes}
           compartidasFb={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasFb}
-          visitasFb={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.visitasFb}
+          compartidasWa={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasWa}
+          visitasCompartidas={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.visitasCompartidas}
           desbloqueadaPor={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.desbloqueadaPor}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
