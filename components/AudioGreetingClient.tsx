@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
 import { formatoRestante } from '@/lib/tiempo';
-import { CODIGO_VALIDO, VISITAS_PARA_DESBLOQUEO, urlCompartida } from '@/lib/pagoDescarga';
+import { CANAL_WHATSAPP, SEGUNDOS_EN_CANAL } from '@/lib/pagoDescarga';
 
-// La descarga es gratis: se desbloquea compartiendo la canción (3 visitas, ver lib/pagoDescarga.ts)
+// La descarga es gratis: se desbloquea uniéndose al canal de WhatsApp (ver lib/pagoDescarga.ts)
 // o el admin la habilita desde /admin/pedidos (ver calcularAcceso).
 
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
@@ -42,41 +42,12 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, visitasCompartidas: visitasInicial = 0, desbloqueada = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; visitasCompartidas?: number; desbloqueada?: boolean }) {
-  // Descarga gratis por compartir (Facebook o WhatsApp): cada teléfono comparte con su link personal ?c=<código> y
-  // se avanza hacia VISITAS_PARA_DESBLOQUEO visitas de otras personas (ver lib/pagoDescarga.ts).
-  const [visitas, setVisitas] = useState(visitasInicial);
-  const [compartio, setCompartio] = useState(false);
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, desbloqueada = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; desbloqueada?: boolean }) {
   const cancionId = audioApiUrl.split('/').pop() ?? '';
-  const codigoRef = useRef('');
-  function codigoDispositivo(): string {
-    if (codigoRef.current) return codigoRef.current;
-    let c = '';
-    try { c = localStorage.getItem('corridos-codigo') ?? ''; } catch { /* sin almacenamiento */ }
-    if (!CODIGO_VALIDO.test(c)) {
-      c = Array.from({ length: 10 }, () => 'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 32)]).join('');
-      try { localStorage.setItem('corridos-codigo', c); } catch { /* se usa solo en esta visita */ }
-    }
-    return (codigoRef.current = c);
-  }
-  useEffect(() => {
-    try { setCompartio(localStorage.getItem(`corridos-compartio-${cancionId}`) === '1'); } catch { /* sin almacenamiento */ }
-    // ¿Llegó por un link compartido de otro teléfono? Cuenta como visita (una vez por sesión; el admin no cuenta y
-    // el servidor descarta al teléfono que la compartió y al dueño).
-    try {
-      const c = new URLSearchParams(window.location.search).get('c') ?? '';
-      const clave = `corridos-visita-${cancionId}`;
-      if (CODIGO_VALIDO.test(c) && c !== codigoDispositivo() && !sessionStorage.getItem(clave) && localStorage.getItem('corridos-admin') !== '1') {
-        sessionStorage.setItem(clave, '1');
-        fetch(`${audioApiUrl}/visita`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ c }) }).catch(() => {});
-      }
-    } catch { /* sin almacenamiento: no se cuenta */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audioApiUrl, cancionId]);
-  // Hoja de la descarga gratis: los botones para compartir en Facebook o WhatsApp y el progreso.
+  // Hoja de la descarga gratis: el botón para unirse al canal de WhatsApp.
   const [hojaPago, setHojaPago] = useState(false);
   // Cartel «¡Tu canción ya es tuya!»: al desbloquearse mientras la página está abierta, y cada vez que vuelve a entrar
-  // a una canción que ya pagó o desbloqueó compartiendo (si no, el botón de descarga aparecía sin que nadie lo notara).
+  // a una canción que ya tiene la descarga habilitada (si no, el botón de descarga aparecía sin que nadie lo notara).
   const [celebrar, setCelebrar] = useState(desbloqueada);
   const [descargable, setDescargable] = useState(descargableInicial);
   // Cuenta regresiva hasta que la canción se retira (36 h desde que se subió, ver venceEn). Arranca en
@@ -129,7 +100,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         const res = await fetch(`${audioApiUrl}/acceso`, { cache: 'no-store' });
         if (!res.ok || cancelado) return;
         const datos = await res.json();
-        if (typeof datos.visitasCompartidas === 'number') setVisitas(datos.visitasCompartidas);
         if (datos.descargable) { setDescargable(true); setHojaPago(false); setCelebrar(true); }
       } catch {
         // Silencioso — se reintenta en el próximo ciclo.
@@ -309,8 +279,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // "text" acá hace que WhatsApp lo muestre como un mensaje de más arriba
   // del link en vez de dejar que la tarjeta sea lo único que se vea.
   async function compartirCancion() {
-    // Con el link personal: lo que se comparte con este botón también suma para la descarga gratis.
-    const url = linkCompartido(/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'otro' : 'wa');
+    const url = `https://corridos.online/cancion/${cancionId}`;
     if (navigator.share) {
       try {
         await navigator.share({ url });
@@ -403,35 +372,59 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
   }
 
-  // La descarga ya no se cobra (Armando, 16 nov 2026): se consigue gratis compartiendo. Abre la hoja con los botones
-  // de compartir y cuenta el toque para el panel (campo clicsPagar, ahora «abrió la descarga»).
+  // La descarga es gratis con un solo requisito: unirse al canal de WhatsApp (Armando, 17 nov 2026). Abre la hoja y
+  // cuenta el toque para el panel (campo clicsPagar, ahora «abrió la descarga»).
   function abrirDescarga(origen: string) {
     trackMetaPixel('Lead', { content_name: `Abrió descarga gratis (${origen})` });
     fetch(`${audioApiUrl}/clic-pagar`, { method: 'POST' }).catch(() => {});
     setHojaPago(true);
   }
-  // Registra que este teléfono compartió (con su código personal) y devuelve el link que cuenta las visitas.
-  function linkCompartido(canal: 'fb' | 'wa' | 'otro'): string {
-    const c = codigoDispositivo();
-    try { localStorage.setItem(`corridos-compartio-${cancionId}`, '1'); } catch { /* sin almacenamiento */ }
-    setCompartio(true);
-    fetch(`${audioApiUrl}/compartio`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ c, canal }) }).catch(() => {});
-    trackMetaPixel('Lead', { content_name: `Compartir canción (${canal})` });
-    return urlCompartida(cancionId, c);
+  // WhatsApp no le dice a una web quién sigue un canal: se confía. Se guarda la hora del toque y, cuando la persona
+  // vuelve a la página después de SEGUNDOS_EN_CANAL, se habilita la descarga. Si vuelve antes, se le pide que se una.
+  const claveCanal = `corridos-canal-${cancionId}`;
+  const [avisoCanal, setAvisoCanal] = useState('');
+  const [tocoCanal, setTocoCanal] = useState(false);
+  function unirseAlCanal() {
+    try { localStorage.setItem(claveCanal, String(Date.now())); } catch { /* sin almacenamiento: vale la de esta visita */ }
+    tocoCanalEnRef.current = Date.now();
+    setTocoCanal(true);
+    setAvisoCanal('');
+    fetch(`${audioApiUrl}/canal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paso: 'clic' }) }).catch(() => {});
+    trackMetaPixel('Lead', { content_name: 'Unirse al canal de WhatsApp' });
+    window.open(CANAL_WHATSAPP, '_blank');
   }
-  function compartirFacebook() {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkCompartido('fb'))}`, '_blank');
+  const tocoCanalEnRef = useRef(0);
+  async function revisarCanal(manual = false) {
+    let desde = tocoCanalEnRef.current;
+    try { desde = desde || Number(localStorage.getItem(claveCanal) || 0); } catch { /* sin almacenamiento */ }
+    if (!desde || descargable) return;
+    if (Date.now() - desde < SEGUNDOS_EN_CANAL * 1000) {
+      if (manual) setAvisoCanal('Primero tocá «Seguir» en el canal y después volvé aquí. 👆');
+      return;
+    }
+    try {
+      const res = await fetch(`${audioApiUrl}/canal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paso: 'unido' }) });
+      if (!res.ok) { if (manual) setAvisoCanal('No se pudo habilitar, intentá de nuevo.'); return; }
+      try { localStorage.removeItem(claveCanal); } catch { /* nada */ }
+      setDescargable(true); setHojaPago(false); setCelebrar(true);
+    } catch {
+      if (manual) setAvisoCanal('Sin conexión, intentá de nuevo.');
+    }
   }
-  // WhatsApp: abre el selector de chats, donde también está «Mi estado».
-  function compartirWhatsapp() {
-    window.open(`https://wa.me/?text=${encodeURIComponent(`🎶 Escuchen la canción que me hicieron: ${linkCompartido('wa')}`)}`, '_blank');
-  }
-  const restantes = Math.max(0, VISITAS_PARA_DESBLOQUEO - visitas);
-  const progreso = (
-    <span style={{ letterSpacing: '0.15em' }}>
-      {Array.from({ length: VISITAS_PARA_DESBLOQUEO }, (_, i) => (i < visitas ? '●' : '○')).join('')}
-    </span>
-  );
+  // Al volver de WhatsApp (o al recargar la página después de haber tocado «Unirme»).
+  useEffect(() => {
+    if (descargable) return;
+    try { if (localStorage.getItem(claveCanal)) setTocoCanal(true); } catch { /* nada */ }
+    const alVolver = () => { if (document.visibilityState === 'visible') revisarCanal(); };
+    alVolver();
+    document.addEventListener('visibilitychange', alVolver);
+    window.addEventListener('focus', alVolver);
+    return () => {
+      document.removeEventListener('visibilitychange', alVolver);
+      window.removeEventListener('focus', alVolver);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [descargable, claveCanal]);
 
   const reproduciendo = estado === 'reproduciendo';
   const enPausaAuto = avisoPausa && estado === 'pausado' && !descargable;
@@ -708,7 +701,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             marginTop: '0.2rem', padding: '0.4rem 1rem', borderRadius: 999,
             background: '#1d4ed8', color: '#fff', fontSize: '1.05rem', fontWeight: 900,
           }}>
-            🎁 Compártela en Facebook o WhatsApp 👉
+            📢 Solo unite a nuestro canal de WhatsApp 👉
           </span>
         </button>
       )}
@@ -735,41 +728,32 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
                 style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            {(
-              <>
-                <div style={{ fontSize: '0.95rem', lineHeight: 1.45 }}>
-                  Compártela en tu <strong>Facebook</strong> o en tu <strong>WhatsApp</strong> (estado, chats o grupos) y
-                  descárgala <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong>.
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button type="button" onClick={compartirFacebook}
-                    style={{
-                      flex: 1, padding: '0.85rem 0.6rem', borderRadius: 999, border: 'none', cursor: 'pointer',
-                      background: 'linear-gradient(180deg, #3b82f6, #1d4ed8)', color: '#fff', fontSize: '0.95rem', fontWeight: 800,
-                      boxShadow: '0 4px 0 #173a9e',
-                    }}>
-                    📲 En Facebook
-                  </button>
-                  <button type="button" onClick={compartirWhatsapp}
-                    style={{
-                      flex: 1, padding: '0.85rem 0.6rem', borderRadius: 999, border: 'none', cursor: 'pointer',
-                      background: 'linear-gradient(180deg, #34d17a, #1fa855)', color: '#0b3a1e', fontSize: '0.95rem', fontWeight: 800,
-                      boxShadow: '0 4px 0 #0f7a3d',
-                    }}>
-                    💬 En WhatsApp
-                  </button>
-                </div>
-                <div style={{ fontSize: '0.86rem', color: '#e8d6bd', lineHeight: 1.4, textAlign: 'center' }}>
-                  Cuando <strong>{VISITAS_PARA_DESBLOQUEO} personas</strong> la abran con tu link, la descarga se habilita sola aquí mismo.
-                  {(compartio || visitas > 0) && (
-                    <div style={{ marginTop: '0.3rem', fontWeight: 800, color: '#ffd35c' }}>
-                      {progreso} {Math.min(visitas, VISITAS_PARA_DESBLOQUEO)} de {VISITAS_PARA_DESBLOQUEO}
-                      {restantes > 0 && <span style={{ fontWeight: 600, color: '#e8d6bd' }}> · {restantes === 1 ? 'falta 1' : `faltan ${restantes}`}</span>}
-                    </div>
-                  )}
-                </div>
-              </>
+            <div style={{ fontSize: '0.95rem', lineHeight: 1.45 }}>
+              Unite a nuestro <strong>canal de WhatsApp</strong> y descárgala <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong>.
+              Ahí te enteras primero de canciones nuevas y promociones.
+            </div>
+            <button type="button" onClick={unirseAlCanal}
+              style={{
+                padding: '1rem', borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(180deg, #34d17a, #1fa855)', color: '#0b3a1e', fontSize: '1.1rem', fontWeight: 900,
+                boxShadow: '0 4px 0 #0f7a3d',
+              }}>
+              📢 Unirme al canal
+            </button>
+            <div style={{ fontSize: '0.86rem', color: '#e8d6bd', lineHeight: 1.4, textAlign: 'center' }}>
+              Tocá <strong>«Seguir»</strong> en el canal y volvé a esta página: la descarga se habilita sola.
+            </div>
+            {tocoCanal && (
+              <button type="button" onClick={() => revisarCanal(true)}
+                style={{
+                  padding: '0.8rem', borderRadius: 999, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1rem', fontWeight: 900,
+                  boxShadow: '0 4px 0 #a87d00',
+                }}>
+                ✅ Ya me uní — descargar
+              </button>
             )}
+            {avisoCanal && <div style={{ color: '#ffd35c', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>{avisoCanal}</div>}
 
             <a href={enlaceDescarga} target="_blank" rel="noopener noreferrer"
               style={{ fontSize: '0.85rem', color: '#9be3b4', textAlign: 'center' }}>
@@ -860,21 +844,11 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           >
             <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
               <span>📥 Descárgala gratis sin pausas</span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>🎁 compartiéndola en Facebook o WhatsApp</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>📢 solo unite a nuestro canal de WhatsApp</span>
             </span>
           </button>
         )}
       </div>
-
-      {/* La opción gratis, a la vista sin abrir la hoja: con el progreso si ya la compartió. */}
-      {!descargable && (compartio || visitas > 0) && (
-        <button type="button" onClick={() => setHojaPago(true)}
-          style={{ background: 'none', border: 'none', color: '#9ec5ff', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
-          {compartio || visitas > 0
-            ? <>🎁 Descarga gratis por compartir: {progreso} {Math.min(visitas, VISITAS_PARA_DESBLOQUEO)} de {VISITAS_PARA_DESBLOQUEO}</>
-            : '🎁 O descárgala gratis compartiéndola'}
-        </button>
-      )}
 
       {/* Quien recibe el link es el próximo cliente: lo invita a hacer la suya. */}
       <a

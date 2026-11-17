@@ -31,7 +31,7 @@ export default function CancionesPendientes({ canciones, vistaAdmin = false }: {
           ⏳ {vigentes.length === 1 ? 'Tenés una canción esperándote' : `Tenés ${vigentes.length} canciones esperándote`}
         </div>
         <div style={{ fontSize: '0.85rem', color: '#e0b98f', marginTop: '0.2rem' }}>
-          Por falta de espacio en nuestro servidor se borran cuando llega a cero. Descárgalas gratis compartiéndolas en Facebook o WhatsApp.
+          Por falta de espacio en nuestro servidor se borran cuando llega a cero. Descárgalas gratis uniéndote a nuestro canal de WhatsApp.
         </div>
       </div>
       {vigentes.map(c => (
@@ -52,7 +52,7 @@ export default function CancionesPendientes({ canciones, vistaAdmin = false }: {
             }}>
               ▶️ Escuchar
             </a>
-            {/* La descarga ya no se cobra: se consigue gratis compartiéndola desde la página de la canción. */}
+            {/* La descarga es gratis: se consigue uniéndose al canal de WhatsApp desde la página de la canción. */}
             <a
               href={`/cancion/${c.id}`}
               onClick={() => !vistaAdmin && trackMetaPixel('Lead', { content_name: 'Descarga gratis (recordatorio en la cuenta)' })}

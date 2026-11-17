@@ -48,9 +48,7 @@ type CancionCompartida = {
   escuchasConPausa: number;
   vence: number;
   clicsPagar?: number;
-  compartidasFb?: number;
-  compartidasWa?: number;
-  visitasCompartidas?: number;
+  clicsCanal?: number;
   desbloqueadaPor?: string;
 };
 
@@ -169,7 +167,7 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, compartidasFb = 0, compartidasWa = 0, visitasCompartidas = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; compartidasFb?: number; compartidasWa?: number; visitasCompartidas?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, clicsCanal = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; clicsCanal?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
   const [vence, setVence] = useState(venceInicial);
   const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
@@ -254,7 +252,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
     }
   }
 
-  // La descarga se consigue gratis compartiendo la canción; esto la abre o la
+  // La descarga se consigue gratis uniéndose al canal de WhatsApp; esto la abre o la
   // cierra para esta canción, sin cambiar el link.
   async function cambiarDescarga() {
     if (!cancionCompartidaId) return;
@@ -333,9 +331,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <p style={{ fontSize: '0.8rem', color: descarga ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>
-                {descarga ? (desbloqueadaPor === 'compartir' ? '🎁 Descarga desbloqueada por compartir' : '📥 Descarga habilitada') : '🔒 Descarga bloqueada — se desbloquea compartiendo'}
+                {descarga ? (desbloqueadaPor === 'canal' ? '📢 Descarga desbloqueada por unirse al canal' : desbloqueadaPor === 'compartir' ? '🎁 Descarga desbloqueada por compartir' : '📥 Descarga habilitada') : '🔒 Descarga bloqueada — se desbloquea uniéndose al canal'}
                 {` · 📥 abrió la descarga ${clicsPagar} ${clicsPagar === 1 ? 'vez' : 'veces'}`}
-                {` · 📲 compartió: Facebook ${compartidasFb}, WhatsApp ${compartidasWa} · 👥 ${visitasCompartidas} ${visitasCompartidas === 1 ? 'persona la abrió' : 'personas la abrieron'} con su link`}
+                {` · 📢 tocó «Unirme al canal» ${clicsCanal} ${clicsCanal === 1 ? 'vez' : 'veces'}`}
               </p>
               <button
                 className={descarga ? 'btn-secondary' : 'btn-primary'}
@@ -347,9 +345,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
               </button>
             </div>
             {!descarga && (
-              // Antes de la meta: se le explica cómo descargarla gratis compartiéndola (la descarga ya no se cobra).
+              // Sin descarga todavía: se le explica cómo descargarla gratis uniéndose al canal de WhatsApp.
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! 🎶 Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y compártela en tu Facebook o WhatsApp. Cuando 3 personas la abran con tu link, la descarga se habilita sola. 🎁`)}
+                href={urlAvisoProceso(p.telefono, `¡Hola! 🎶 Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y unite a nuestro canal de WhatsApp: al volver a la página, la descarga se habilita sola. 📢`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"
@@ -558,22 +556,21 @@ export default function AdminPedidosPage() {
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                       {(() => {
-                        // Lo mismo que se ve al revisar el pedido, de un vistazo: estado de la descarga y cómo va compartiéndola.
-                        // Desbloqueada sola por compartir: hay que avisarle por WhatsApp que ya puede descargarla.
+                        // Lo mismo que se ve al revisar el pedido, de un vistazo: estado de la descarga y si tocó «Unirme al canal».
                         const c = p.cancionCompartidaId ? cancionesCompartidas.find(x => x.id === p.cancionCompartidaId) : undefined;
                         if (!c) return null;
-                        const visitas = c.visitasCompartidas ?? 0;
                         return (
                           <>
-                            {c.desbloqueadaPor === 'compartir'
-                              ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir — avisale por WhatsApp</div>
+                            {c.desbloqueadaPor === 'canal'
+                              ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>📢 Desbloqueada por unirse al canal</div>
+                              : c.desbloqueadaPor === 'compartir'
+                              ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir</div>
                               : <div style={{ fontSize: '0.78rem', fontWeight: 600, color: c.descargaHabilitada ? 'var(--success)' : 'var(--text-muted)' }}>
                                   {c.descargaHabilitada ? '📥 Descarga habilitada' : '🔒 Descarga bloqueada'}
                                 </div>}
                             <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                               📥 abrió la descarga {c.clicsPagar ?? 0} {(c.clicsPagar ?? 0) === 1 ? 'vez' : 'veces'}
-                              {` · 📲 compartió: Facebook ${c.compartidasFb ?? 0}, WhatsApp ${c.compartidasWa ?? 0}`}
-                              {` · 👥 ${visitas} ${visitas === 1 ? 'persona la abrió' : 'personas la abrieron'} con su link`}
+                              {` · 📢 tocó «Unirme al canal» ${c.clicsCanal ?? 0} ${(c.clicsCanal ?? 0) === 1 ? 'vez' : 'veces'}`}
                             </div>
                           </>
                         );
@@ -631,9 +628,7 @@ export default function AdminPedidosPage() {
           vence={pedidoAbierto.cancionCompartidaId ? cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.vence : undefined}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           clicsPagar={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsPagar}
-          compartidasFb={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasFb}
-          compartidasWa={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasWa}
-          visitasCompartidas={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.visitasCompartidas}
+          clicsCanal={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsCanal}
           desbloqueadaPor={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.desbloqueadaPor}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
