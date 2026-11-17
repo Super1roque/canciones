@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { getDb } from '@/lib/firebaseService';
 import { calcularAcceso, estaEscuchada, venceEn } from '@/lib/cancionCompartidaService';
 import AudioGreetingClient from '@/components/AudioGreetingClient';
-import { datosBanco } from '@/lib/pagoDescarga';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -68,8 +67,6 @@ export default async function CancionPage({ params }: { params: Promise<{ id: st
       esDueño={esDueño}
       yaEscuchada={estaEscuchada(cancion)}
       vence={venceEn(cancion)}
-      pago={datosBanco()}
-      comprobanteEnviado={(cancion.comprobantes?.length ?? 0) > 0}
       visitasCompartidas={cancion.visitasCompartidas ?? 0}
       desbloqueada={cancion.descargaHabilitada === true}
     />

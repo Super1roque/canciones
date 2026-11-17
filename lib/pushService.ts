@@ -120,26 +120,6 @@ export async function avisarRespuestaSoporte(telefono: string, texto?: string): 
   await enviarATodos(snap.docs, payload);
 }
 
-// La persona subió el comprobante de la descarga (L 250) en la página de la canción: el admin lo revisa en
-// /admin/pedidos y habilita la descarga.
-export async function avisarComprobanteAdmin(titulo: string, telefono?: string): Promise<void> {
-  if (!process.env.VAPID_PRIVATE_KEY) return;
-  configurar();
-
-  const db = getDb();
-  const snap = await db.collection(COLLECTION_ADMIN).get();
-  if (snap.empty) return;
-
-  const payload = JSON.stringify({
-    titulo: '💰 Comprobante de descarga',
-    cuerpo: `«${titulo}»${telefono ? ` · ${telefono}` : ''} — revisalo y habilitá la descarga`,
-    url: '/admin/pedidos',
-    tag: 'comprobante-descarga',
-  });
-
-  await enviarATodos(snap.docs, payload);
-}
-
 // La descarga se desbloqueó sola porque 3 personas abrieron la canción con un link compartido: el admin se entera
 // para avisarle por WhatsApp (la mayoría no tiene las notificaciones activadas).
 export async function avisarDesbloqueoAdmin(titulo: string, telefono?: string): Promise<void> {

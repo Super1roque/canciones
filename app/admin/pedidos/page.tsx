@@ -48,7 +48,6 @@ type CancionCompartida = {
   escuchasConPausa: number;
   vence: number;
   clicsPagar?: number;
-  comprobantes?: number;
   compartidasFb?: number;
   compartidasWa?: number;
   visitasCompartidas?: number;
@@ -143,9 +142,9 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
     if (!p.cancionCompartidaId) return p.estado === 'entregada' ? 'Entregada (sin canción subida)' : '🛠️ La estamos preparando';
     const c = porId.get(p.cancionCompartidaId);
     if (!c) return 'Canción no encontrada';
-    if (c.descargaHabilitada) return `📥 «${c.titulo}» — descarga pagada`;
+    if (c.descargaHabilitada) return `📥 «${c.titulo}» — descarga habilitada`;
     if (c.vence <= ahora) return `⌛ «${c.titulo}» — vencida`;
-    return `⏳ «${c.titulo}» — sin pagar · ▶️ ${c.reproducciones} · ⏸️ ${c.escuchasConPausa ?? 0} con pausas`;
+    return `⏳ «${c.titulo}» — sin descargar · ▶️ ${c.reproducciones} · ⏸️ ${c.escuchasConPausa ?? 0} con pausas`;
   }
   return (
     <Modal onClose={onClose}>
@@ -170,16 +169,7 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, comprobantes = 0, compartidasFb = 0, compartidasWa = 0, visitasCompartidas = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; comprobantes?: number; compartidasFb?: number; compartidasWa?: number; visitasCompartidas?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
-  // El comprobante que la persona subió en la página de la canción: se trae con la sesión del admin y se abre aparte.
-  async function verComprobante(i: number) {
-    if (!p.cancionCompartidaId) return;
-    const ventana = window.open('', '_blank');
-    const res = await fetchConSesion(`/api/admin/canciones-compartidas/comprobante?id=${p.cancionCompartidaId}&i=${i}`);
-    if (!res.ok) { ventana?.close(); return; }
-    const url = URL.createObjectURL(await res.blob());
-    if (ventana) ventana.location.href = url; else window.open(url, '_blank');
-  }
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, compartidasFb = 0, compartidasWa = 0, visitasCompartidas = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; compartidasFb?: number; compartidasWa?: number; visitasCompartidas?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
   const [vence, setVence] = useState(venceInicial);
   const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
@@ -264,7 +254,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
     }
   }
 
-  // La descarga se cobra aparte (L 250 por WhatsApp): esto la abre o la
+  // La descarga se consigue gratis compartiendo la canción; esto la abre o la
   // cierra para esta canción, sin cambiar el link.
   async function cambiarDescarga() {
     if (!cancionCompartidaId) return;
@@ -343,26 +333,17 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <p style={{ fontSize: '0.8rem', color: descarga ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>
-                {descarga ? (desbloqueadaPor === 'compartir' ? '🎁 Descarga desbloqueada por compartir' : '📥 Descarga habilitada (pagada)') : '🔒 Descarga bloqueada — se cobra L 250'}
-                {` · 💳 tocó «Pagar» ${clicsPagar} ${clicsPagar === 1 ? 'vez' : 'veces'}`}
+                {descarga ? (desbloqueadaPor === 'compartir' ? '🎁 Descarga desbloqueada por compartir' : '📥 Descarga habilitada') : '🔒 Descarga bloqueada — se desbloquea compartiendo'}
+                {` · 📥 abrió la descarga ${clicsPagar} ${clicsPagar === 1 ? 'vez' : 'veces'}`}
                 {` · 📲 compartió: Facebook ${compartidasFb}, WhatsApp ${compartidasWa} · 👥 ${visitasCompartidas} ${visitasCompartidas === 1 ? 'persona la abrió' : 'personas la abrieron'} con su link`}
               </p>
-              {comprobantes > 0 && (
-                <span style={{ display: 'inline-flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                  {Array.from({ length: comprobantes }, (_, i) => (
-                    <button key={i} className={descarga ? 'btn-secondary' : 'btn-primary'} onClick={() => verComprobante(i)} style={{ fontSize: '0.78rem' }}>
-                      🧾 Ver comprobante{comprobantes > 1 ? ` ${i + 1}` : ''}
-                    </button>
-                  ))}
-                </span>
-              )}
               <button
                 className={descarga ? 'btn-secondary' : 'btn-primary'}
                 disabled={cambiandoDescarga}
                 onClick={cambiarDescarga}
                 style={{ fontSize: '0.78rem' }}
               >
-                {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Ya pagó — habilitar descarga'}
+                {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Habilitar descarga'}
               </button>
             </div>
             {descarga && (
@@ -565,11 +546,8 @@ export default function AdminPedidosPage() {
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                       {(() => {
-                        // Comprobante de la descarga subido en la página y todavía sin habilitar: hay que revisarlo.
+                        // Desbloqueada sola por compartir: hay que avisarle por WhatsApp que ya puede descargarla.
                         const c = p.cancionCompartidaId ? cancionesCompartidas.find(x => x.id === p.cancionCompartidaId) : undefined;
-                        if (c && (c.comprobantes ?? 0) > 0 && !c.descargaHabilitada) {
-                          return <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f2b705' }}>🧾 Comprobante por revisar</div>;
-                        }
                         return c?.desbloqueadaPor === 'compartir'
                           ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir — avisale por WhatsApp</div>
                           : null;
@@ -627,7 +605,6 @@ export default function AdminPedidosPage() {
           vence={pedidoAbierto.cancionCompartidaId ? cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.vence : undefined}
           premium={planPorTelefono.get(pedidoAbierto.telefono) === 'premium'}
           clicsPagar={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsPagar}
-          comprobantes={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.comprobantes}
           compartidasFb={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasFb}
           compartidasWa={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.compartidasWa}
           visitasCompartidas={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.visitasCompartidas}

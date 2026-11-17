@@ -24,9 +24,9 @@ export interface AccesoCancion {
 //
 // `restringida` y `descargable` son cosas distintas a propósito: la
 // escucha es gratis las primeras MAX_ESCUCHAS_GRATIS veces aunque el
-// dueño no sea premium, pero la descarga se cobra aparte, canción por
-// canción (L 250 por WhatsApp): solo se puede bajar si el admin le marcó
-// `descargaHabilitada` desde /admin/pedidos, sin importar el plan.
+// dueño no sea premium, pero la descarga va aparte, canción por canción:
+// solo se puede bajar con `descargaHabilitada`, que se pone sola al compartirla
+// (3 visitas, ver lib/pagoDescarga.ts) o desde /admin/pedidos, sin importar el plan.
 // `esDueño` decide QUÉ mensaje ve quien se topa con el corte — el dueño ve
 // la invitación a recargar; cualquier otra persona (a quien le reenviaron
 // el link) ve un mensaje genérico que no expone que el dueño es freemium.
@@ -103,16 +103,15 @@ export interface CancionCompartida {
   descargaHabilitada: boolean;
   escuchasConPausa: number;
   vence: number;
-  clicsPagar: number;        // veces que se abrió «Pagar L 250» en la página
-  comprobantes: number;      // fotos de comprobante subidas, pendientes de revisar si no está habilitada
+  clicsPagar: number;        // veces que se abrió la hoja de descarga gratis en la página
   compartidasFb: number;     // toques en «Compártela en tu Facebook»
   compartidasWa: number;     // toques en «Ponla en tu estado de WhatsApp» y en el botón de compartir
   visitasCompartidas: number; // personas distintas que la abrieron con un link compartido
   desbloqueadaPor?: string;  // 'compartir' si la descarga se habilitó sola por las visitas
 }
 
-// Botón "Habilitar descarga" de /admin/pedidos — cuando el cliente pagó
-// los L 250 de la descarga por WhatsApp.
+// Botón "Habilitar descarga" de /admin/pedidos (la descarga es gratis: normalmente se
+// habilita sola al compartirla; esto es para casos especiales).
 export async function habilitarDescarga(id: string, habilitar: boolean): Promise<void> {
   const db = getDb();
   await db.collection(COLLECTION).doc(id).update({ descargaHabilitada: habilitar });
@@ -156,7 +155,6 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         escuchasConPausa: data.escuchasConPausa ?? 0,
         vence: venceEn({ fecha: data.fecha, vigenteDesde: data.vigenteDesde }),
         clicsPagar: data.clicsPagar ?? 0,
-        comprobantes: data.comprobantes?.length ?? 0,
         compartidasFb: data.compartidasFb ?? 0,
         compartidasWa: (data.compartidasWa ?? 0) + (data.compartidasOtro ?? 0),
         visitasCompartidas: data.visitasCompartidas ?? 0,

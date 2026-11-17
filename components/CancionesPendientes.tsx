@@ -1,12 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
-import { PRECIO_DESCARGA } from '@/lib/promo';
 import { formatoRestante } from '@/lib/tiempo';
 import type { CancionPendiente } from '@/lib/cancionCompartidaService';
 
-// Tarjeta arriba de la cuenta del tenant: sus canciones sin la descarga pagada que todavía suenan,
+// Tarjeta arriba de la cuenta del tenant: sus canciones sin la descarga habilitada que todavía suenan,
 // cada una con su cuenta regresiva hasta que se retira (ver venceEn). Las que vencen se quitan solas.
 // `vistaAdmin`: el admin la mira desde /admin/pedidos — sus clics no deben contar en el Píxel.
 export default function CancionesPendientes({ canciones, vistaAdmin = false }: { canciones: CancionPendiente[]; vistaAdmin?: boolean }) {
@@ -33,7 +31,7 @@ export default function CancionesPendientes({ canciones, vistaAdmin = false }: {
           ⏳ {vigentes.length === 1 ? 'Tenés una canción esperándote' : `Tenés ${vigentes.length} canciones esperándote`}
         </div>
         <div style={{ fontSize: '0.85rem', color: '#e0b98f', marginTop: '0.2rem' }}>
-          Por falta de espacio en nuestro servidor se borran cuando llega a cero. Descargalas antes para no perderlas.
+          Por falta de espacio en nuestro servidor se borran cuando llega a cero. Descárgalas gratis compartiéndolas en Facebook o WhatsApp.
         </div>
       </div>
       {vigentes.map(c => (
@@ -54,17 +52,16 @@ export default function CancionesPendientes({ canciones, vistaAdmin = false }: {
             }}>
               ▶️ Escuchar
             </a>
+            {/* La descarga ya no se cobra: se consigue gratis compartiéndola desde la página de la canción. */}
             <a
-              href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${c.titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${c.id}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => !vistaAdmin && trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (recordatorio en la cuenta)' })}
+              href={`/cancion/${c.id}`}
+              onClick={() => !vistaAdmin && trackMetaPixel('Lead', { content_name: 'Descarga gratis (recordatorio en la cuenta)' })}
               style={{
                 padding: '0.6rem 1rem', borderRadius: 999, textDecoration: 'none', fontWeight: 800, fontSize: '0.9rem',
                 background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10', boxShadow: '0 3px 0 #a87d00',
               }}
             >
-              📥 Descargar — L {PRECIO_DESCARGA}
+              🎁 Descargar gratis
             </a>
           </div>
         </div>

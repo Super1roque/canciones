@@ -3,12 +3,11 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ADMIN_WHATSAPP } from '@/lib/config';
 import { trackMetaPixel } from '@/lib/metaPixel';
-import { PRECIO_DESCARGA } from '@/lib/promo';
 import { formatoRestante } from '@/lib/tiempo';
-import { CODIGO_VALIDO, VISITAS_PARA_DESBLOQUEO, urlCompartida, type DatosBanco } from '@/lib/pagoDescarga';
+import { CODIGO_VALIDO, VISITAS_PARA_DESBLOQUEO, urlCompartida } from '@/lib/pagoDescarga';
 
-// La descarga se cobra canción por canción: el cliente paga por WhatsApp y
-// el admin la habilita desde /admin/pedidos (ver calcularAcceso).
+// La descarga es gratis: se desbloquea compartiendo la canción (3 visitas, ver lib/pagoDescarga.ts)
+// o el admin la habilita desde /admin/pedidos (ver calcularAcceso).
 
 // Video del mariachi (mismo asset que la landing) de fondo en las 3
 // pantallas de esta página. El <main> que lo contiene necesita
@@ -43,7 +42,7 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false, visitasCompartidas: visitasInicial = 0, desbloqueada = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean; visitasCompartidas?: number; desbloqueada?: boolean }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, visitasCompartidas: visitasInicial = 0, desbloqueada = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; visitasCompartidas?: number; desbloqueada?: boolean }) {
   // Descarga gratis por compartir (Facebook o WhatsApp): cada teléfono comparte con su link personal ?c=<código> y
   // se avanza hacia VISITAS_PARA_DESBLOQUEO visitas de otras personas (ver lib/pagoDescarga.ts).
   const [visitas, setVisitas] = useState(visitasInicial);
@@ -74,11 +73,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     } catch { /* sin almacenamiento: no se cuenta */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioApiUrl, cancionId]);
-  // Pago directo de la descarga (ver lib/pagoDescarga.ts): la hoja con la cuenta del banco y la foto del comprobante.
+  // Hoja de la descarga gratis: los botones para compartir en Facebook o WhatsApp y el progreso.
   const [hojaPago, setHojaPago] = useState(false);
-  const [comprobante, setComprobante] = useState<'no' | 'subiendo' | 'enviado'>(comprobanteInicial ? 'enviado' : 'no');
-  const [errorComprobante, setErrorComprobante] = useState('');
-  const [copiado, setCopiado] = useState(false);
   // Cartel «¡Tu canción ya es tuya!»: al desbloquearse mientras la página está abierta, y cada vez que vuelve a entrar
   // a una canción que ya pagó o desbloqueó compartiendo (si no, el botón de descarga aparecía sin que nadie lo notara).
   const [celebrar, setCelebrar] = useState(desbloqueada);
@@ -122,7 +118,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       setPuedeCompartirArchivo(false);
     }
   }, [descargable]);
-  // Mientras la descarga no esté pagada, se vuelve a preguntar al volver a la página y cada 20 s: si el
+  // Mientras la descarga no esté habilitada, se vuelve a preguntar al volver a la página y cada 20 s: si el
   // admin ya la habilitó, aparece el botón de descarga sin que la persona tenga que recargar.
   useEffect(() => {
     if (descargable) return;
@@ -135,7 +131,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         const datos = await res.json();
         if (typeof datos.visitasCompartidas === 'number') setVisitas(datos.visitasCompartidas);
         if (datos.descargable) { setDescargable(true); setHojaPago(false); setCelebrar(true); }
-        else if (datos.comprobante) setComprobante('enviado');
       } catch {
         // Silencioso — se reintenta en el próximo ciclo.
       }
@@ -408,10 +403,10 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
   }
 
-  // «Pagar L 250»: abre la hoja de pago (y cuenta el toque para el panel). Sin cuenta configurada, como antes: WhatsApp.
-  function abrirPago(origen: string) {
-    trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: `Descarga de canción (${origen})` });
-    if (!pago) { window.open(enlaceDescarga, '_blank'); return; }
+  // La descarga ya no se cobra (Armando, 16 nov 2026): se consigue gratis compartiendo. Abre la hoja con los botones
+  // de compartir y cuenta el toque para el panel (campo clicsPagar, ahora «abrió la descarga»).
+  function abrirDescarga(origen: string) {
+    trackMetaPixel('Lead', { content_name: `Abrió descarga gratis (${origen})` });
     fetch(`${audioApiUrl}/clic-pagar`, { method: 'POST' }).catch(() => {});
     setHojaPago(true);
   }
@@ -438,33 +433,10 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     </span>
   );
 
-  async function copiarCuenta() {
-    if (!pago) return;
-    try { await navigator.clipboard.writeText(pago.cuenta); setCopiado(true); setTimeout(() => setCopiado(false), 2500); } catch { /* sin portapapeles: el número igual está a la vista */ }
-  }
-  async function subirComprobante(file: File | undefined) {
-    if (!file) return;
-    setErrorComprobante('');
-    setComprobante('subiendo');
-    try {
-      const fd = new FormData();
-      fd.append('imagen', file);
-      const res = await fetch(`${audioApiUrl}/comprobante`, { method: 'POST', body: fd });
-      const datos = await res.json().catch(() => ({}));
-      if (!res.ok) { setErrorComprobante(datos.error || 'No se pudo subir, intentá de nuevo'); setComprobante('no'); return; }
-      if (datos.yaHabilitada) { setDescargable(true); setHojaPago(false); setCelebrar(true); return; }
-      setComprobante('enviado');
-      trackMetaPixel('AddPaymentInfo', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Comprobante de descarga' });
-    } catch {
-      setErrorComprobante('Sin conexión, intentá de nuevo');
-      setComprobante('no');
-    }
-  }
-
   const reproduciendo = estado === 'reproduciendo';
   const enPausaAuto = avisoPausa && estado === 'pausado' && !descargable;
 
-  const enlaceDescarga = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, quiero descargar mi canción "${titulo}" (L ${PRECIO_DESCARGA}). https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`;
+  const enlaceDescarga = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hola, tengo una consulta sobre mi canción "${titulo}". https://corridos.online/cancion/${audioApiUrl.split('/').pop()}`)}`;
 
   if (vencida) {
     return (
@@ -480,20 +452,20 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           «{titulo}» fue retirada de nuestro servidor por falta de espacio.
         </h1>
         <p style={{ maxWidth: '26rem', fontSize: '0.95rem', lineHeight: 1.55, color: '#e0b98f', margin: 0 }}>
-          Todavía la podemos recuperar para vos. Escribinos y te la dejamos lista para descargar a tu teléfono.
+          Todavía la podemos recuperar para vos. Escribinos y te la volvemos a dejar disponible.
         </p>
         <a
           href={enlaceDescarga}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackMetaPixel('InitiateCheckout', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Descarga de canción (retirada)' })}
+          onClick={() => trackMetaPixel('Contact', { content_name: 'Recuperar canción retirada' })}
           style={{
             marginTop: '0.5rem', padding: '1rem 1.6rem', borderRadius: 999, textDecoration: 'none',
             background: 'linear-gradient(135deg, #25d366, #128c7e)', color: '#fff',
             fontSize: '1rem', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
           }}
         >
-          💬 Recuperar mi canción — L {PRECIO_DESCARGA}
+          💬 Recuperar mi canción
         </a>
         <button
           type="button"
@@ -720,7 +692,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       {enPausaAuto && (
         <button
           type="button"
-          onClick={() => abrirPago('aviso de pausa')}
+          onClick={() => abrirDescarga('aviso de pausa')}
           style={{
             cursor: 'pointer', font: 'inherit',
             width: 'min(92vw, 24rem)', padding: '1.3rem 1.2rem', borderRadius: 22, textDecoration: 'none',
@@ -731,25 +703,17 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           }}
         >
           <span style={{ fontSize: '1.5rem', fontWeight: 900 }}>¿Te gusta? 🎶</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>Descárgala sin interrupciones</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>Descárgala GRATIS sin interrupciones</span>
           <span style={{
-            marginTop: '0.2rem', padding: '0.35rem 1.1rem', borderRadius: 999,
-            background: '#c0161f', color: '#fff', fontSize: '1.25rem', fontWeight: 900,
+            marginTop: '0.2rem', padding: '0.4rem 1rem', borderRadius: 999,
+            background: '#1d4ed8', color: '#fff', fontSize: '1.05rem', fontWeight: 900,
           }}>
-            📥 L {PRECIO_DESCARGA} 👉
+            🎁 Compártela en Facebook o WhatsApp 👉
           </span>
-          {pago && (
-            <span style={{
-              marginTop: '0.15rem', padding: '0.3rem 0.9rem', borderRadius: 999,
-              background: '#1d4ed8', color: '#fff', fontSize: '1rem', fontWeight: 800,
-            }}>
-              🎁 o GRATIS compartiéndola en Facebook o WhatsApp
-            </span>
-          )}
         </button>
       )}
 
-      {hojaPago && pago && (
+      {hojaPago && (
         <div
           onClick={() => setHojaPago(false)}
           style={{
@@ -766,59 +730,16 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong style={{ fontSize: '1.2rem' }}>📥 Descargá «{titulo}»</strong>
+              <strong style={{ fontSize: '1.2rem' }}>🎁 Descárgala gratis</strong>
               <button type="button" onClick={() => setHojaPago(false)} aria-label="Cerrar"
                 style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            {comprobante === 'enviado' ? (
-              <div style={{ padding: '1rem', borderRadius: 14, background: 'rgba(52,196,111,0.15)', border: '1px solid #34c46f', lineHeight: 1.45 }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>✅ Recibimos tu comprobante</div>
-                <div style={{ fontSize: '0.92rem', color: '#e8d6bd', marginTop: '0.3rem' }}>
-                  En cuanto lo revisemos, el botón de descarga aparece aquí mismo, sin pausas. Podés cerrar esta página: te avisamos.
-                </div>
-              </div>
-            ) : (
+            {(
               <>
-                <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
-                  <strong>1.</strong> Transferí <strong style={{ color: '#ffd35c' }}>L {PRECIO_DESCARGA}</strong> a esta cuenta:
-                </div>
-                <div style={{ padding: '0.9rem 1rem', borderRadius: 14, background: 'rgba(255,211,92,0.1)', border: '1px solid rgba(255,211,92,0.5)', lineHeight: 1.5 }}>
-                  <div style={{ fontSize: '0.85rem', color: '#e0b98f' }}>{pago.banco}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>{pago.cuenta}</span>
-                    <button type="button" onClick={copiarCuenta}
-                      style={{ padding: '0.45rem 0.8rem', borderRadius: 999, border: 'none', background: '#ffd35c', color: '#2c0a10', fontWeight: 800, cursor: 'pointer' }}>
-                      {copiado ? '✓ Copiado' : 'Copiar'}
-                    </button>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#e8d6bd' }}>A nombre de {pago.titular}</div>
-                </div>
-                <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
-                  <strong>2.</strong> Subí la foto o captura del comprobante:
-                </div>
-                <label style={{
-                  padding: '0.95rem 1rem', borderRadius: 999, textAlign: 'center', cursor: comprobante === 'subiendo' ? 'wait' : 'pointer',
-                  background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1.05rem', fontWeight: 900,
-                  boxShadow: '0 4px 0 #a87d00',
-                }}>
-                  {comprobante === 'subiendo' ? 'Subiendo…' : '📷 Subir comprobante'}
-                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={comprobante === 'subiendo'}
-                    onChange={e => subirComprobante(e.target.files?.[0])} />
-                </label>
-                {errorComprobante && <div style={{ color: '#ff9a8a', fontSize: '0.88rem' }}>⚠️ {errorComprobante}</div>}
-                <div style={{ fontSize: '0.82rem', color: '#e0b98f', lineHeight: 1.4 }}>
-                  Revisamos el pago y se habilita la descarga sin pausas aquí mismo, en esta página.
-                </div>
-              </>
-            )}
-
-            {comprobante !== 'enviado' && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e0b98f', fontSize: '0.85rem' }}>
-                  <span style={{ flex: 1, height: 1, background: 'rgba(224,185,143,0.4)' }} />
-                  o descárgala gratis
-                  <span style={{ flex: 1, height: 1, background: 'rgba(224,185,143,0.4)' }} />
+                <div style={{ fontSize: '0.95rem', lineHeight: 1.45 }}>
+                  Compártela en tu <strong>Facebook</strong> o en tu <strong>WhatsApp</strong> (estado, chats o grupos) y
+                  descárgala <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong>.
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button type="button" onClick={compartirFacebook}
@@ -839,8 +760,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
                   </button>
                 </div>
                 <div style={{ fontSize: '0.86rem', color: '#e8d6bd', lineHeight: 1.4, textAlign: 'center' }}>
-                  Compártela en tu muro, tu estado o con tus grupos. Cuando <strong>{VISITAS_PARA_DESBLOQUEO} personas</strong> la
-                  abran con tu link, la descarga es tuya, sin pagar.
+                  Cuando <strong>{VISITAS_PARA_DESBLOQUEO} personas</strong> la abran con tu link, la descarga se habilita sola aquí mismo.
                   {(compartio || visitas > 0) && (
                     <div style={{ marginTop: '0.3rem', fontWeight: 800, color: '#ffd35c' }}>
                       {progreso} {Math.min(visitas, VISITAS_PARA_DESBLOQUEO)} de {VISITAS_PARA_DESBLOQUEO}
@@ -926,7 +846,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         {!descargable && (
           <button
             type="button"
-            onClick={() => abrirPago('botón')}
+            onClick={() => abrirDescarga('botón')}
             style={{
               font: 'inherit',
               padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999, textDecoration: 'none',
@@ -935,20 +855,16 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
               boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}
           >
-            {comprobante === 'enviado'
-              ? '🧾 Comprobante enviado — en revisión'
-              : pago
-                ? <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
-                    <span>📥 Descárgala sin pausas</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>L {PRECIO_DESCARGA} · o 🎁 gratis compartiéndola</span>
-                  </span>
-                : `📥 Descargar a mi teléfono — L ${PRECIO_DESCARGA}`}
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+              <span>📥 Descárgala gratis sin pausas</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>🎁 compartiéndola en Facebook o WhatsApp</span>
+            </span>
           </button>
         )}
       </div>
 
       {/* La opción gratis, a la vista sin abrir la hoja: con el progreso si ya la compartió. */}
-      {!descargable && pago && comprobante !== 'enviado' && (compartio || visitas > 0) && (
+      {!descargable && (compartio || visitas > 0) && (
         <button type="button" onClick={() => setHojaPago(true)}
           style={{ background: 'none', border: 'none', color: '#9ec5ff', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
           {compartio || visitas > 0
