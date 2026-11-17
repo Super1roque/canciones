@@ -1,14 +1,13 @@
 import { cookies } from 'next/headers';
-import { Rye } from 'next/font/google';
+import { rye } from '@/lib/fuentes';
 import styles from './tenant.module.css';
 import SoporteLink from './SoporteLink';
 import CerrarSesionLink from './CerrarSesionLink';
 
-// Fuente festiva tipo cartel para los títulos del tema "corridos" — el
+// Fuente festiva tipo cartel (rye, de lib/fuentes) para los títulos del tema "corridos" — el
 // resto del texto usa la fuente del sistema (Inter, ya cargada en
 // app/globals.css, que igual aplica acá porque los imports de CSS de
 // Next.js son globales).
-const rye = Rye({ weight: '400', subsets: ['latin'], variable: '--font-corrido' });
 
 export default async function TenantLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();

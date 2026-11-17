@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Baloo_2 } from 'next/font/google';
+import { baloo } from '@/lib/fuentes';
 import AccesoMiembro from './AccesoMiembro';
 import RadionovelaComic from './RadionovelaComic';
 import type { Capitulo, Personaje } from '@/lib/radionovelas';
 import s from './RadionovelaClient.module.css';
 
-const baloo = Baloo_2({ weight: ['600', '700', '800'], subsets: ['latin'] });
 
 type Props = {
   slug: string;

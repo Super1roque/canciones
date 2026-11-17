@@ -1,10 +1,8 @@
 'use client';
 import { useRef, useState, useCallback } from 'react';
-import { Baloo_2, Literata } from 'next/font/google';
+import { baloo, literata } from '@/lib/fuentes';
 import type { CuePárrafo } from '@/lib/jorgeCaballeroCues';
 
-const baloo = Baloo_2({ weight: ['600', '700', '800'], subsets: ['latin'] });
-const literata = Literata({ weight: ['400', '600'], subsets: ['latin'] });
 
 function formatearTiempo(segundos: number) {
   const m = Math.floor(segundos / 60);

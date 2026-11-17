@@ -1,9 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
-import { Baloo_2, Literata } from 'next/font/google';
+import { baloo, literata } from '@/lib/fuentes';
 
-const baloo = Baloo_2({ weight: ['600', '700', '800'], subsets: ['latin'] });
-const literata = Literata({ weight: ['400', '600'], subsets: ['latin'] });
 
 type Cue = { start: number; end: number; text: string };
 
