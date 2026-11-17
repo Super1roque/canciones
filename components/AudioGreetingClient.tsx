@@ -46,12 +46,12 @@ function TarjetaCanal({ texto }: { texto: string }) {
 }
 
 // Dibujo de cómo se ve el canal en WhatsApp, con una flecha al botón «Seguir»: mucha gente abre el canal y cree
-// que con eso ya está.
-function MuestraSeguir() {
+// que con eso ya está. Al tocarlo también abre el canal, porque la gente cree que es el botón de verdad.
+function MuestraSeguir({ onClick }: { onClick: () => void }) {
   return (
-    <span style={{
+    <button type="button" onClick={onClick} style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem', padding: '0.8rem 0.75rem 0.9rem',
-      borderRadius: 16, background: '#111b21', border: '1px solid #2a3942', color: '#e9edef',
+      borderRadius: 16, background: '#111b21', border: '1px solid #2a3942', color: '#e9edef', cursor: 'pointer', font: 'inherit',
     }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/canal/corridos-hondurenos.jpg" alt="" width={56} height={56} style={{ borderRadius: '50%' }} />
@@ -63,7 +63,7 @@ function MuestraSeguir() {
         </span>
         <span style={{ color: '#ffd35c', fontWeight: 900, fontSize: '0.95rem' }}>👈 tocá aquí</span>
       </span>
-    </span>
+    </button>
   );
 }
 
@@ -765,7 +765,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
                 style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            <MuestraSeguir />
+            <MuestraSeguir onClick={unirseAlCanal} />
             {confirmarCanal ? (
               <div style={{ fontSize: '1.1rem', fontWeight: 900, textAlign: 'center', color: '#ffd35c' }}>
                 ¿Le diste al botón verde «Seguir»?
@@ -788,6 +788,9 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
               style={{ background: 'none', border: 'none', color: '#9be3b4', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
               {confirmarCanal ? '📢 No, volver al canal' : '📢 Abrir el canal otra vez'}
             </button>
+            <div style={{ fontSize: '0.82rem', color: '#e0b98f', textAlign: 'center' }}>
+              ¿Ya lo seguís? En WhatsApp dirá «Siguiendo»: solo volvé y tocá «Ya lo seguí».
+            </div>
             {avisoCanal && <div style={{ color: '#ffd35c', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>{avisoCanal}</div>}
 
             <a href={enlaceDescarga} target="_blank" rel="noopener noreferrer"
