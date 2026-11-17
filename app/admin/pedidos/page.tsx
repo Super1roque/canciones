@@ -346,6 +346,18 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
                 {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Habilitar descarga'}
               </button>
             </div>
+            {!descarga && (
+              // Antes de la meta: se le explica cómo descargarla gratis compartiéndola (la descarga ya no se cobra).
+              <a
+                href={urlAvisoProceso(p.telefono, `¡Hola! 🎶 Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y compártela en tu Facebook o WhatsApp. Cuando 3 personas la abran con tu link, la descarga se habilita sola. 🎁`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary"
+                style={{ textDecoration: 'none', display: 'inline-block', fontSize: '0.85rem', alignSelf: 'flex-start' }}
+              >
+                📲 Invitarle a descargarla gratis
+              </a>
+            )}
             {descarga && (
               // Casi nadie tiene las notificaciones activadas: así se entera de que ya puede descargarla.
               <a
