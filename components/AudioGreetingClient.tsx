@@ -735,6 +735,14 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           }}>
             📥 L {PRECIO_DESCARGA} 👉
           </span>
+          {pago && (
+            <span style={{
+              marginTop: '0.15rem', padding: '0.3rem 0.9rem', borderRadius: 999,
+              background: '#1d4ed8', color: '#fff', fontSize: '1rem', fontWeight: 800,
+            }}>
+              🎁 o GRATIS compartiéndola en Facebook o WhatsApp
+            </span>
+          )}
         </button>
       )}
 
@@ -905,13 +913,20 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
               boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}
           >
-            {comprobante === 'enviado' ? '🧾 Comprobante enviado — en revisión' : `📥 Descargar a mi teléfono — L ${PRECIO_DESCARGA}`}
+            {comprobante === 'enviado'
+              ? '🧾 Comprobante enviado — en revisión'
+              : pago
+                ? <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                    <span>📥 Descárgala sin pausas</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>L {PRECIO_DESCARGA} · o 🎁 gratis compartiéndola</span>
+                  </span>
+                : `📥 Descargar a mi teléfono — L ${PRECIO_DESCARGA}`}
           </button>
         )}
       </div>
 
       {/* La opción gratis, a la vista sin abrir la hoja: con el progreso si ya la compartió. */}
-      {!descargable && pago && comprobante !== 'enviado' && (
+      {!descargable && pago && comprobante !== 'enviado' && (compartio || visitas > 0) && (
         <button type="button" onClick={() => setHojaPago(true)}
           style={{ background: 'none', border: 'none', color: '#9ec5ff', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
           {compartio || visitas > 0
