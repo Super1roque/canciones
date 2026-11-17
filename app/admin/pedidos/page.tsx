@@ -348,7 +348,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
               // Sin descarga todavía: se le explica cómo descargarla gratis uniéndose al canal de WhatsApp.
               // Sin emojis: al abrir WhatsApp desde el link a veces llegaban como «�».
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y unite a nuestro canal de WhatsApp: al volver a la página, la descarga se habilita sola.`)}
+                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"

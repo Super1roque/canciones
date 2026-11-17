@@ -28,6 +28,23 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
   );
 }
 
+// El canal de WhatsApp con su foto y nombre, para que se vea que es algo real (foto guardada en public/canal/).
+function TarjetaCanal({ texto }: { texto: string }) {
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', gap: '0.65rem', width: '100%', boxSizing: 'border-box',
+      padding: '0.5rem 0.75rem', borderRadius: 16, background: '#0b3a1e', color: '#fff', textAlign: 'left',
+    }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/canal/corridos-hondurenos.jpg" alt="" width={48} height={48} style={{ borderRadius: '50%', flexShrink: 0, border: '2px solid #25d366' }} />
+      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+        <span style={{ fontSize: '1rem', fontWeight: 900 }}>Corridos Hondureños</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#9be3b4' }}>{texto}</span>
+      </span>
+    </span>
+  );
+}
+
 // Hermano de VideoGreetingClient.tsx, pero para audio — mismo círculo con
 // botón de play sobre el tema mariachi/corrido, pensado para viralizar
 // canciones generadas: se puede escuchar (no descargar) y, si se agotan
@@ -372,22 +389,22 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     }
   }
 
-  // La descarga es gratis con un solo requisito: unirse al canal de WhatsApp (Armando, 17 nov 2026). Abre la hoja y
-  // cuenta el toque para el panel (campo clicsPagar, ahora «abrió la descarga»).
+  // La descarga es gratis con un solo requisito: unirse al canal de WhatsApp (Armando, 17 nov 2026). Un solo toque:
+  // abre el canal directo (antes había una hoja intermedia y se perdía gente) y deja abierta la hoja de «volvé aquí»
+  // con el botón de respaldo. Cuenta el toque para el panel (campo clicsPagar, ahora «abrió la descarga»).
   function abrirDescarga(origen: string) {
     trackMetaPixel('Lead', { content_name: `Abrió descarga gratis (${origen})` });
     fetch(`${audioApiUrl}/clic-pagar`, { method: 'POST' }).catch(() => {});
+    unirseAlCanal();
     setHojaPago(true);
   }
   // WhatsApp no le dice a una web quién sigue un canal: se confía. Se guarda la hora del toque y, cuando la persona
   // vuelve a la página después de SEGUNDOS_EN_CANAL, se habilita la descarga. Si vuelve antes, se le pide que se una.
   const claveCanal = `corridos-canal-${cancionId}`;
   const [avisoCanal, setAvisoCanal] = useState('');
-  const [tocoCanal, setTocoCanal] = useState(false);
   function unirseAlCanal() {
     try { localStorage.setItem(claveCanal, String(Date.now())); } catch { /* sin almacenamiento: vale la de esta visita */ }
     tocoCanalEnRef.current = Date.now();
-    setTocoCanal(true);
     setAvisoCanal('');
     fetch(`${audioApiUrl}/canal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paso: 'clic' }) }).catch(() => {});
     trackMetaPixel('Lead', { content_name: 'Unirse al canal de WhatsApp' });
@@ -399,7 +416,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
     try { desde = desde || Number(localStorage.getItem(claveCanal) || 0); } catch { /* sin almacenamiento */ }
     if (!desde || descargable) return;
     if (Date.now() - desde < SEGUNDOS_EN_CANAL * 1000) {
-      if (manual) setAvisoCanal('Primero tocá «Seguir» en el canal y después volvé aquí. 👆');
+      if (manual) setAvisoCanal('Tocá «Seguir» en el canal y volvé aquí. 👆');
       return;
     }
     try {
@@ -414,7 +431,6 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   // Al volver de WhatsApp (o al recargar la página después de haber tocado «Unirme»).
   useEffect(() => {
     if (descargable) return;
-    try { if (localStorage.getItem(claveCanal)) setTocoCanal(true); } catch { /* nada */ }
     const alVolver = () => { if (document.visibilityState === 'visible') revisarCanal(); };
     alVolver();
     document.addEventListener('visibilitychange', alVolver);
@@ -697,12 +713,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         >
           <span style={{ fontSize: '1.5rem', fontWeight: 900 }}>¿Te gusta? 🎶</span>
           <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>Descárgala GRATIS sin interrupciones</span>
-          <span style={{
-            marginTop: '0.2rem', padding: '0.4rem 1rem', borderRadius: 999,
-            background: '#1d4ed8', color: '#fff', fontSize: '1.05rem', fontWeight: 900,
-          }}>
-            📢 Solo unite a nuestro canal de WhatsApp 👉
-          </span>
+          <TarjetaCanal texto="Tocá aquí, seguí el canal y volvé 👉" />
         </button>
       )}
 
@@ -723,36 +734,28 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong style={{ fontSize: '1.2rem' }}>🎁 Descárgala gratis</strong>
+              <strong style={{ fontSize: '1.2rem' }}>📢 Seguí el canal y volvé</strong>
               <button type="button" onClick={() => setHojaPago(false)} aria-label="Cerrar"
                 style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            <div style={{ fontSize: '0.95rem', lineHeight: 1.45 }}>
-              Unite a nuestro <strong>canal de WhatsApp</strong> y descárgala <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong>.
-              Ahí te enteras primero de canciones nuevas y promociones.
+            <TarjetaCanal texto="Canal de WhatsApp" />
+            <div style={{ fontSize: '0.98rem', lineHeight: 1.5 }}>
+              <strong>1.</strong> En WhatsApp tocá <strong style={{ color: '#9be3b4' }}>«Seguir»</strong>.<br />
+              <strong>2.</strong> Volvé a esta página: tu descarga <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong> aparece sola.
             </div>
-            <button type="button" onClick={unirseAlCanal}
+            <button type="button" onClick={() => revisarCanal(true)}
               style={{
-                padding: '1rem', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(180deg, #34d17a, #1fa855)', color: '#0b3a1e', fontSize: '1.1rem', fontWeight: 900,
-                boxShadow: '0 4px 0 #0f7a3d',
+                padding: '0.95rem', borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1.05rem', fontWeight: 900,
+                boxShadow: '0 4px 0 #a87d00',
               }}>
-              📢 Unirme al canal
+              ✅ Ya lo seguí — descargar
             </button>
-            <div style={{ fontSize: '0.86rem', color: '#e8d6bd', lineHeight: 1.4, textAlign: 'center' }}>
-              Tocá <strong>«Seguir»</strong> en el canal y volvé a esta página: la descarga se habilita sola.
-            </div>
-            {tocoCanal && (
-              <button type="button" onClick={() => revisarCanal(true)}
-                style={{
-                  padding: '0.8rem', borderRadius: 999, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1rem', fontWeight: 900,
-                  boxShadow: '0 4px 0 #a87d00',
-                }}>
-                ✅ Ya me uní — descargar
-              </button>
-            )}
+            <button type="button" onClick={unirseAlCanal}
+              style={{ background: 'none', border: 'none', color: '#9be3b4', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+              📢 Abrir el canal otra vez
+            </button>
             {avisoCanal && <div style={{ color: '#ffd35c', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>{avisoCanal}</div>}
 
             <a href={enlaceDescarga} target="_blank" rel="noopener noreferrer"
@@ -831,21 +834,19 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         )}
 
         {!descargable && (
+          // Visible desde que entra (no solo en la pausa): la invitación al canal con su foto, de un solo toque.
           <button
             type="button"
             onClick={() => abrirDescarga('botón')}
             style={{
-              font: 'inherit',
-              padding: '0.85rem 1.8rem', border: 'none', borderRadius: 999, textDecoration: 'none',
-              background: 'linear-gradient(180deg, #ffd35c, #f2b705)', color: '#2c0a10',
-              fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
-              boxShadow: '0 4px 0 #a87d00', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              font: 'inherit', cursor: 'pointer',
+              width: 'min(92vw, 24rem)', padding: '0.85rem 1rem', borderRadius: 20, boxSizing: 'border-box',
+              background: 'linear-gradient(180deg, #ffe27a, #f2b705)', border: '2px solid #fff4c2', color: '#2c0a10',
+              boxShadow: '0 4px 0 #a87d00', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem',
             }}
           >
-            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
-              <span>📥 Descárgala gratis sin pausas</span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>📢 solo unite a nuestro canal de WhatsApp</span>
-            </span>
+            <span style={{ fontSize: '1.08rem', fontWeight: 900 }}>📥 Descárgala GRATIS y sin pausas</span>
+            <TarjetaCanal texto="Tocá aquí, seguí el canal y volvé 👉" />
           </button>
         )}
       </div>
