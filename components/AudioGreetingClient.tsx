@@ -45,6 +45,28 @@ function TarjetaCanal({ texto }: { texto: string }) {
   );
 }
 
+// Dibujo de cómo se ve el canal en WhatsApp, con una flecha al botón «Seguir»: mucha gente abre el canal y cree
+// que con eso ya está.
+function MuestraSeguir() {
+  return (
+    <span style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem', padding: '0.8rem 0.75rem 0.9rem',
+      borderRadius: 16, background: '#111b21', border: '1px solid #2a3942', color: '#e9edef',
+    }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/canal/corridos-hondurenos.jpg" alt="" width={56} height={56} style={{ borderRadius: '50%' }} />
+      <span style={{ fontSize: '1rem', fontWeight: 800 }}>Corridos Hondureños</span>
+      <span style={{ fontSize: '0.78rem', color: '#8696a0' }}>Canal</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span style={{ background: '#21c063', color: '#0b141a', fontWeight: 800, fontSize: '0.95rem', padding: '0.4rem 1.4rem', borderRadius: 999, boxShadow: '0 0 0 3px rgba(255,211,92,0.9)' }}>
+          + Seguir
+        </span>
+        <span style={{ color: '#ffd35c', fontWeight: 900, fontSize: '0.95rem' }}>👈 tocá aquí</span>
+      </span>
+    </span>
+  );
+}
+
 // Hermano de VideoGreetingClient.tsx, pero para audio — mismo círculo con
 // botón de play sobre el tema mariachi/corrido, pensado para viralizar
 // canciones generadas: se puede escuchar (no descargar) y, si se agotan
@@ -405,20 +427,24 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   function unirseAlCanal() {
     try { localStorage.setItem(claveCanal, String(Date.now())); } catch { /* sin almacenamiento: vale la de esta visita */ }
     tocoCanalEnRef.current = Date.now();
-    setAvisoCanal('');
+    setAvisoCanal(''); setConfirmarCanal(false);
     fetch(`${audioApiUrl}/canal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paso: 'clic' }) }).catch(() => {});
     trackMetaPixel('Lead', { content_name: 'Unirse al canal de WhatsApp' });
     window.open(CANAL_WHATSAPP, '_blank');
   }
   const tocoCanalEnRef = useRef(0);
+  // 17 nov 2026: 13 desbloqueos pero el canal solo ganó 5 seguidores — muchos abren el canal y salen sin tocar
+  // «Seguir». Al volver ya no se desbloquea solo: se le pregunta si tocó el botón verde (manual = respondió que sí).
+  const [confirmarCanal, setConfirmarCanal] = useState(false);
   async function revisarCanal(manual = false) {
     let desde = tocoCanalEnRef.current;
     try { desde = desde || Number(localStorage.getItem(claveCanal) || 0); } catch { /* sin almacenamiento */ }
     if (!desde || descargable) return;
     if (Date.now() - desde < SEGUNDOS_EN_CANAL * 1000) {
-      if (manual) setAvisoCanal('Tocá «Seguir» en el canal y volvé aquí. 👆');
+      if (manual) setAvisoCanal('Primero tocá el botón verde «Seguir» en el canal y volvé aquí. 👆');
       return;
     }
+    if (!manual) { setConfirmarCanal(true); setHojaPago(true); return; }
     try {
       const res = await fetch(`${audioApiUrl}/canal`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paso: 'unido' }) });
       if (!res.ok) { if (manual) setAvisoCanal('No se pudo habilitar, intentá de nuevo.'); return; }
@@ -739,22 +765,28 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
                 style={{ background: 'none', border: 'none', color: '#e0b98f', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            <TarjetaCanal texto="Canal de WhatsApp" />
-            <div style={{ fontSize: '0.98rem', lineHeight: 1.5 }}>
-              <strong>1.</strong> En WhatsApp tocá <strong style={{ color: '#9be3b4' }}>«Seguir»</strong>.<br />
-              <strong>2.</strong> Volvé a esta página: tu descarga <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong> aparece sola.
-            </div>
+            <MuestraSeguir />
+            {confirmarCanal ? (
+              <div style={{ fontSize: '1.1rem', fontWeight: 900, textAlign: 'center', color: '#ffd35c' }}>
+                ¿Le diste al botón verde «Seguir»?
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.98rem', lineHeight: 1.5 }}>
+                <strong>1.</strong> En el canal tocá el botón verde <strong style={{ color: '#9be3b4' }}>«Seguir»</strong> (abrir el canal no es suficiente).<br />
+                <strong>2.</strong> Volvé a esta página y bajá tu canción <strong style={{ color: '#ffd35c' }}>gratis y sin pausas</strong>.
+              </div>
+            )}
             <button type="button" onClick={() => revisarCanal(true)}
               style={{
                 padding: '0.95rem', borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1.05rem', fontWeight: 900,
                 boxShadow: '0 4px 0 #a87d00',
               }}>
-              ✅ Ya lo seguí — descargar
+              {confirmarCanal ? '✅ Sí, ya lo seguí — descargar' : '✅ Ya lo seguí — descargar'}
             </button>
             <button type="button" onClick={unirseAlCanal}
               style={{ background: 'none', border: 'none', color: '#9be3b4', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
-              📢 Abrir el canal otra vez
+              {confirmarCanal ? '📢 No, volver al canal' : '📢 Abrir el canal otra vez'}
             </button>
             {avisoCanal && <div style={{ color: '#ffd35c', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>{avisoCanal}</div>}
 
