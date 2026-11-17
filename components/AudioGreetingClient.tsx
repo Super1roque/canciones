@@ -800,6 +800,8 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       )}
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {/* Mientras está bloqueada, compartir ya es el botón amarillo de la descarga gratis: este solo vuelve después. */}
+        {descargable && (
         <button
           type="button"
           onClick={compartirCancion}
@@ -812,6 +814,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         >
           📤 Compartir esta canción
         </button>
+        )}
 
         {descargable && !celebrar && (
           <button
