@@ -346,8 +346,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             </div>
             {!descarga && (
               // Sin descarga todavía: se le explica cómo descargarla gratis uniéndose al canal de WhatsApp.
+              // Sin emojis: al abrir WhatsApp desde el link a veces llegaban como «�».
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! 🎶 Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y unite a nuestro canal de WhatsApp: al volver a la página, la descarga se habilita sola. 📢`)}
+                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nSi la querés descargar GRATIS y sin pausas, tocá «Descárgala gratis» y unite a nuestro canal de WhatsApp: al volver a la página, la descarga se habilita sola.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"
@@ -359,7 +360,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             {descarga && (
               // Casi nadie tiene las notificaciones activadas: así se entera de que ya puede descargarla.
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! 🎉 Tu canción «${p.cancion_base}» ya es tuya: ya podés descargarla sin pausas aquí 👉 https://corridos.online/cancion/${cancionCompartidaId}`)}
+                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción «${p.cancion_base}» ya es tuya: ya podés descargarla sin pausas aquí: https://corridos.online/cancion/${cancionCompartidaId}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary"
