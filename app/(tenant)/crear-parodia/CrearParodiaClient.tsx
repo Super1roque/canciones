@@ -10,6 +10,10 @@ import type { CancionPendiente } from '@/lib/cancionCompartidaService';
 import NotificacionesTenant from '../dashboard/NotificacionesTenant';
 import { estadoNotificaciones, activarNotificaciones, type EstadoNotificaciones } from '@/lib/notificacionesCliente';
 
+function formatoTelefono(digits: string) {
+  return digits.startsWith('504') && digits.length === 11 ? `+504 ${digits.slice(3, 7)}-${digits.slice(7)}` : `+${digits}`;
+}
+
 type Cancion = { id: string; nombre: string; estilo: string; descripcionEstilo?: string; direccionGenerador?: string; letra: string };
 type ParodiaResult = { cancion_base: string; estilo: string; descripcionEstilo: string; direccionGenerador: string; historia: string; parodia: string; modoPrueba?: boolean };
 type Toast = { msg: string; type: 'success' | 'error' } | null;
@@ -178,8 +182,18 @@ export default function CrearParodiaClient({ tenant, pendientes }: { tenant: Ten
           <span style={{ fontSize: '3rem' }}>🎉</span>
           <h2 className={styles.heroTitle} style={{ fontSize: '1.4rem', margin: 0 }}>¡Tu pedido fue enviado!</h2>
           <p className={styles.textMuted} style={{ maxWidth: 380 }}>
-            Ya tenemos la letra de tu parodia de &quot;{parodiaActual?.cancion_base}&quot;. Te la vamos a entregar por WhatsApp.
+            Ya tenemos la letra de tu parodia de &quot;{parodiaActual?.cancion_base}&quot;.
           </p>
+          {/* Varios preguntaban por el chat cuándo iba a estar lista: se lo decimos aquí mismo (Armando, 16 nov 2026). */}
+          <div style={{
+            width: '100%', boxSizing: 'border-box', padding: '0.9rem 1rem', borderRadius: 12, lineHeight: 1.45,
+            background: 'var(--cr-surface-2)', border: '2px solid var(--cr-gold)', textAlign: 'left',
+          }}>
+            <div style={{ fontWeight: 800, fontSize: '1rem' }}>🛠️ Tu canción ya está en proceso</div>
+            <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
+              Te vamos a avisar por <strong>WhatsApp</strong>{tenant.telefono ? <> al <strong>{formatoTelefono(tenant.telefono)}</strong></> : null} en cuanto esté lista, con el link para escucharla.
+            </div>
+          </div>
           {/* Mientras no estén activas, el mismo botón del dashboard; si ya están, confirma que le vamos a avisar. */}
           <div style={{ width: '100%' }}><NotificacionesTenant /></div>
           <a href="/dashboard" className={styles.btnPrimary}>📋 Ir a mi dashboard</a>

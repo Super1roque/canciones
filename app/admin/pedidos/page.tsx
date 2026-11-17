@@ -365,6 +365,18 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
                 {cambiandoDescarga ? '...' : descarga ? 'Quitar descarga' : '✅ Ya pagó — habilitar descarga'}
               </button>
             </div>
+            {descarga && (
+              // Casi nadie tiene las notificaciones activadas: así se entera de que ya puede descargarla.
+              <a
+                href={urlAvisoProceso(p.telefono, `¡Hola! 🎉 Tu canción «${p.cancion_base}» ya es tuya: ya podés descargarla sin pausas aquí 👉 https://corridos.online/cancion/${cancionCompartidaId}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ textDecoration: 'none', display: 'inline-block', fontSize: '0.85rem', alignSelf: 'flex-start' }}
+              >
+                📲 Avisarle por WhatsApp que ya puede descargarla
+              </a>
+            )}
             {!descarga && vence !== undefined && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <p style={{ fontSize: '0.8rem', color: vence <= Date.now() ? 'var(--error)' : 'var(--text-muted)', margin: 0 }}>
@@ -555,8 +567,11 @@ export default function AdminPedidosPage() {
                       {(() => {
                         // Comprobante de la descarga subido en la página y todavía sin habilitar: hay que revisarlo.
                         const c = p.cancionCompartidaId ? cancionesCompartidas.find(x => x.id === p.cancionCompartidaId) : undefined;
-                        return c && (c.comprobantes ?? 0) > 0 && !c.descargaHabilitada
-                          ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f2b705' }}>🧾 Comprobante por revisar</div>
+                        if (c && (c.comprobantes ?? 0) > 0 && !c.descargaHabilitada) {
+                          return <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f2b705' }}>🧾 Comprobante por revisar</div>;
+                        }
+                        return c?.desbloqueadaPor === 'compartir'
+                          ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir — avisale por WhatsApp</div>
                           : null;
                       })()}
                     </div>

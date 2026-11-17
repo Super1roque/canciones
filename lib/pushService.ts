@@ -140,6 +140,26 @@ export async function avisarComprobanteAdmin(titulo: string, telefono?: string):
   await enviarATodos(snap.docs, payload);
 }
 
+// La descarga se desbloqueó sola porque 3 personas abrieron la canción con un link compartido: el admin se entera
+// para avisarle por WhatsApp (la mayoría no tiene las notificaciones activadas).
+export async function avisarDesbloqueoAdmin(titulo: string, telefono?: string): Promise<void> {
+  if (!process.env.VAPID_PRIVATE_KEY) return;
+  configurar();
+
+  const db = getDb();
+  const snap = await db.collection(COLLECTION_ADMIN).get();
+  if (snap.empty) return;
+
+  const payload = JSON.stringify({
+    titulo: '🎁 Se desbloqueó por compartir',
+    cuerpo: `«${titulo}»${telefono ? ` · ${telefono}` : ''} — avisale por WhatsApp que ya puede descargarla`,
+    url: '/admin/pedidos',
+    tag: 'desbloqueo-compartir',
+  });
+
+  await enviarATodos(snap.docs, payload);
+}
+
 // El admin habilitó la descarga (después de revisar el pago): se le avisa al dueño de la canción.
 export async function avisarDescargaLista(telefono: string, titulo: string, cancionId: string): Promise<void> {
   if (!process.env.VAPID_PRIVATE_KEY) return;

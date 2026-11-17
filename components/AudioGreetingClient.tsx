@@ -43,7 +43,7 @@ function HeroVideoFondo({ overlay }: { overlay: string }) {
 // `esDueño` solo decide QUÉ mensaje se muestra: el dueño ve la invitación
 // a recargar, cualquier otra persona (a quien le reenviaron el link) ve
 // un aviso genérico que no expone que el dueño es freemium.
-export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false, visitasCompartidas: visitasInicial = 0 }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean; visitasCompartidas?: number }) {
+export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, restringida, descargable: descargableInicial, esDueño, yaEscuchada: yaEscuchadaInicial = false, vence, pago = null, comprobanteEnviado: comprobanteInicial = false, visitasCompartidas: visitasInicial = 0, desbloqueada = false }: { audioApiUrl: string; posterSrc: string; titulo: string; restringida: boolean; descargable: boolean; esDueño: boolean; yaEscuchada?: boolean; vence: number; pago?: DatosBanco | null; comprobanteEnviado?: boolean; visitasCompartidas?: number; desbloqueada?: boolean }) {
   // Descarga gratis por compartir (Facebook o WhatsApp): cada teléfono comparte con su link personal ?c=<código> y
   // se avanza hacia VISITAS_PARA_DESBLOQUEO visitas de otras personas (ver lib/pagoDescarga.ts).
   const [visitas, setVisitas] = useState(visitasInicial);
@@ -79,6 +79,9 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
   const [comprobante, setComprobante] = useState<'no' | 'subiendo' | 'enviado'>(comprobanteInicial ? 'enviado' : 'no');
   const [errorComprobante, setErrorComprobante] = useState('');
   const [copiado, setCopiado] = useState(false);
+  // Cartel «¡Tu canción ya es tuya!»: al desbloquearse mientras la página está abierta, y cada vez que vuelve a entrar
+  // a una canción que ya pagó o desbloqueó compartiendo (si no, el botón de descarga aparecía sin que nadie lo notara).
+  const [celebrar, setCelebrar] = useState(desbloqueada);
   const [descargable, setDescargable] = useState(descargableInicial);
   // Cuenta regresiva hasta que la canción se retira (36 h desde que se subió, ver venceEn). Arranca en
   // null y se llena al montar: la hora del servidor y la del teléfono no coinciden al segundo.
@@ -131,7 +134,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
         if (!res.ok || cancelado) return;
         const datos = await res.json();
         if (typeof datos.visitasCompartidas === 'number') setVisitas(datos.visitasCompartidas);
-        if (datos.descargable) { setDescargable(true); setHojaPago(false); }
+        if (datos.descargable) { setDescargable(true); setHojaPago(false); setCelebrar(true); }
         else if (datos.comprobante) setComprobante('enviado');
       } catch {
         // Silencioso — se reintenta en el próximo ciclo.
@@ -449,7 +452,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       const res = await fetch(`${audioApiUrl}/comprobante`, { method: 'POST', body: fd });
       const datos = await res.json().catch(() => ({}));
       if (!res.ok) { setErrorComprobante(datos.error || 'No se pudo subir, intentá de nuevo'); setComprobante('no'); return; }
-      if (datos.yaHabilitada) { setDescargable(true); setHojaPago(false); return; }
+      if (datos.yaHabilitada) { setDescargable(true); setHojaPago(false); setCelebrar(true); return; }
       setComprobante('enviado');
       trackMetaPixel('AddPaymentInfo', { value: PRECIO_DESCARGA, currency: 'HNL', content_name: 'Comprobante de descarga' });
     } catch {
@@ -857,6 +860,25 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
       )}
 
       {!enPausaAuto && (<>
+      {descargable && celebrar && (
+        <div style={{
+          width: 'min(92vw, 24rem)', padding: '1.1rem 1.1rem 1.2rem', borderRadius: 22, boxSizing: 'border-box',
+          background: 'linear-gradient(180deg, #2f7d4a, #1f5c35)', border: '3px solid #ffd35c', color: '#fdf3e0',
+          boxShadow: '0 0 30px rgba(255,211,92,0.45)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem',
+        }}>
+          <span style={{ fontSize: '1.45rem', fontWeight: 900 }}>🎉 ¡Tu canción ya es tuya!</span>
+          <span style={{ fontSize: '0.98rem', lineHeight: 1.35 }}>Descárgala sin pausas y guárdala en tu teléfono.</span>
+          <button type="button" onClick={descargarArchivo}
+            style={{
+              padding: '0.9rem 1.8rem', border: 'none', borderRadius: 999, cursor: 'pointer',
+              background: 'linear-gradient(180deg, #ffe27a, #f2b705)', color: '#2c0a10', fontSize: '1.1rem', fontWeight: 900,
+              boxShadow: '0 4px 0 #a87d00', animation: 'latidoDescarga 1.1s ease-in-out infinite',
+            }}>
+            📥 Descargar mi canción
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
         <button
           type="button"
@@ -871,7 +893,7 @@ export default function AudioGreetingClient({ audioApiUrl, posterSrc, titulo, re
           📤 Compartir esta canción
         </button>
 
-        {descargable && (
+        {descargable && !celebrar && (
           <button
             type="button"
             onClick={descargarArchivo}

@@ -333,6 +333,9 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                   <div>
                     <div style={{ fontWeight: 700 }}>{p.cancion_base}</div>
                     <div className={styles.textMuted} style={{ fontSize: '0.78rem' }}>{formatFecha(p.fecha)}</div>
+                    {p.estado !== 'entregada' && (
+                      <div style={{ fontSize: '0.78rem', marginTop: '0.2rem' }}>📲 Te avisamos por WhatsApp cuando esté lista</div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     {p.cancionCompartidaId && (
@@ -350,7 +353,7 @@ export default function DashboardClient({ tenant: tenantInicial, pedidosIniciale
                       className={styles.badge}
                       style={p.estado === 'entregada' ? { background: 'rgba(31,138,76,0.14)', borderColor: 'var(--cr-green)', color: 'var(--cr-green)' } : undefined}
                     >
-                      {p.estado === 'entregada' ? '✅ Entregada' : '⏳ Pendiente'}
+                      {p.estado === 'entregada' ? '✅ Entregada' : '🛠️ En proceso'}
                     </span>
                   </div>
                 </div>

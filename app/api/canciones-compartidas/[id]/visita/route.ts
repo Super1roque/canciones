@@ -5,7 +5,7 @@ import admin from 'firebase-admin';
 import { getDb } from '@/lib/firebaseService';
 import { esNavegadorAdmin } from '@/lib/adminServidor';
 import { CODIGO_VALIDO, VISITAS_PARA_DESBLOQUEO } from '@/lib/pagoDescarga';
-import { avisarDescargaLista } from '@/lib/pushService';
+import { avisarDescargaLista, avisarDesbloqueoAdmin } from '@/lib/pushService';
 
 export const runtime = 'nodejs';
 
@@ -48,6 +48,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return { visitas, desbloqueo, titulo: doc.get('titulo') as string };
   });
   if (!resultado) return NextResponse.json({ error: 'Link no válido' }, { status: 404 });
-  if (resultado.desbloqueo && telefonoDueño) void avisarDescargaLista(telefonoDueño, resultado.titulo ?? 'tu canción', id);
+  if (resultado.desbloqueo) {
+    if (telefonoDueño) void avisarDescargaLista(telefonoDueño, resultado.titulo ?? 'tu canción', id);
+    void avisarDesbloqueoAdmin(resultado.titulo ?? 'canción', telefonoDueño ?? undefined);
+  }
   return NextResponse.json({ ok: true, visitas: resultado.visitas });
 }
