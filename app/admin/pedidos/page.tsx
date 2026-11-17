@@ -558,11 +558,25 @@ export default function AdminPedidosPage() {
                       <div style={{ fontWeight: 600 }}>{p.cancion_base} — {p.telefono}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{formatFecha(p.fecha)} · {p.costo > 0 ? `L ${p.costo}` : 'gratis'}</div>
                       {(() => {
+                        // Lo mismo que se ve al revisar el pedido, de un vistazo: estado de la descarga y cómo va compartiéndola.
                         // Desbloqueada sola por compartir: hay que avisarle por WhatsApp que ya puede descargarla.
                         const c = p.cancionCompartidaId ? cancionesCompartidas.find(x => x.id === p.cancionCompartidaId) : undefined;
-                        return c?.desbloqueadaPor === 'compartir'
-                          ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir — avisale por WhatsApp</div>
-                          : null;
+                        if (!c) return null;
+                        const visitas = c.visitasCompartidas ?? 0;
+                        return (
+                          <>
+                            {c.desbloqueadaPor === 'compartir'
+                              ? <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--success)' }}>🎁 Desbloqueada por compartir — avisale por WhatsApp</div>
+                              : <div style={{ fontSize: '0.78rem', fontWeight: 600, color: c.descargaHabilitada ? 'var(--success)' : 'var(--text-muted)' }}>
+                                  {c.descargaHabilitada ? '📥 Descarga habilitada' : '🔒 Descarga bloqueada'}
+                                </div>}
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                              📥 abrió la descarga {c.clicsPagar ?? 0} {(c.clicsPagar ?? 0) === 1 ? 'vez' : 'veces'}
+                              {` · 📲 compartió: Facebook ${c.compartidasFb ?? 0}, WhatsApp ${c.compartidasWa ?? 0}`}
+                              {` · 👥 ${visitas} ${visitas === 1 ? 'persona la abrió' : 'personas la abrieron'} con su link`}
+                            </div>
+                          </>
+                        );
                       })()}
                     </div>
                     <div>
