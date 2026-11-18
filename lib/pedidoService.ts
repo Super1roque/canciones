@@ -109,6 +109,11 @@ export async function listarTodosPedidos(): Promise<Pedido[]> {
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
 
+export async function obtenerPedido(id: string): Promise<Pedido | null> {
+  const doc = await getDb().collection(COLLECTION).doc(id).get();
+  return doc.exists ? toPedido(doc.id, doc.data()!) : null;
+}
+
 // Devuelve el pedido actualizado (no solo void) para que quien llame pueda
 // avisarle al tenant que ya está lista, sin tener que volver a pedirlo.
 export async function marcarPedidoEntregado(id: string): Promise<Pedido> {

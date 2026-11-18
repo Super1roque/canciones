@@ -179,6 +179,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
   // persona en vez de solo la canción original).
   const [tituloCompartir, setTituloCompartir] = useState(p.cancion_base);
   const [subiendo, setSubiendo] = useState(false);
+  const [generando, setGenerando] = useState(false);
   const [errorSubida, setErrorSubida] = useState('');
   const [desvinculando, setDesvinculando] = useState(false);
   // Editable porque a veces conviene ajustarlo al caso (ej. avisar que ya
@@ -204,6 +205,28 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
       setErrorSubida('Error de conexión');
     } finally {
       setSubiendo(false);
+    }
+  }
+
+  // En vez de hacerla en Suno: Lyria (Gemini) la canta con el estilo y la parodia del pedido y queda el link.
+  async function generarConGemini() {
+    if (!tituloCompartir.trim()) { setErrorSubida('Ponele un título a la canción'); return; }
+    setGenerando(true);
+    setErrorSubida('');
+    try {
+      const res = await fetchConSesion('/api/admin/pedidos/generar-cancion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedidoId: p.id, titulo: tituloCompartir.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setErrorSubida(data.error || `Error al generar (${res.status})`); return; }
+      setCancionCompartidaId(data.id);
+      onVinculado();
+    } catch {
+      setErrorSubida('Error de conexión');
+    } finally {
+      setGenerando(false);
     }
   }
 
@@ -403,9 +426,16 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
                 accept="audio/*"
                 onChange={e => setArchivo(e.target.files?.[0] ?? null)}
               />
-              <button className="btn-primary" disabled={!archivo || subiendo} onClick={subirCancion}>
+              <button className="btn-primary" disabled={!archivo || subiendo || generando} onClick={subirCancion}>
                 {subiendo ? '⏳ Subiendo...' : '🔗 Generar link'}
               </button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', padding: '0.25rem 0 0.5rem', borderTop: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>o sin Suno:</span>
+              <button className="btn-primary" disabled={subiendo || generando || !p.parodia?.trim()} onClick={generarConGemini}>
+                {generando ? '⏳ Gemini está cantando… (~1 min)' : '🎵 Generar la canción con Gemini'}
+              </button>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Usa el estilo y la parodia de arriba · ~US$ 0.08</span>
             </div>
           </div>
         )}

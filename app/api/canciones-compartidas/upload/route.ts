@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb, getStorageBucket } from '@/lib/firebaseService';
-import { vincularCancionCompartida } from '@/lib/pedidoService';
-import { crearVersionLigera } from '@/lib/audioLigero';
+import { guardarCancionCompartida } from '@/lib/guardarCancionCompartida';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -22,48 +20,7 @@ export async function POST(request: Request) {
     if (!titulo) return NextResponse.json({ error: 'Falta el título de la canción' }, { status: 400 });
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const id = crypto.randomUUID();
-    const storagePath = `canciones-compartidas/${id}`;
-
-    const bucket = getStorageBucket();
-    await bucket.file(storagePath).save(buffer, {
-      metadata: { contentType: file.type || 'audio/mpeg' },
-    });
-
-    // La página reproduce esta copia liviana (ver lib/audioLigero.ts). Si falla, se sirve el original.
-    let ligera: { storagePathLigera: string; sizeLigera: number } | null = null;
-    try {
-      const liviano = await crearVersionLigera(buffer);
-      if (liviano.length < buffer.length * 0.85) {
-        await bucket.file(`${storagePath}-ligera`).save(liviano, { metadata: { contentType: 'audio/mpeg' } });
-        ligera = { storagePathLigera: `${storagePath}-ligera`, sizeLigera: liviano.length };
-      }
-    } catch (e) {
-      console.error('canciones-compartidas/upload versión ligera:', e instanceof Error ? e.message : e);
-    }
-
-    // Ya no se transcribe con Deepgram acá — se estaba tardando demasiado
-    // (hasta 1-2 min por canción) y el reproductor tampoco usa la letra
-    // sincronizada; solo muestra el ecualizador.
-    const db = getDb();
-    await db.collection('canciones_compartidas').doc(id).set({
-      titulo,
-      storagePath,
-      contentType: file.type || 'audio/mpeg',
-      size: buffer.length,
-      ...ligera,
-      fecha: new Date().toISOString(),
-      escuchadaCompleta: false,   // la primera escucha completa (la del dueño) es limpia; ver /escuchada
-    });
-
-    // Opcional — cuando se sube desde el modal de un pedido puntual en
-    // /admin/pedidos, así el tenant dueño de ese pedido la ve en su propio
-    // dashboard. Subir desde /admin/compartir-cancion (sin pedidoId) sigue
-    // funcionando igual que siempre, sin vincular a nada.
-    if (pedidoId) {
-      await vincularCancionCompartida(pedidoId, id);
-    }
-
+    const id = await guardarCancionCompartida(buffer, file.type || 'audio/mpeg', titulo, pedidoId || undefined);
     return NextResponse.json({ id });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';
