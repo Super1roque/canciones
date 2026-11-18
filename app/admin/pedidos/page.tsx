@@ -433,9 +433,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', padding: '0.25rem 0 0.5rem', borderTop: '1px solid var(--border)' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>o sin Suno:</span>
               <button className="btn-primary" disabled={subiendo || generando || !p.parodia?.trim()} onClick={generarConGemini}>
-                {generando ? '⏳ Gemini está cantando… (~1 min)' : '🎵 Generar la canción con Gemini'}
+                {generando ? '⏳ Claude prepara el estilo y Gemini canta… (1–3 min)' : '🎵 Generar la canción con Gemini'}
               </button>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Usa el estilo y la parodia de arriba · ~US$ 0.08</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Claude afina el estilo, Gemini canta la parodia de arriba · ~US$ 0.10</span>
             </div>
           </div>
         )}
