@@ -106,6 +106,7 @@ export interface CancionCompartida {
   clicsPagar: number;        // veces que se abrió la hoja de descarga gratis en la página
   clicsCanal: number;        // toques en «Unirme al canal» de WhatsApp
   desbloqueadaPor?: string;  // 'canal' si se habilitó sola al unirse al canal ('compartir': sistema anterior)
+  generadaCon?: 'gemini';    // hecha con el botón «Generar la canción con Gemini» (si no, se subió el mp3)
 }
 
 // Botón "Habilitar descarga" de /admin/pedidos (la descarga es gratis: normalmente se
@@ -155,6 +156,7 @@ export async function listarCancionesCompartidas(): Promise<CancionCompartida[]>
         clicsPagar: data.clicsPagar ?? 0,
         clicsCanal: data.clicsCanal ?? 0,
         desbloqueadaPor: data.desbloqueadaPor,
+        generadaCon: data.generadaCon,
       };
     })
     .sort((a, b) => b.fecha.localeCompare(a.fecha));

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const estilo = [p.estilo, p.descripcionEstilo].filter(Boolean).join(' — ');
     const { audio, mimeType } = await generarCancionLyria(estilo, p.parodia);
-    const id = await guardarCancionCompartida(audio, mimeType, titulo.trim(), pedidoId);
+    const id = await guardarCancionCompartida(audio, mimeType, titulo.trim(), pedidoId, 'gemini');
     return NextResponse.json({ id });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Error desconocido';

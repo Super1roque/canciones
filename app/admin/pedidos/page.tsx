@@ -50,6 +50,7 @@ type CancionCompartida = {
   clicsPagar?: number;
   clicsCanal?: number;
   desbloqueadaPor?: string;
+  generadaCon?: 'gemini';
 };
 
 type TenantPlan = {
@@ -167,7 +168,7 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, clicsCanal = 0, desbloqueadaPor, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; clicsCanal?: number; desbloqueadaPor?: string; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, clicsCanal = 0, desbloqueadaPor, generadaCon, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; clicsCanal?: number; desbloqueadaPor?: string; generadaCon?: 'gemini'; onClose: () => void; onVinculado: () => void }) {
   const [vence, setVence] = useState(venceInicial);
   const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
@@ -180,6 +181,8 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
   const [tituloCompartir, setTituloCompartir] = useState(p.cancion_base);
   const [subiendo, setSubiendo] = useState(false);
   const [generando, setGenerando] = useState(false);
+  // Se actualiza al momento al generar o quitar el enlace, sin esperar a que se recargue la lista.
+  const [conGemini, setConGemini] = useState(generadaCon === 'gemini');
   const [errorSubida, setErrorSubida] = useState('');
   const [desvinculando, setDesvinculando] = useState(false);
   // Editable porque a veces conviene ajustarlo al caso (ej. avisar que ya
@@ -222,6 +225,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setErrorSubida(data.error || `Error al generar (${res.status})`); return; }
       setCancionCompartidaId(data.id);
+      setConGemini(true);
       onVinculado();
     } catch {
       setErrorSubida('Error de conexión');
@@ -245,6 +249,7 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
       });
       if (!res.ok) { setErrorSubida('No se pudo quitar el enlace'); return; }
       setCancionCompartidaId(undefined);
+      setConGemini(false);
       setTituloCompartir(p.cancion_base);
       onVinculado();
     } catch {
@@ -370,9 +375,11 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             {!descarga && (
               // Sin descarga todavía: se le explica cómo descargarla gratis uniéndose al canal de WhatsApp.
               // Sin emojis: al abrir WhatsApp desde el link a veces llegaban como «�».
-              // Armando (18 nov 2026): aclararle que es una canción a ese estilo y ofrecerle la parodia igual a la original.
+              // Armando (18 nov 2026): si la hizo Gemini, aclararle que es a ese estilo y ofrecerle la parodia igual a la original.
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción al estilo de «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.\n\nDebo aclararte algo: ESTA CANCIÓN ESTÁ GENERADA A ESE ESTILO. Si quieres una PARODIA que suene igual a la original, TE LA PODEMOS HACER, pero esa sí tiene un costo de 250 LPS. (AVÍSAME SI TE INTERESA)`)}
+                href={urlAvisoProceso(p.telefono, conGemini
+                  ? `¡Hola! Tu canción al estilo de «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.\n\nDebo aclararte algo: ESTA CANCIÓN ESTÁ GENERADA A ESE ESTILO. Si quieres una PARODIA que suene igual a la original, TE LA PODEMOS HACER, pero esa sí tiene un costo de 250 LPS. (AVÍSAME SI TE INTERESA)`
+                  : `¡Hola! Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"
@@ -662,6 +669,7 @@ export default function AdminPedidosPage() {
           clicsPagar={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsPagar}
           clicsCanal={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsCanal}
           desbloqueadaPor={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.desbloqueadaPor}
+          generadaCon={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.generadaCon}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
         />

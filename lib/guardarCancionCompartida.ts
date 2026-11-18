@@ -4,7 +4,8 @@ import { crearVersionLigera } from '@/lib/audioLigero';
 
 // Guarda el audio en Storage, crea el doc de canciones_compartidas (el link /cancion/<id>) y, si viene de un
 // pedido, lo vincula. Lo usan la subida manual (/api/canciones-compartidas/upload) y la generación con Gemini.
-export async function guardarCancionCompartida(buffer: Buffer, contentType: string, titulo: string, pedidoId?: string): Promise<string> {
+// generadaCon 'gemini': el mensaje de invitación del panel aclara que es «al estilo» y ofrece la parodia igual a la original.
+export async function guardarCancionCompartida(buffer: Buffer, contentType: string, titulo: string, pedidoId?: string, generadaCon?: 'gemini'): Promise<string> {
   const id = crypto.randomUUID();
   const storagePath = `canciones-compartidas/${id}`;
 
@@ -35,6 +36,7 @@ export async function guardarCancionCompartida(buffer: Buffer, contentType: stri
     contentType,
     size: buffer.length,
     ...ligera,
+    ...(generadaCon ? { generadaCon } : {}),
     fecha: new Date().toISOString(),
     escuchadaCompleta: false,   // la primera escucha completa (la del dueño) es limpia; ver /escuchada
   });
