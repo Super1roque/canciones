@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebaseClient';
 import CancionesPendientes from '@/components/CancionesPendientes';
+import { CANAL_WHATSAPP } from '@/lib/pagoDescarga';
 
 // Las rutas de pedidos comprueban la sesión en el servidor: hay que mandarles el token.
 async function fetchConSesion(url: string, init?: RequestInit) {
@@ -51,6 +52,7 @@ type CancionCompartida = {
   clicsCanal?: number;
   desbloqueadaPor?: string;
   generadaCon?: 'gemini';
+  unidoCanalEn?: string;
 };
 
 type TenantPlan = {
@@ -91,6 +93,13 @@ function EstadoEscuchas({ reproducciones, premium, conPausa }: { reproducciones:
     </div>
   );
 }
+
+// Lo que se sabe del canal de WhatsApp sumando todas las canciones del cliente (WhatsApp no deja ver quién lo sigue):
+// si alguna vez confirmó «Sí, ya lo seguí» y cuántas veces tocó «Unirme al canal».
+type CanalCliente = { confirmo: boolean; toques: number };
+// Antes del 17 nov 2026 (commit 9fa43d1) la descarga se desbloqueaba sola a los 8 s de volver del canal, sin preguntar:
+// esos «canal» no prueban que haya tocado «Seguir» (13 desbloqueos y solo +5 seguidores).
+const DESDE_CONFIRMACION = '2026-11-17T21:00:00Z';
 
 const MENSAJE_AVISO_PROCESO_DEFAULT = 'Su canción ya está en proceso. Le llegará por este medio — cuando el sistema está muy cargado, suele demorar hasta una hora.';
 
@@ -168,7 +177,7 @@ function ModalCuenta({ telefono, pedidos, canciones, premium, onClose }: { telef
   );
 }
 
-function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, clicsCanal = 0, desbloqueadaPor, generadaCon, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; clicsCanal?: number; desbloqueadaPor?: string; generadaCon?: 'gemini'; onClose: () => void; onVinculado: () => void }) {
+function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, vence: venceInicial, premium, clicsPagar = 0, clicsCanal = 0, desbloqueadaPor, generadaCon, canalCliente, onClose, onVinculado }: { pedido: Pedido; reproducciones?: number; conPausa?: number; descargaHabilitada: boolean; vence?: number; premium: boolean; clicsPagar?: number; clicsCanal?: number; desbloqueadaPor?: string; generadaCon?: 'gemini'; canalCliente: CanalCliente; onClose: () => void; onVinculado: () => void }) {
   const [vence, setVence] = useState(venceInicial);
   const [prorrogando, setProrrogando] = useState(false);
   const [cancionCompartidaId, setCancionCompartidaId] = useState(p.cancionCompartidaId);
@@ -330,6 +339,31 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
               📲 Abrir WhatsApp y avisar
             </a>
           </div>
+        </div>
+
+        <div className="campo-copiable">
+          <div className="campo-copiable-header">
+            <span className="campo-copiable-label">📢 Canal de WhatsApp</span>
+          </div>
+          <p style={{ fontSize: '0.85rem', margin: '0.25rem 0', color: canalCliente.confirmo ? 'var(--success)' : '#d99a2b' }}>
+            {canalCliente.confirmo
+              ? '✅ Este cliente confirmó que ya sigue el canal'
+              : canalCliente.toques > 0
+                ? `⚠️ Tocó «Unirme al canal» ${canalCliente.toques} ${canalCliente.toques === 1 ? 'vez' : 'veces'}, pero nunca confirmó que lo siguió`
+                : '⚠️ Nunca ha tocado «Unirme al canal»'}
+          </p>
+          {!canalCliente.confirmo && (
+            // Sin emojis: al abrir WhatsApp desde el link a veces llegaban como «�».
+            <a
+              href={urlAvisoProceso(p.telefono, `¡Hola! Vimos que todavía no te has unido a nuestro canal de WhatsApp «Corridos Hondureños». Ahí avisamos de canciones nuevas y promociones, y es lo único que se pide para descargar tus canciones GRATIS y sin pausas: ${CANAL_WHATSAPP}\n\nSolo abrí el link y tocá el botón verde «Seguir».`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{ textDecoration: 'none', display: 'inline-block', fontSize: '0.85rem' }}
+            >
+              📲 Recordarle que se una al canal
+            </a>
+          )}
         </div>
 
         {p.estilo && <CampoCopiable label="🎼 Estilo" valor={p.estilo + (p.descripcionEstilo ? ` — ${p.descripcionEstilo}` : '')} />}
@@ -529,6 +563,14 @@ export default function AdminPedidosPage() {
   const reproduccionesPorId = new Map(cancionesCompartidas.map(c => [c.id, c.reproducciones]));
   const descargaPorId = new Map(cancionesCompartidas.map(c => [c.id, c.descargaHabilitada]));
   const conPausaPorId = new Map(cancionesCompartidas.map(c => [c.id, c.escuchasConPausa ?? 0]));
+  function canalDe(telefono: string): CanalCliente {
+    const ids = new Set(pedidos.filter(x => x.telefono === telefono && x.cancionCompartidaId).map(x => x.cancionCompartidaId));
+    const suyas = cancionesCompartidas.filter(c => ids.has(c.id));
+    return {
+      confirmo: suyas.some(c => c.desbloqueadaPor === 'canal' && !!c.unidoCanalEn && c.unidoCanalEn >= DESDE_CONFIRMACION),
+      toques: suyas.reduce((n, c) => n + (c.clicsCanal ?? 0), 0),
+    };
+  }
   const planPorTelefono = new Map(tenants.map(t => [t.telefono, t.plan]));
 
   return (
@@ -670,6 +712,7 @@ export default function AdminPedidosPage() {
           clicsCanal={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.clicsCanal}
           desbloqueadaPor={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.desbloqueadaPor}
           generadaCon={cancionesCompartidas.find(c => c.id === pedidoAbierto.cancionCompartidaId)?.generadaCon}
+          canalCliente={canalDe(pedidoAbierto.telefono)}
           onClose={() => setPedidoAbierto(null)}
           onVinculado={cargarSilencioso}
         />
