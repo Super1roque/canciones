@@ -370,8 +370,9 @@ function ModalPedido({ pedido: p, reproducciones, conPausa, descargaHabilitada, 
             {!descarga && (
               // Sin descarga todavía: se le explica cómo descargarla gratis uniéndose al canal de WhatsApp.
               // Sin emojis: al abrir WhatsApp desde el link a veces llegaban como «�».
+              // Armando (18 nov 2026): aclararle que es una canción a ese estilo y ofrecerle la parodia igual a la original.
               <a
-                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.`)}
+                href={urlAvisoProceso(p.telefono, `¡Hola! Tu canción al estilo de «${p.cancion_base}» ya está lista: https://corridos.online/cancion/${cancionCompartidaId}\n\nPara bajarla GRATIS y sin pausas: abrí el link, tocá «Descárgala GRATIS», seguí nuestro canal de WhatsApp y volvé a la página. La descarga aparece sola.\n\nDebo aclararte algo: ESTA CANCIÓN ESTÁ GENERADA A ESE ESTILO. Si quieres una PARODIA que suene igual a la original, TE LA PODEMOS HACER, pero esa sí tiene un costo de 250 LPS. (AVÍSAME SI TE INTERESA)`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary"
